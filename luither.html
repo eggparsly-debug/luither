@@ -94,13 +94,17 @@ footer{border-top:1px solid var(--line);background:#120d09;display:flex;align-it
 #modal input:not([type=checkbox]){background:#0e0a07;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
 main.synthOn #stage, main.synthOn aside{display:none}
 #synth{display:none;grid-column:1/-1;overflow:auto;padding:8px 12px;min-height:0}
-#synthIn{transform-origin:top left}
+
 main.synthOn #synth{display:block}
-.sbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.sgrid{display:grid;grid-template-columns:1fr 290px;gap:10px;align-items:start}
-.srcrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;align-items:start}
-.scol{display:flex;flex-direction:column;gap:10px}
-.schain{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;align-items:start}
+.sbar{display:flex;align-items:center;gap:8px;margin-bottom:8px}.sbar .ssel{width:220px;margin:0}.sbar .knob{display:flex;align-items:center;gap:4px;width:auto}.sbar .knob svg{width:30px;height:30px;margin:0}.sbar .knob .kl{display:none}
+.sgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:8px;align-items:stretch}
+.sgrid .s2{grid-column:span 2}.sgrid .s3{grid-column:span 3}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:4px;align-items:center;margin-bottom:4px}.two .ssel{margin:0}
+.syncbig{font:600 12px "IBM Plex Mono",monospace;color:var(--brass2);border:1px solid var(--line);border-radius:6px;padding:12px 6px;text-align:center;min-width:70px}
+.syncbig.sm{min-width:44px;padding:10px 2px;font-size:10px;align-self:center}
+#modList{max-height:150px;overflow:auto}
+@media (max-width:1180px){.sgrid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:760px){.sgrid .s2,.sgrid .s3{grid-column:span 6}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px;transition:opacity .15s}
 .card.off{opacity:.55}
 .ch{display:flex;align-items:center;gap:8px;margin-bottom:7px;min-height:24px}
@@ -110,8 +114,8 @@ main.synthOn #synth{display:block}
 .sw.on{border-color:var(--brass)}.sw.on::after{left:16px;background:var(--brass2)}
 .krow{display:flex;gap:4px;flex-wrap:wrap;align-items:flex-start;justify-content:space-around}
 .kcol{display:flex;flex-direction:column;gap:4px;justify-content:center;min-width:110px}
-.knob{width:58px;text-align:center;cursor:ns-resize;user-select:none;touch-action:none;border-radius:8px;padding:2px 0}
-.knob.sm{width:50px}.knob svg{width:46px;height:46px;display:block;margin:0 auto}.knob.sm svg{width:40px;height:40px}
+.knob{width:54px;text-align:center;cursor:ns-resize;user-select:none;touch-action:none;border-radius:8px;padding:2px 0}
+.knob.sm{width:47px}.knob svg{width:46px;height:46px;display:block;margin:0 auto}.knob.sm svg{width:38px;height:38px}
 .knob .trk{fill:none;stroke:#3a2c1f;stroke-width:3.5;stroke-linecap:round}
 .knob .val{fill:none;stroke:var(--brass2);stroke-width:3.5;stroke-linecap:round}
 .knob .marc{fill:none;stroke-width:1.8;stroke-linecap:round;opacity:.95}
@@ -211,6 +215,7 @@ const VOWELS = [[730, 1090, 2440], [530, 1840, 2480], [270, 2290, 3010], [570, 8
 const PHYS = { ph_pos: ['ex', 'pos'], ph_pressure: ['ex', 'pressure'], ph_speed: ['ex', 'speed'], ph_ebow: ['ex', 'ebow'], ph_wind: ['ex', 'wind'], ph_jawari: ['nk', 'jawari'], ph_buzz: ['nk', 'buzz'] };
 
 const fz = x => (x > 1e-15 || x < -1e-15) ? x : 0; // flush tiny values: keeps decaying tails from hitting slow denormal maths
+function divBeats(d) { const m = /^(\d+)\/(\d+)([.t]?)$/.exec(String(d)); if (!m) return 1; return 4 * m[1] / m[2] * (m[3] === '.' ? 1.5 : m[3] === 't' ? 2 / 3 : 1); }
 function polyblep(t, dt) {
   if (t < dt) { t /= dt; return t + t - t * t - 1; }
   if (t > 1 - dt) { t = (t - 1) / dt; return t * t + t + t + 1; }
@@ -303,9 +308,11 @@ class Synth {
   allOff() { this.nHeld = 0; for (const e of this.env) if (e.st) e.st = 4; }
   block(n) {
     const fs = this.fs, p = this.p, o = this.o, src = this.src, dt = n / fs;
+    const bpm = (this.modTargets.has('tempo') ? this.eff.tempo : p.tempo) || 120;
     // LFOs
     for (let i = 0; i < 2; i++) {
-      const L = this.lfo[i], k = 'lfo' + (i + 1), rate = p[k + '_rate'] || 1, sh = o[k + '_shape'] || 'sine';
+      const L = this.lfo[i], k = 'lfo' + (i + 1), sh = o[k + '_shape'] || 'sine', sy = o[k + '_sync'];
+      const rate = sy && sy !== 'free' ? bpm / 60 / divBeats(sy) : (this.modTargets.has(k + '_rate') ? this.eff[k + '_rate'] : p[k + '_rate']) || 1;
       L.ph += rate * dt; let wrapped = false; if (L.ph >= 1) { L.ph -= Math.floor(L.ph); wrapped = true; }
       const ph = L.ph; let v;
       switch (sh) {
@@ -362,11 +369,12 @@ class Synth {
       }
     }
     this.mdTPrev = this.mdT; this.mdT = V('mfx_time') || 3;
-    this.mdDepth = V('mfx_depth') || 0; this.mdRate = V('mfx_rate') || 0.5; this.mdFb = V('mfx_fb') || 0; this.mdMixP = this.mdMix ?? 0.5; this.mdMix = V('mfx_mix') ?? 0.5; this.mdSpread = V('mfx_spread') ?? 0.5;
+    this.mdDepth = V('mfx_depth') || 0; this.mdRate = o.mfx_sync && o.mfx_sync !== 'free' ? bpm / 60 / divBeats(o.mfx_sync) : V('mfx_rate') || 0.5; this.mdFb = V('mfx_fb') || 0; this.mdMixP = this.mdMix ?? 0.5; this.mdMix = V('mfx_mix') ?? 0.5; this.mdSpread = V('mfx_spread') ?? 0.5;
     this.psRatio = Math.pow(2, ((V('ps_semi') || 0) + (V('ps_fine') || 0) / 100) / 12); this.psMixP = this.psMix ?? 0; this.psMix = V('ps_mix') || 0; this.psFb = V('ps_fb') || 0;
     this.ampPrevBlk = this.ampNow ?? 1; this.ampNow = V('amp_lvl') ?? 1; this.pan = V('amp_pan') || 0;
     this.gDepth = V('gate_depth') ?? 1; this.gSmooth = 1 - Math.exp(-1 / ((V('gate_smooth') || 6) * 0.001 * fs));
-    this.stepLen = 60 / (V('gate_bpm') || 120) * 4 / (o.gate_div || 16) * fs;
+    const gd = typeof o.gate_div === 'number' ? '1/' + o.gate_div : (o.gate_div || '1/16');
+    this.stepLen = divBeats(gd) * 60 / (V('tempo') || 120) * fs;
     this.folA = 1 - Math.exp(-1 / ((p.fol_atk || .005) * fs)); this.folR = 1 - Math.exp(-1 / ((p.fol_rel || .15) * fs));
   }
   // one stereo sample through the chain; returns via this.l / this.r
@@ -1893,7 +1901,7 @@ const SP = {
   mfx_time: ['Time', .2, 30, 3, 1, 'ms'], mfx_depth: ['Depth', 0, 1, .3, 0, '%'], mfx_rate: ['Rate', .02, 12, .5, 1, 'Hz'], mfx_fb: ['Feedback', -.95, .95, 0, 0, '%'],
   mfx_mix: ['Mix', 0, 1, .5, 0, '%'], mfx_spread: ['Stereo', 0, 1, .5, 0, '%'],
   ps_semi: ['Shift', -24, 24, 12, 0, 'st'], ps_fine: ['Fine', -100, 100, 0, 0, '¢'], ps_mix: ['Mix', 0, 1, .3, 0, '%'], ps_fb: ['Feedback', 0, .9, 0, 0, '%'],
-  gate_bpm: ['Tempo', 40, 240, 120, 0, 'bpm'], gate_depth: ['Depth', 0, 1, 1, 0, '%'], gate_smooth: ['Smooth', 1, 60, 5, 1, 'ms'],
+  tempo: ['Tempo', 40, 240, 120, 0, 'bpm'], gate_depth: ['Depth', 0, 1, 1, 0, '%'], gate_smooth: ['Smooth', 1, 60, 5, 1, 'ms'],
   amp_lvl: ['Level', 0, 2, 1, 0, 'x'], amp_pan: ['Pan', -1, 1, 0, 0, 'pan'],
   lfo1_rate: ['Rate', .02, 20, 1, 1, 'Hz'], lfo2_rate: ['Rate', .02, 20, .25, 1, 'Hz'],
   env1_a: ['Attack', .001, 4, .005, 1, 's'], env1_d: ['Decay', .005, 4, .4, 1, 's'], env1_s: ['Sustain', 0, 1, .5, 0, '%'], env1_r: ['Release', .005, 6, .5, 1, 's'],
@@ -1910,7 +1918,7 @@ const SRC = {
   rnd: ['Random', '#b0b0b0'], energy: ['String energy', '#ff9e5e'], gate: ['Gate', '#80d0c0'],
 };
 const SOPT = () => ({ osc_mode: 'layer', f1_on: false, f1_type: 'lp', f2_on: false, f2_type: 'hp', f_route: 'serial', mfx_on: false, ps_on: false,
-  gate_on: false, gate_div: 16, gate_steps: [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1], lfo1_shape: 'sine', lfo1_retrig: false, lfo2_shape: 'smooth', lfo2_retrig: false });
+  gate_on: false, gate_div: '1/16', lfo1_sync: 'free', lfo2_sync: 'free', mfx_sync: 'free', gate_steps: [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1], lfo1_shape: 'sine', lfo1_retrig: false, lfo2_shape: 'smooth', lfo2_retrig: false });
 function synthDefault() {
   const p = {}; for (const k in SP) if (!SPHYS[k]) p[k] = SP[k][3];
   return { preset: 'Init (clean)', p, o: SOPT(), mods: [] };
@@ -1925,9 +1933,9 @@ const SPRESETS = {
   'Flanger': { p: { amp_lvl: 1.2, mfx_time: 1.2, mfx_depth: .85, mfx_rate: .18, mfx_fb: .78, mfx_mix: .5, mfx_spread: .25 }, o: { mfx_on: true } },
   'Jet flanger': { p: { mfx_time: .9, mfx_depth: .9, mfx_rate: .09, mfx_fb: -.88, mfx_mix: .5, mfx_spread: .3 }, o: { mfx_on: true } },
   'Chorus': { p: { amp_lvl: 1.3, mfx_time: 16, mfx_depth: .22, mfx_rate: .7, mfx_fb: 0, mfx_mix: .45, mfx_spread: 1 }, o: { mfx_on: true } },
-  'Tremolo': { p: { lfo1_rate: 6, amp_lvl: 1 }, o: { lfo1_shape: 'sine' }, mods: [SM('lfo1', 'amp_lvl', .22)] },
+  'Tremolo': { p: { lfo1_rate: 6, amp_lvl: 1 }, o: { lfo1_shape: 'sine', lfo1_sync: '1/16' }, mods: [SM('lfo1', 'amp_lvl', .22)] },
   'Harmonic tremolo': { p: { amp_lvl: 1.9, lfo1_rate: 5, f1_cut: 700, f1_res: 0, f2_cut: 700, f2_res: 0 }, o: { f1_on: true, f1_type: 'lp', f2_on: true, f2_type: 'hp', f_route: 'parallel', lfo1_shape: 'sine' }, mods: [SM('lfo1', 'f1_mix', .5), SM('lfo1', 'f2_mix', -.5)] },
-  'Trance gate': { p: { gate_bpm: 120, gate_depth: 1, gate_smooth: 4 }, o: { gate_on: true, gate_div: 16, gate_steps: [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1] } },
+  'Trance gate': { p: { tempo: 120, gate_depth: 1, gate_smooth: 4 }, o: { gate_on: true, gate_div: '1/16', gate_steps: [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1] } },
   'Talk box': { p: { f1_cut: 950, f1_vowel: .5, lfo1_rate: .45 }, o: { f1_on: true, f1_type: 'formant', lfo1_shape: 'tri' }, mods: [SM('lfo1', 'f1_vowel', .5), SM('mw', 'f1_vowel', .4)] },
   'Octave shimmer': { p: { ps_semi: 12, ps_mix: .38, ps_fb: .45, mfx_time: 20, mfx_depth: .2, mfx_rate: .4, mfx_mix: .35, mfx_spread: 1 }, o: { ps_on: true, mfx_on: true } },
   'Sub-octave synth': { p: { osc_lvl: .5, osc_shape: .66, osc_semi: -12, f1_cut: 700, f1_res: .35, env1_a: .002, env1_d: .5, env1_s: .2 }, o: { osc_mode: 'layer', f1_on: true, f1_type: 'lp' }, mods: [SM('env1', 'f1_cut', .35)] },
@@ -1942,6 +1950,8 @@ function synthPreset(name) {
   Object.assign(d.p, pr.p || {}); Object.assign(d.o, pr.o || {}); d.mods = (pr.mods || []).map(m => ({ ...m })); d.preset = name;
   return d;
 }
+// length of a tempo division in quarter-note beats: '1/4' = 1, '1/8.' = 0.75 (dotted), '1/8t' = 1/3 (triplet)
+function divBeats(d) { const m = /^(\d+)\/(\d+)([.t]?)$/.exec(String(d)); if (!m) return 1; return 4 * m[1] / m[2] * (m[3] === '.' ? 1.5 : m[3] === 't' ? 2 / 3 : 1); }
 function synthDefs() { const d = {}; for (const k in SP) d[k] = { min: SP[k][1], max: SP[k][2], log: !!SP[k][4] }; return d; }
 
 // ───────────────────────── synth face UI ─────────────────────────
@@ -2062,77 +2072,83 @@ function seg(opts, cur, on) { const s = el('div', { class: 'seg' }); opts.forEac
 function sel(opts, cur, on) { const s = el('select', { class: 'ssel' }); opts.forEach(([v, l]) => s.append(el('option', { value: v }, l))); s.value = cur; s.onchange = () => on(s.value); return s; }
 function mini(id, h = 46) { return el('canvas', { class: 'mini', id, height: h }); }
 
+// tempo divisions: '1/4' plain, '1/4.' dotted, '1/4t' triplet
+const DIVS = []; for (const d of ['4/1', '2/1', '1/1', '1/2', '1/4', '1/8', '1/16', '1/32']) DIVS.push(d, d + '.', d + 't');
+const divLabel = d => d.endsWith('.') ? d.slice(0, -1) + ' dotted' : d.endsWith('t') ? d.slice(0, -1) + ' triplet' : d;
+function syncSel(key, withFree) {
+  const opts = (withFree ? [['free', 'Free (Hz)']] : []).concat(DIVS.map(d => [d, divLabel(d)]));
+  return sel(opts, cfg.synth.o[key] || (withFree ? 'free' : '1/16'), v => setOpt(key, v, true));
+}
 function buildSynth() {
   for (const k in knobs) delete knobs[k];
-  const host = $('synth'); host.innerHTML = ''; const root = el('div', { id: 'synthIn' }); host.append(root);
+  const root = $('synth'); root.innerHTML = '';
   const o = cfg.synth.o;
-  // top bar
-  const bar = el('div', { class: 'sbar' }, el('span', { class: 'ct' }, 'Synth patch'),
+  if (typeof o.gate_div === 'number') o.gate_div = '1/' + o.gate_div;
+  const bar = el('div', { class: 'sbar' }, el('span', { class: 'ct', style: 'flex:0 0 auto' }, 'Synth patch'),
     sel(Object.keys(SPRESETS).map(k => [k, k]), cfg.synth.preset || '', v => { cfg.synth = synthPreset(v); pushSynth(); buildSynth(); }),
-    el('span', { class: 'note', style: 'margin:0 0 0 8px' }, 'Patches only change this face. Your instrument stays as built. Saving an instrument saves its patch too.'));
-  root.append(bar);
-  const L = el('div', { class: 'srcrow' }), C = el('div', { class: 'schain' }), R = el('div', { class: 'scol' });
-  root.append(el('div', { class: 'sgrid' }, el('div', { class: 'scol' }, L, C), R));
-  // sources
+    el('span', { class: 'ct', style: 'flex:0 0 auto;margin-left:14px' }, 'Tempo'), knob('tempo', 2),
+    el('span', { class: 'note', style: 'margin:0 0 0 8px;flex:1' }, 'Every synced rate (LFOs, Mod FX, Gate) follows this tempo. Patches only change this face; saving an instrument saves its patch too.'));
+  const G = el('div', { class: 'sgrid' });
+  root.append(bar, G);
+  const put = (c, span) => { c.classList.add('s' + span); G.append(c); return c; };
+  const head = (src) => { const c = card('', null, chip(src)); c.querySelector('.ct').remove(); return c; };
+  // row 1: modulation sources
   for (const i of [1, 2]) {
-    const k = 'lfo' + i, c = card('', null, chip(k));
-    c.querySelector('.ct').remove();
-    c.append(mini('cv_' + k, 36), krow(el('div', { class: 'kcol' },
+    const k = 'lfo' + i, c = head(k), sync = o[k + '_sync'] || 'free';
+    c.append(mini('cv_' + k, 34), el('div', { class: 'two' },
       sel([['sine', 'Sine'], ['tri', 'Triangle'], ['saw', 'Saw up'], ['ramp', 'Saw down'], ['square', 'Square'], ['sh', 'Sample & hold'], ['smooth', 'Smooth random']], o[k + '_shape'], v => setOpt(k + '_shape', v)),
-      el('label', { class: 'chk' }, Object.assign(el('input', { type: 'checkbox' }), { checked: !!o[k + '_retrig'], onchange: e => setOpt(k + '_retrig', e.target.checked) }), 'Restart on note')), knob(k + '_rate', 1)));
-    L.append(c);
+      syncSel(k + '_sync', true)),
+      krow(sync === 'free' ? knob(k + '_rate', 1) : el('div', { class: 'syncbig' }, divLabel(sync)),
+        el('label', { class: 'chk' }, Object.assign(el('input', { type: 'checkbox' }), { checked: !!o[k + '_retrig'], onchange: e => setOpt(k + '_retrig', e.target.checked) }), 'Restart on note')));
+    put(c, 2);
   }
-  for (const i of [1, 2]) { const k = 'env' + i, c = card('', null, chip(k)); c.querySelector('.ct').remove(); c.append(mini('cv_' + k, 36), krow(knob(k + '_a', 1), knob(k + '_d', 1), knob(k + '_s', 1), knob(k + '_r', 1))); L.append(c); }
-  { const c = card('', null, chip('fol')); c.querySelector('.ct').remove(); c.append(el('div', { class: 'meter' }, el('i', { id: 'm_fol' })), krow(knob('fol_atk', 1), knob('fol_rel', 1), knob('fol_gain', 1)));
-    c.append(el('div', { class: 'note' }, 'How loud the instrument is playing. Drives an auto-wah.')); L.append(c); }
+  for (const i of [1, 2]) { const k = 'env' + i, c = head(k); c.append(mini('cv_' + k, 34), krow(knob(k + '_a', 1), knob(k + '_d', 1), knob(k + '_s', 1), knob(k + '_r', 1))); put(c, 2); }
+  { const c = head('fol'); c.append(el('div', { class: 'meter' }, el('i', { id: 'm_fol' })), krow(knob('fol_atk', 1), knob('fol_rel', 1), knob('fol_gain', 1)),
+      el('div', { class: 'note' }, 'How loud the instrument is playing.')); put(c, 2); }
   { const c = card('Performance'); const g = el('div', { class: 'chips' });
     ['vel', 'note', 'mw', 'rnd', 'energy', 'gate'].forEach(s => g.append(chip(s, el('i', { class: 'cbar', id: 'cb_' + s }))));
-    c.append(g, el('div', { class: 'note' }, 'Set per note. String energy = how hard the strings are vibrating.')); L.append(c); }
-  // chain
-  { const c = card('Pickup → Oscillator'); c.append(seg([['layer', 'Layer'], ['morph', 'Morph'], ['ring', 'Ring']], o.osc_mode, v => setOpt('osc_mode', v, true)), mini('cv_osc', 40),
+    c.append(g); put(c, 2); }
+  // row 2: the sound path
+  { const c = card('Pickup → Oscillator'); c.append(seg([['layer', 'Layer'], ['morph', 'Morph'], ['ring', 'Ring']], o.osc_mode, v => setOpt('osc_mode', v, true)), mini('cv_osc', 34),
       krow(knob('src_lvl', 1), knob('osc_lvl', 1), knob('osc_shape', 1), knob('osc_semi', 1), knob('osc_fine', 1)),
-      el('div', { class: 'note' }, 'Pickup = the instrument you built. ' + { layer: 'Adds a synth voice that follows each string\'s pitch and loudness.', morph: 'Crossfades from the string into a synth voice that keeps the string\'s dynamics.', ring: 'Multiplies each string by its own oscillator: metallic, bell-like.' }[o.osc_mode]));
-    C.append(c); }
+      el('div', { class: 'note' }, { layer: 'Adds a synth voice that follows each string.', morph: 'Crossfades the string into a synth voice that keeps its dynamics.', ring: 'Multiplies each string by its own oscillator: metallic, bell-like.' }[o.osc_mode]));
+    put(c, 3); }
   for (const f of [1, 2]) {
     const k = 'f' + f, extra = f === 2 ? sel([['serial', 'After filter 1'], ['parallel', 'Beside filter 1']], o.f_route, v => setOpt('f_route', v)) : null;
     const c = card('Filter ' + f, k + '_on', extra);
     c.append(sel([['lp', 'Low-pass'], ['bp', 'Band-pass (wah)'], ['hp', 'High-pass'], ['notch', 'Notch'], ['peak', 'Peak'], ['formant', 'Formant (vowels)']], o[k + '_type'], v => setOpt(k + '_type', v, true)),
       mini('cv_' + k, 40), krow(knob(k + '_cut', 1), knob(k + '_res', 1), ...(o[k + '_type'] === 'formant' ? [knob(k + '_vowel', 1)] : [knob(k + '_drive', 1)]), knob(k + '_mix', 1)));
-    C.append(c);
+    put(c, 3);
   }
-  { const c = card('Mod FX', 'mfx_on'); const q = (t, ms, dp, rt, fb, mx, sp) => { Object.assign(cfg.synth.p, { mfx_time: ms, mfx_depth: dp, mfx_rate: rt, mfx_fb: fb, mfx_mix: mx, mfx_spread: sp }); cfg.synth.o.mfx_on = true; pushSynth(); buildSynth(); };
-    c.append(el('div', { class: 'seg' }, el('button', { onclick: () => q('c', 16, .22, .7, 0, .45, 1) }, 'Chorus'), el('button', { onclick: () => q('f', 1.2, .85, .18, .78, .5, .25) }, 'Flanger'), el('button', { onclick: () => q('v', 3, .13, 5.8, 0, 1, .1) }, 'Vibrato')),
-      krow(knob('mfx_time', 1), knob('mfx_depth', 1), knob('mfx_rate', 1), knob('mfx_fb', 1), knob('mfx_mix', 1), knob('mfx_spread', 1)));
-    C.append(c); }
-  { const c = card('Pitch shifter', 'ps_on'); c.append(krow(knob('ps_semi', 1), knob('ps_fine', 1), knob('ps_mix', 1), knob('ps_fb', 1)), el('div', { class: 'note' }, 'Mix up to 50% adds the shifted copy; above, it replaces the original.')); C.append(c); }
+  { const c = card('Mod FX', 'mfx_on'), sync = o.mfx_sync || 'free';
+    const q = (ms, dp, rt, fb, mx, sp) => { Object.assign(cfg.synth.p, { mfx_time: ms, mfx_depth: dp, mfx_rate: rt, mfx_fb: fb, mfx_mix: mx, mfx_spread: sp }); cfg.synth.o.mfx_on = true; cfg.synth.o.mfx_sync = 'free'; pushSynth(); buildSynth(); };
+    c.append(el('div', { class: 'seg' }, el('button', { onclick: () => q(16, .22, .7, 0, .45, 1) }, 'Chorus'), el('button', { onclick: () => q(1.2, .85, .18, .78, .5, .25) }, 'Flanger'), el('button', { onclick: () => q(3, .13, 5.8, 0, 1, .1) }, 'Vibrato')),
+      el('div', { class: 'two' }, el('span', { class: 'note', style: 'margin:0' }, 'Rate sync'), syncSel('mfx_sync', true)),
+      krow(knob('mfx_time', 1), knob('mfx_depth', 1), sync === 'free' ? knob('mfx_rate', 1) : el('div', { class: 'syncbig sm' }, divLabel(sync)), knob('mfx_fb', 1), knob('mfx_mix', 1), knob('mfx_spread', 1)));
+    put(c, 3); }
+  // row 3: pitch, gate, amp, physical, modulation list
+  { const c = card('Pitch shifter', 'ps_on'); c.append(krow(knob('ps_semi', 1), knob('ps_fine', 1), knob('ps_mix', 1), knob('ps_fb', 1)), el('div', { class: 'note' }, 'Mix up to 50% adds the shifted copy; above, it replaces the original.')); put(c, 2); }
   { const c = card('Gate', 'gate_on'); const steps = el('div', { class: 'steps', id: 'gsteps' });
     o.gate_steps.forEach((v, i) => steps.append(el('button', { class: v ? 'on' : '', onclick: e => { o.gate_steps[i] = o.gate_steps[i] ? 0 : 1; e.target.classList.toggle('on'); setOpt('gate_steps', o.gate_steps.slice()); } })));
-    c.append(steps, krow(el('div', { class: 'kcol', style: 'min-width:64px' }, sel([[4, '1/4'], [8, '1/8'], [16, '1/16'], [32, '1/32']], o.gate_div, v => setOpt('gate_div', +v))), knob('gate_bpm', 1), knob('gate_depth', 1), knob('gate_smooth', 1)));
-    C.append(c); }
-  { const c = card('Amp'); c.append(krow(knob('amp_lvl', 1), knob('amp_pan', 1))); C.append(c); }
-  // physical + matrix
+    c.append(steps, el('div', { class: 'two' }, el('span', { class: 'note', style: 'margin:0' }, 'Step length'), syncSel('gate_div', false)), krow(knob('gate_depth', 1), knob('gate_smooth', 1)));
+    put(c, 3); }
+  { const c = card('Amp'); c.append(krow(knob('amp_lvl', 1), knob('amp_pan', 1))); put(c, 2); }
   { const c = card('Physical'); const t = cfg.ex.type, rel = { ph_pressure: t === 'bow', ph_speed: t === 'bow', ph_ebow: t === 'ebow', ph_wind: t === 'wind' };
-    const ks = Object.keys(SPHYS).map(id => { const k = knob(id, 1); if (rel[id] === false) k.classList.add('dim'); return k; });
-    c.append(el('div', { class: 'krow wrap' }, ...ks), el('div', { class: 'note' }, 'These are the builder\'s own controls. Modulate them to move the bow, the pick, or the bridge buzz while you play. Dimmed ones don\'t affect the current exciter.'));
-    R.append(c); }
-  { const c = card('Modulation'); c.append(el('div', { id: 'modList' })); R.append(c); }
+    c.append(el('div', { class: 'krow wrap' }, ...Object.keys(SPHYS).map(id => { const k = knob(id, 1); if (rel[id] === false) k.classList.add('dim'); return k; })));
+    put(c, 3); }
+  { const c = card('Modulation'); c.append(el('div', { id: 'modList' })); put(c, 2); }
   buildModList();
-  requestAnimationFrame(() => { fitSynth(); sizeMinis(); drawSynthStatic(); });
+  requestAnimationFrame(() => { sizeMinis(); drawSynthLive(); });
 }
-// zoom the whole face out just enough that every module fits on screen without scrolling
-function fitSynth() {
-  const host = $('synth'), inner = $('synthIn'); if (!host || !inner || face !== 'synth') return;
-  const fits = z => { inner.style.zoom = z; return inner.getBoundingClientRect().height <= host.clientHeight - 4 && inner.scrollWidth * z <= host.clientWidth + 2; };
-  if (fits(1)) return;
-  let lo = .5, hi = 1; for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m; }
-  inner.style.zoom = lo;
-}
-window.addEventListener('resize', () => { if (face === 'synth') { fitSynth(); sizeMinis(); drawSynthStatic(); } });
+window.addEventListener('resize', () => { if (face === 'synth') { sizeMinis(); drawSynthLive(); } });
 function sizeMinis() { document.querySelectorAll('#synth canvas.mini').forEach(c => { const d = devicePixelRatio || 1; c.width = c.clientWidth * d; c.height = c.clientHeight * d; }); }
+// the value a knob is really at right now: its setting plus any live modulation
+function liveVal(id) { const mv = viz.syn && viz.syn.mv && viz.syn.mv[id]; return mv != null ? sV(id, mv) : cfg.synth.p[id]; }
 
-// static drawings: oscillator shape, filter responses
-function drawSynthStatic() {
-  const o = cfg.synth.o, p = cfg.synth.p;
+// oscillator shape and filter curves, drawn from live values so they move with knobs and modulation
+function drawSynthStatic() { drawSynthLive(); }
+function drawSynthLive() {
+  const o = cfg.synth.o, p = {}; for (const k of ['osc_shape', 'f1_cut', 'f1_res', 'f1_vowel', 'f2_cut', 'f2_res', 'f2_vowel']) p[k] = liveVal(k);
   const cvO = $('cv_osc'); if (cvO) { const c = cvO.getContext('2d'), W = cvO.width, H = cvO.height; c.clearRect(0, 0, W, H); c.strokeStyle = '#f2c568'; c.lineWidth = 2 * devicePixelRatio; c.beginPath();
     for (let x = 0; x <= W; x++) { const ph = (x / W * 2) % 1, y = oscWaveUI(ph, p.osc_shape); x ? c.lineTo(x, H / 2 - y * H * .38) : c.moveTo(x, H / 2 - y * H * .38); } c.stroke(); }
   for (const f of [1, 2]) { const cv = $('cv_f' + f); if (!cv) continue; const c = cv.getContext('2d'), W = cv.width, H = cv.height, k = 'f' + f; c.clearRect(0, 0, W, H);
@@ -2153,6 +2169,7 @@ function oscWaveUI(ph, m) { const s = Math.sin(2 * Math.PI * ph), tri = ph < .5 
 
 // live: LFO phase, envelopes, meters, gate step, modulated knob dots
 function synthFrame() {
+  drawSynthLive();
   const sv = viz.syn; if (!sv) return;
   const d = devicePixelRatio || 1;
   for (const i of [1, 2]) { const cv = $('cv_lfo' + i); if (!cv) continue; const c = cv.getContext('2d'), W = cv.width, H = cv.height, sh = cfg.synth.o['lfo' + i + '_shape'];

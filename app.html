@@ -94,13 +94,17 @@ footer{border-top:1px solid var(--line);background:#120d09;display:flex;align-it
 #modal input:not([type=checkbox]){background:#0e0a07;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
 main.synthOn #stage, main.synthOn aside{display:none}
 #synth{display:none;grid-column:1/-1;overflow:auto;padding:8px 12px;min-height:0}
-#synthIn{transform-origin:top left}
+
 main.synthOn #synth{display:block}
-.sbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.sgrid{display:grid;grid-template-columns:1fr 290px;gap:10px;align-items:start}
-.srcrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;align-items:start}
-.scol{display:flex;flex-direction:column;gap:10px}
-.schain{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;align-items:start}
+.sbar{display:flex;align-items:center;gap:8px;margin-bottom:8px}.sbar .ssel{width:220px;margin:0}.sbar .knob{display:flex;align-items:center;gap:4px;width:auto}.sbar .knob svg{width:30px;height:30px;margin:0}.sbar .knob .kl{display:none}
+.sgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:8px;align-items:stretch}
+.sgrid .s2{grid-column:span 2}.sgrid .s3{grid-column:span 3}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:4px;align-items:center;margin-bottom:4px}.two .ssel{margin:0}
+.syncbig{font:600 12px "IBM Plex Mono",monospace;color:var(--brass2);border:1px solid var(--line);border-radius:6px;padding:12px 6px;text-align:center;min-width:70px}
+.syncbig.sm{min-width:44px;padding:10px 2px;font-size:10px;align-self:center}
+#modList{max-height:150px;overflow:auto}
+@media (max-width:1180px){.sgrid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:760px){.sgrid .s2,.sgrid .s3{grid-column:span 6}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px;transition:opacity .15s}
 .card.off{opacity:.55}
 .ch{display:flex;align-items:center;gap:8px;margin-bottom:7px;min-height:24px}
@@ -110,8 +114,8 @@ main.synthOn #synth{display:block}
 .sw.on{border-color:var(--brass)}.sw.on::after{left:16px;background:var(--brass2)}
 .krow{display:flex;gap:4px;flex-wrap:wrap;align-items:flex-start;justify-content:space-around}
 .kcol{display:flex;flex-direction:column;gap:4px;justify-content:center;min-width:110px}
-.knob{width:58px;text-align:center;cursor:ns-resize;user-select:none;touch-action:none;border-radius:8px;padding:2px 0}
-.knob.sm{width:50px}.knob svg{width:46px;height:46px;display:block;margin:0 auto}.knob.sm svg{width:40px;height:40px}
+.knob{width:54px;text-align:center;cursor:ns-resize;user-select:none;touch-action:none;border-radius:8px;padding:2px 0}
+.knob.sm{width:47px}.knob svg{width:46px;height:46px;display:block;margin:0 auto}.knob.sm svg{width:38px;height:38px}
 .knob .trk{fill:none;stroke:#3a2c1f;stroke-width:3.5;stroke-linecap:round}
 .knob .val{fill:none;stroke:var(--brass2);stroke-width:3.5;stroke-linecap:round}
 .knob .marc{fill:none;stroke-width:1.8;stroke-linecap:round;opacity:.95}

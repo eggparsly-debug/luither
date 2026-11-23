@@ -118,7 +118,7 @@ function mini(id, h = 46) { return el('canvas', { class: 'mini', id, height: h }
 
 // tempo divisions: '1/4' plain, '1/4.' dotted, '1/4t' triplet
 const DIVS = []; for (const d of ['4/1', '2/1', '1/1', '1/2', '1/4', '1/8', '1/16', '1/32']) DIVS.push(d, d + '.', d + 't');
-const divLabel = d => d.replace('.', ' dotted').replace('t', ' triplet');
+const divLabel = d => d.endsWith('.') ? d.slice(0, -1) + ' dotted' : d.endsWith('t') ? d.slice(0, -1) + ' triplet' : d;
 function syncSel(key, withFree) {
   const opts = (withFree ? [['free', 'Free (Hz)']] : []).concat(DIVS.map(d => [d, divLabel(d)]));
   return sel(opts, cfg.synth.o[key] || (withFree ? 'free' : '1/16'), v => setOpt(key, v, true));
