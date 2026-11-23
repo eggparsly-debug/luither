@@ -2,7 +2,7 @@ const fs = require('fs');
 globalThis.sampleRate = 48000;
 globalThis.AudioWorkletProcessor = class { constructor() { this.port = { postMessage() {}, onmessage: null }; } };
 let P; globalThis.registerProcessor = (n, c) => { P = c; };
-eval(fs.readFileSync(__dirname + '/synthdsp.js', 'utf8') + fs.readFileSync(__dirname + '/dsp.js', 'utf8'));
+eval(['biquad.js','synthdsp.js','ampdsp.js','dsp.js'].map(f => fs.readFileSync(__dirname + '/' + f, 'utf8')).join('\n'));
 
 const MAT = {
   steel: { decay: 9, bright: 0.08, stiff: 0.35, magnetic: 1 },

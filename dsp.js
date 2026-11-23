@@ -240,7 +240,7 @@ class LuitherProc extends AudioWorkletProcessor {
     this.held = []; this.map = new Map(); this.sus = false; this.bendSemis = 0; this.bendMul = 1; this.clock = 0;
     this.sympFeed = 0; this.dc = [0, 0, 0, 0, 0, 0, 0, 0]; this.lim = 1; this.limMin = 1; this.dcA = 1 - 2 * Math.PI * 5 / sampleRate; this.dcB = 1 - 2 * Math.PI * 3 / sampleRate; this.frame = 0; this.lastOn = -1e9; this.bin1 = 0; this.bin2 = 0; this.pa = 0; this.pb = 0;
     { const g = Math.tan(Math.PI * Math.min(4500, sampleRate * .45) / sampleRate), k = 1 / 1.6; this.pa1 = 1 / (1 + g * (g + k)); this.pa2 = g * this.pa1; this.pa3 = g * this.pa2; } this.limRel = 1 - Math.exp(-1 / (0.12 * sampleRate)); this.blk = 0; this.seed = 22222; this.gustV = 0; this.gustT = 0;
-    this.exBase = { ...this.ex }; this.nkBase = { ...this.nk }; this.syn = new Synth(this);
+    this.exBase = { ...this.ex }; this.nkBase = { ...this.nk }; this.syn = new Synth(this); this.rack = new AmpRack(sampleRate);
     this.derive();
     this.port.onmessage = e => this.msg(e.data);
   }
@@ -262,6 +262,7 @@ class LuitherProc extends AudioWorkletProcessor {
       case 'sdefs': this.syn.setDefs(d.v); break;
       case 'synth': this.syn.set(d.v); break;
       case 'mw': this.syn.src.mw = d.v; break;
+      case 'amp': this.rack.set(d.v); break;
       case 'pk': Object.assign(this.pk, d.v); break;
       case 'strings': this.setStrings(d.v); break;
       case 'modes': this.setModes(d.v); break;
@@ -367,6 +368,7 @@ class LuitherProc extends AudioWorkletProcessor {
     for (let k = 0; k < nS; k++) S[k].block(n);
     for (let k = 0; k < nM; k++) { const m = M[k]; if (m.y1 < 1e-15 && m.y1 > -1e-15 && m.y2 < 1e-15 && m.y2 > -1e-15) m.y1 = m.y2 = 0; }
     const syn = this.syn; syn.block(n); this.frame += n;
+    const rack = this.rack; rack.tempo = syn.p.tempo || 120; rack.block(n);
     const oscOn = syn.oscOn, oscShape = syn.oscShape, oscMul = syn.oscMul / this.fs;
     this.bendMul = Math.pow(2, this.bendSemis / 12);
     if ((this.gustT -= n) <= 0) { this.gustT = 2000 + Math.random() * 6000; this.gustTarget = Math.random() * 2 - 0.6; }
@@ -407,8 +409,9 @@ class LuitherProc extends AudioWorkletProcessor {
       let yr = r - dc[2] + this.dcA * dc[3]; dc[2] = r; dc[3] = yr;
       syn.run(yl * mast, yr * mast, oscSum * mast * OSC_G, ringSum * mast * RING_G, i, n);
       // output: DC blocker after the synth, then a clean peak limiter at -1 dBFS (no colouring below it)
-      let ol = syn.l - dc[4] + this.dcB * dc[5]; dc[4] = syn.l; dc[5] = ol;
-      let or = syn.r - dc[6] + this.dcB * dc[7]; dc[6] = syn.r; dc[7] = or;
+      rack.run(syn.l, syn.r);
+      let ol = rack.l - dc[4] + this.dcB * dc[5]; dc[4] = rack.l; dc[5] = ol;
+      let or = rack.r - dc[6] + this.dcB * dc[7]; dc[6] = rack.r; dc[7] = or;
       const pk = Math.max(ol < 0 ? -ol : ol, or < 0 ? -or : or);
       if (pk * this.lim > 0.891) this.lim = 0.891 / pk; else this.lim += (1 - this.lim) * this.limRel;
       ol *= this.lim; or *= this.lim;
@@ -418,7 +421,7 @@ class LuitherProc extends AudioWorkletProcessor {
     if (++this.blk >= 6) {
       this.blk = 0;
       this.port.postMessage({ t: 'viz', amp: S.map(s => s.rms), note: S.map(s => s.harm ? s.touch : s.note + 12 * Math.log2(s.freq / s.target)), harm: S.map(s => !!s.harm),
-        held: S.map(s => s.held || s.cont > 0.02), syn: syn.viz(), lim: this.limMin, modeE: M.map(m => { const e = m.e; m.e = 0; return e; }) });
+        held: S.map(s => s.held || s.cont > 0.02), syn: syn.viz(), amp: rack.viz(), lim: this.limMin, modeE: M.map(m => { const e = m.e; m.e = 0; return e; }) });
       this.limMin = 1;
     }
     return true;

@@ -9,13 +9,14 @@ function makeCtx(sr) {
   vm.runInContext(fs.readFileSync(__dirname + '/instdefs.js', 'utf8'), ctx);
   vm.runInContext('let cfg, quality = "med", actx = { sampleRate: ' + sr + ' }, modesInfo; function bulge(b){ return Math.max(0, 1 - b.depth[b.depth.length-1] / Math.max(1e-4, b.depth[0])); }\n' + grab('function bodyGeom', '// ───────────────────────── audio'), ctx);
   vm.runInContext(fs.readFileSync(__dirname + '/synthdefs.js', 'utf8'), ctx);
-  vm.runInContext(fs.readFileSync(__dirname + '/synthdsp.js', 'utf8') + fs.readFileSync(__dirname + '/dsp.js', 'utf8'), ctx);
+  vm.runInContext(fs.readFileSync(__dirname + '/ampdefs.js', 'utf8'), ctx);
+  vm.runInContext(['biquad.js','synthdsp.js','ampdsp.js','dsp.js'].map(f => fs.readFileSync(__dirname + '/' + f, 'utf8')).join('\n'), ctx);
   return ctx;
 }
 const db = x => x > 0 ? (20 * Math.log10(x)).toFixed(1) : '-inf';
-function run(sr, preset, synthName, scen) {
+function run(sr, preset, synthName, scen, amp) {
   const ctx = makeCtx(sr);
-  ctx.__pre = preset; ctx.__syn = synthName;
+  ctx.__pre = preset; ctx.__syn = synthName; ctx.__amp = amp ? JSON.stringify(amp) : '';
   vm.runInContext(`
     cfg = PRESETS[__pre](); var mods = computeBody();
     var p = new P();
@@ -25,6 +26,7 @@ function run(sr, preset, synthName, scen) {
     p.msg({ t: 'modes', v: mods.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan })) });
     p.msg({ t: 'pk', v: { ...cfg.pk, master: cfg.pk.master * 0.7 } });
     var sp = synthPreset(__syn); p.msg({ t: 'synth', v: { p: sp.p, o: sp.o, mods: sp.mods } });
+    if (__amp) p.msg({ t: 'amp', v: typeof __amp === 'string' ? JSON.parse(__amp) : __amp });
     var play = cfg.strings.filter(s => s.role === 'stopped' || s.role === 'open').map(s => s.note);
   `, ctx);
   const p = ctx.p, play = ctx.play;
@@ -82,4 +84,26 @@ if (which === 'cal') {
     console.log(name.padEnd(20), 'truePk', truePk.toFixed(1), 'rms', rms, '→ gain', gdb.toFixed(1), 'dB, master', out[name]);
   }
   fs.writeFileSync(__dirname + '/cal.json', JSON.stringify(out));
+}
+
+if (which === 'amp') {
+  const ampNames = vm.runInContext('Object.keys(AMP_PRESETS)', ctx0), out = {};
+  for (const inst of ['Electric guitar', 'Electric bass', 'Acoustic guitar']) for (const an of ampNames) {
+    const amp = vm.runInContext('ampPreset(' + JSON.stringify(an) + ')', ctx0);
+    const r = run(48000, inst, 'Init (clean)', 'chord', JSON.parse(JSON.stringify(amp)));
+    const truePk = +r.pk - +r.gr, rms = +r.rms; const gdb = Math.max(-18, Math.min(12, Math.min(-3 - truePk, -14 - rms)));
+    if (inst === 'Electric guitar') out[an] = +gdb.toFixed(1);
+    console.log(inst.padEnd(16), an.padEnd(18), 'pk', r.pk, 'rms', r.rms, 'GR', r.gr, 'corr', r.corr, 'cpu', r.cpu, r.bad ? 'NaN!' : '', inst === 'Electric guitar' ? '→ trim ' + gdb.toFixed(1) + ' dB' : '');
+  }
+  fs.writeFileSync(__dirname + '/ampcal.json', JSON.stringify(out));
+}
+if (which === 'pedals') {
+  const types = vm.runInContext('Object.keys(PEDALS)', ctx0);
+  const base = run(48000, 'Electric guitar', 'Init (clean)', 'chord');
+  console.log('bypass'.padEnd(14), 'pk', base.pk, 'rms', base.rms);
+  for (const t of types) {
+    const amp = JSON.parse(vm.runInContext('(() => { const a = ampDefault(); a.pre = [newPedal(' + JSON.stringify(t) + ')]; return JSON.stringify(a); })()', ctx0));
+    const r = run(48000, 'Electric guitar', 'Init (clean)', 'chord', amp);
+    console.log(t.padEnd(14), 'pk', r.pk, 'rms', r.rms, 'Δrms', (r.rms - base.rms).toFixed(1), 'GR', r.gr, 'corr', r.corr, 'mono', r.mono, 'tail', r.tail, 'cpu', r.cpu, r.bad ? 'NaN!' : '');
+  }
 }

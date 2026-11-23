@@ -102,7 +102,7 @@ const PRESETS = {
 BMAT['Snakeskin'] = { E: .35, rho: 1100, Q: 14, color: '#bfa77a' };
 const diat = (root, steps, count) => { const out = []; for (let i = 0; out.length < count; i++) out.push(root + 12 * Math.floor(i / steps.length) + steps[i % steps.length]); return out; };
 const body = (o) => ({ topT: 3, backT: 3, bracing: 'none', braceS: .5, hole: { type: 'round', x: .3, size: .6 }, bridgeX: .6, neckLen: .3, nutX: .05, backShape: 'flat', ...o });
-const pre = (o) => () => ({ ex: { ...exDefault(), ...o.ex }, nk: { ...nkDefault(), ...o.nk }, pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8, ...o.pk }, strings: o.strings(), body: body(o.body) });
+const pre = (o) => () => ({ ex: { ...exDefault(), ...o.ex }, nk: { ...nkDefault(), ...o.nk }, pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8, ...o.pk }, strings: o.strings(), body: body(o.body), ampPreset: o.amp });
 Object.assign(PRESETS, {
   'Violin': pre({
     strings: () => [S('stopped',55,'Gut',.45,{range:31}), S('stopped',62,'Gut',.35,{range:31}), S('stopped',69,'Steel',.25,{range:31}), S('stopped',76,'Steel',.15,{range:31})],
@@ -125,12 +125,12 @@ Object.assign(PRESETS, {
   'Electric guitar': pre({
     strings: () => [S('stopped',40,'Nickel-wound',.75,{range:22,wound:1}), S('stopped',45,'Nickel-wound',.6,{range:22,wound:1}), S('stopped',50,'Nickel-wound',.5,{range:22,wound:1}),
       S('stopped',55,'Steel',.35,{range:22}), S('stopped',59,'Steel',.25,{range:22}), S('stopped',64,'Steel',.18,{range:22})],
-    ex: { type: 'pick', pos: .13, pickStiff: .7 }, nk: { frets: true, buzz: .03, glide: .01 }, pk: { mag: 1.1, magPos: .18, piezo: 0, mic: 0 },
+    ex: { type: 'pick', pos: .13, pickStiff: .7 }, nk: { frets: true, buzz: .03, glide: .01 }, pk: { mag: 1.1, magPos: .18, piezo: 0, mic: 0 }, amp: 'Clean American',
     body: { length: .45, hw: [.1,.15,.16,.15,.12,.13,.16,.17,.165,.14,.07], depth: [.045,.045,.045,.045,.045,.045,.045], top: 'Mahogany', back: 'Mahogany', topT: 25, backT: 20,
       hole: { type: 'none', x: .5, size: .5 }, bridgeX: .48, neckLen: .43 } }),
   'Electric bass': pre({
     strings: () => [S('stopped',28,'Nickel-wound',.95,{range:20,wound:1}), S('stopped',33,'Nickel-wound',.85,{range:20,wound:1}), S('stopped',38,'Nickel-wound',.72,{range:20,wound:1}), S('stopped',43,'Nickel-wound',.6,{range:20,wound:1})],
-    ex: { type: 'finger', pos: .2, fingerSoft: .3 }, nk: { frets: true, glide: .01 }, pk: { mag: 1.1, magPos: .2, piezo: 0, mic: 0 },
+    ex: { type: 'finger', pos: .2, fingerSoft: .3 }, nk: { frets: true, glide: .01 }, pk: { mag: 1.1, magPos: .2, piezo: 0, mic: 0 }, amp: 'Bass amp',
     body: { length: .5, hw: [.11,.16,.17,.16,.13,.14,.17,.18,.175,.15,.08], depth: [.045,.045,.045,.045,.045,.045,.045], top: 'Mahogany', back: 'Mahogany', topT: 25, backT: 20,
       hole: { type: 'none', x: .5, size: .5 }, bridgeX: .49, neckLen: .62 } }),
   'Oud': pre({
