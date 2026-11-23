@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luither — Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#17120e; --panel:#211912; --panel2:#2a2018; --line:#3d2f22; --ink:#efe4d2; --dim:#a8957b; --faint:#6f5e4a;
+  --brass:#d9a441; --brass2:#f2c568; --stop:#e9b65a; --open:#7fc4b8; --drone:#d97a5b; --symp:#a99be0; --heat:#ff8a3d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.35 "IBM Plex Sans",system-ui,sans-serif;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+#app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);background:linear-gradient(#21180f,#1a130d);flex-wrap:wrap}
+.logo{font-family:Fraunces,serif;font-size:22px;font-weight:700;letter-spacing:.5px;color:var(--brass2)}
+.logo small{font:500 11px "IBM Plex Mono",monospace;color:var(--dim);letter-spacing:2px;margin-left:8px;text-transform:uppercase}
+.faces{display:flex;gap:2px;background:#120d09;border:1px solid var(--line);border-radius:8px;padding:2px}
+.faces button{border:0;background:transparent;padding:5px 12px;border-radius:6px;color:var(--dim);cursor:pointer}
+.faces button.on{background:var(--panel2);color:var(--brass2)}
+.faces button:disabled{opacity:.45;cursor:default}
+.sp{flex:1}
+.hbtn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+.hbtn:hover{border-color:var(--brass)}
+.hbtn.on{border-color:var(--brass);color:var(--brass2);background:#33261a}
+select{background:#120d09;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.pill{font:500 11px "IBM Plex Mono",monospace;color:var(--dim);border:1px solid var(--line);border-radius:20px;padding:3px 9px}
+.pill.ok{color:#9fd49a;border-color:#3f5f3a}
+#meter{width:70px;height:8px;background:#0d0906;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+#meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6fb36a,#e0c050 70%,#e0603a)}
+main{display:grid;grid-template-columns:1fr 390px;min-height:0}
+#stage{position:relative;display:grid;grid-template-rows:1fr 150px;min-height:0;border-right:1px solid var(--line)}
+#cv{width:100%;height:100%;display:block;cursor:default}
+#viewbar{position:absolute;top:8px;left:10px;display:flex;gap:10px;align-items:center;background:rgba(18,13,9,.8);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12px;color:var(--dim)}
+#viewbar input[type=range]{width:80px}
+#viewbar label{display:flex;gap:5px;align-items:center}
+.tog{border:1px solid var(--line);background:transparent;border-radius:5px;padding:2px 7px;cursor:pointer;color:var(--dim)}
+.tog.on{border-color:var(--brass);color:var(--brass2)}
+#hint{position:absolute;bottom:160px;left:12px;font-size:11px;color:var(--faint);pointer-events:none}
+#lower{display:grid;grid-template-columns:330px 1fr;border-top:1px solid var(--line);min-height:0}
+#dcv{width:100%;height:100%;display:block;border-right:1px solid var(--line)}
+#info{padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px;align-content:start;overflow:auto}
+.stat b{display:block;font:500 17px "IBM Plex Mono",monospace;color:var(--ink)}
+.stat span{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+aside{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;background:transparent;border:0;border-bottom:2px solid transparent;padding:9px 2px;color:var(--dim);cursor:pointer;font-weight:500}
+.tabs button.on{color:var(--brass2);border-bottom-color:var(--brass)}
+.pane{flex:1;overflow:auto;padding:12px 14px 30px;display:none}
+.pane.on{display:block}
+h3{font:600 11px "IBM Plex Sans";letter-spacing:1.6px;text-transform:uppercase;color:var(--brass);margin:16px 0 8px}
+h3:first-child{margin-top:2px}
+.row{display:grid;grid-template-columns:118px 1fr 58px;align-items:center;gap:8px;margin:5px 0}
+.row label{color:var(--dim);font-size:12px}
+.row output{font:12px "IBM Plex Mono",monospace;text-align:right;color:var(--ink)}
+.row.sel{grid-template-columns:118px 1fr}
+.row.dis{opacity:.4;pointer-events:none}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:#3a2c1f;border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--brass2);border:2px solid #4a3418;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--brass2);border:2px solid #4a3418}
+.chk{display:flex;gap:8px;align-items:center;color:var(--dim);font-size:12px;margin:6px 0;cursor:pointer}
+.exc{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.exc button{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px 4px;cursor:pointer;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:2px}
+.exc button span{font-size:18px;line-height:1}
+.exc button.on{border-color:var(--brass);color:var(--brass2);background:#33261a}
+.note{font-size:11.5px;color:var(--faint);margin:6px 0;line-height:1.45}
+.strtools{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.strtools button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 7px;cursor:pointer;font-size:12px}
+.strtools button:disabled{opacity:.35}
+.srow{display:grid;grid-template-columns:8px 78px 58px 1fr 22px;gap:5px;align-items:center;padding:6px 6px;border:1px solid var(--line);border-radius:7px;margin-bottom:5px;background:var(--panel2)}
+.srow .dot{width:8px;height:8px;border-radius:50%}
+.srow select,.srow input[type=text],.srow input[type=number]{width:100%;padding:3px 4px;font-size:12px;background:#120d09;border:1px solid var(--line);border-radius:5px}
+.srow .x{background:transparent;border:0;color:var(--faint);cursor:pointer;font-size:15px}
+.srow .x:hover{color:#e0603a}
+.srow .sub{grid-column:2/6;display:grid;grid-template-columns:auto 1fr auto 1fr auto auto;gap:5px;align-items:center;font-size:11px;color:var(--dim)}
+.srow .sub input[type=range]{height:3px}
+.srow.active{border-color:var(--brass)}
+footer{border-top:1px solid var(--line);background:#120d09;display:flex;align-items:stretch;height:96px}
+#kbctl{display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 10px;border-right:1px solid var(--line);font-size:11px;color:var(--dim);min-width:130px}
+#kbctl .r{display:flex;gap:4px;align-items:center}
+#kb{flex:1;position:relative;touch-action:none;cursor:pointer}
+#overlay{position:fixed;inset:0;background:rgba(12,9,6,.86);display:flex;align-items:center;justify-content:center;z-index:10}
+#overlay .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px 34px;max-width:460px;text-align:center}
+#overlay h1{font:700 40px Fraunces,serif;margin:0 0 4px;color:var(--brass2)}
+#overlay p{color:var(--dim);margin:8px 0 18px}
+#overlay button{background:var(--brass);color:#1a1208;border:0;border-radius:8px;padding:11px 26px;font-weight:600;font-size:15px;cursor:pointer}
+#modal{position:fixed;inset:0;background:rgba(12,9,6,.8);display:none;align-items:center;justify-content:center;z-index:9}
+#modal .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;width:min(620px,92vw)}
+#modal textarea{width:100%;height:260px;background:#0e0a07;color:var(--ink);border:1px solid var(--line);border-radius:6px;font:11px "IBM Plex Mono",monospace;padding:8px}
+#modal .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+#modal input:not([type=checkbox]){background:#0e0a07;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
+main.synthOn #stage, main.synthOn aside{display:none}
+#synth{display:none;grid-column:1/-1;overflow:auto;padding:8px 12px;min-height:0}
+#synthIn{transform-origin:top left}
+main.synthOn #synth{display:block}
+.sbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sgrid{display:grid;grid-template-columns:1fr 290px;gap:10px;align-items:start}
+.srcrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;align-items:start}
+.scol{display:flex;flex-direction:column;gap:10px}
+.schain{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px;transition:opacity .15s}
+.card.off{opacity:.55}
+.ch{display:flex;align-items:center;gap:8px;margin-bottom:7px;min-height:24px}
+.ct{font:600 11px "IBM Plex Sans";letter-spacing:1.5px;text-transform:uppercase;color:var(--brass);flex:1}
+.sw{width:30px;height:16px;border-radius:9px;border:1px solid var(--line);background:#120d09;position:relative;cursor:pointer;padding:0}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#6f5e4a;transition:.15s}
+.sw.on{border-color:var(--brass)}.sw.on::after{left:16px;background:var(--brass2)}
+.krow{display:flex;gap:4px;flex-wrap:wrap;align-items:flex-start;justify-content:space-around}
+.kcol{display:flex;flex-direction:column;gap:4px;justify-content:center;min-width:110px}
+.knob{width:58px;text-align:center;cursor:ns-resize;user-select:none;touch-action:none;border-radius:8px;padding:2px 0}
+.knob.sm{width:50px}.knob svg{width:46px;height:46px;display:block;margin:0 auto}.knob.sm svg{width:40px;height:40px}
+.knob .trk{fill:none;stroke:#3a2c1f;stroke-width:3.5;stroke-linecap:round}
+.knob .val{fill:none;stroke:var(--brass2);stroke-width:3.5;stroke-linecap:round}
+.knob .marc{fill:none;stroke-width:1.8;stroke-linecap:round;opacity:.95}
+.knob .cap{fill:#2e231a;stroke:#4a3826}.knob .ptr{stroke:#efe4d2;stroke-width:2;stroke-linecap:round}
+.knob .live{fill:#fff}
+.knob .kv{font:11px "IBM Plex Mono",monospace;color:var(--ink);margin-top:-2px}.knob .kl{font-size:10.5px;color:var(--dim);line-height:1.15}
+.knob.dim{opacity:.4}
+body.dragging .knob{outline:1px dashed #6f5e4a}
+.knob.over{outline:2px solid var(--brass2)!important;background:#33261a}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--c);color:var(--c);border-radius:14px;padding:3px 10px 3px 6px;font-size:12px;font-weight:600;cursor:grab;user-select:none;touch-action:none;background:#120d09;position:relative;overflow:hidden}
+.chip .grip{opacity:.7}.chip .cbar{position:absolute;left:0;bottom:0;height:2px;background:var(--c);width:0}
+.chip.ghost{position:fixed;z-index:20;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.6)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.card .ch .chip{margin-right:auto}
+.mini{width:100%;height:38px;display:block;background:#120d09;border-radius:6px;margin-bottom:6px}
+.meter{height:6px;background:#120d09;border-radius:3px;overflow:hidden;margin-bottom:6px}.meter i{display:block;height:100%;width:0;background:#c58ce0}
+.seg{display:flex;gap:3px;margin-bottom:6px}.seg button{flex:1;background:#120d09;border:1px solid var(--line);border-radius:6px;padding:4px;cursor:pointer;color:var(--dim);font-size:12px}
+.seg button.on{border-color:var(--brass);color:var(--brass2)}
+.ssel{width:100%;margin-bottom:6px;font-size:12px}
+.ch .ssel{width:auto;margin:0;flex:0 1 auto}
+.steps{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin-bottom:6px}
+.steps button{height:22px;border-radius:3px;border:1px solid var(--line);background:#120d09;cursor:pointer;padding:0}
+.steps button.on{background:#5c8f86;border-color:#80d0c0}.steps button.cur{outline:2px solid var(--brass2)}
+.steps button:nth-child(4n+1){margin-left:2px}
+.mrow{display:grid;grid-template-columns:10px 1fr 18px;gap:4px 6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.mrow .dot{width:9px;height:9px;border-radius:50%}.mrow .mn{font-size:12px}.mrow input{grid-column:1/3}.mrow .mv{font:11px "IBM Plex Mono";text-align:right}
+.mrow .x{background:none;border:0;color:var(--faint);cursor:pointer;font-size:15px}
+.mrow.flash{animation:fl 1s}@keyframes fl{from{background:#33261a}to{background:transparent}}
+@media (max-width:1150px){.sgrid{grid-template-columns:1fr}}
+@media (max-width:900px){main{grid-template-columns:1fr}aside{max-height:45vh}#stage{grid-template-rows:1fr 120px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="logo">Luither<small>string synth</small></div>
+  <div class="faces">
+    <button class="on" data-face="builder">Builder</button>
+    <button data-face="synth">Synth</button>
+    <button disabled title="Stage 3">Amp &amp; Pedals</button>
+  </div>
+  <select id="preset"></select>
+  <button class="hbtn" id="saveBtn">Save</button>
+  <button class="hbtn" id="jsonBtn">JSON</button>
+  <div class="sp"></div>
+  <span class="pill" id="midiPill">MIDI: —</span>
+  <span class="pill" id="susPill">Sustain off</span>
+  <div id="meter"><i></i></div>
+  <label style="display:flex;gap:6px;align-items:center;color:var(--dim)">Vol <input type="range" id="vol" min="0" max="1" step="0.01" value="0.7" style="width:80px"></label>
+  <button class="hbtn" id="purBtn" title="Lock the keyboard to one scale">Scale purity: off</button>
+  <button class="hbtn" id="panic" title="Stop all sound">Panic</button>
+</header>
+<main>
+  <section id="stage">
+    <canvas id="cv"></canvas>
+    <div id="viewbar">
+      <label>Slow-mo <input type="range" id="slow" min="0.05" max="1" step="0.01" value="0.35"></label>
+      <label>Exaggerate <input type="range" id="exag" min="0.2" max="4" step="0.05" value="1.4"></label>
+      <button class="tog on" id="brTog">Bracing</button>
+      <button class="tog" id="editTog">✎ Edit outline</button>
+      <button class="tog" id="backTog">⟲ Back view</button>
+    </div>
+    <div id="hint">Drag the bridge, soundhole, exciter and pickup on the instrument. Turn on ✎ to reshape the body.</div>
+    <div id="lower">
+      <canvas id="dcv"></canvas>
+      <div id="info"></div>
+    </div>
+  </section>
+  <section id="synth"></section>
+  <aside>
+    <div class="tabs">
+      <button data-t="strings" class="on">Strings</button><button data-t="exciter">Exciter</button><button data-t="neck">Neck &amp; Play</button><button data-t="body">Body</button><button data-t="pickups">Pickups</button>
+    </div>
+    <div class="pane on" id="p-strings"></div>
+    <div class="pane" id="p-exciter"></div>
+    <div class="pane" id="p-neck"></div>
+    <div class="pane" id="p-body"></div>
+    <div class="pane" id="p-pickups"></div>
+  </aside>
+</main>
+<footer>
+  <div id="kbctl">
+    <div class="r"><button class="hbtn" id="octDn">−</button><span id="octLbl" style="flex:1;text-align:center">C2</span><button class="hbtn" id="octUp">+</button></div>
+    <div>Keys: A–; · Z/X octave<br>Shift+key = ghost · Space = sustain<br>Top of a key = softest</div>
+  </div>
+  <div id="kb"><canvas id="kbcv" style="width:100%;height:100%;display:block"></canvas></div>
+</footer>
+</div>
+<div id="overlay"><div class="card"><h1>Luither</h1><div style="color:var(--dim);font-size:12px;letter-spacing:2px;text-transform:uppercase">Stage 1 · Instrument Builder</div>
+<p>Build a string instrument from bows, picks, fingers, hammers, e-bows or wind; strings of any material; a body you sculpt. It plays live from your MIDI keyboard or computer keys.</p>
+<button id="startBtn">Start audio</button></div></div>
+<div id="modal"><div class="card" id="modalCard"></div></div>
+
+<script id="dsp" type="text/plain">/* Luither — synth face DSP: modulation sources, oscillator mix, filters, mod FX, pitch shifter, gate, amp. */
+const TWO_PI = Math.PI * 2;
+const VOWELS = [[730, 1090, 2440], [530, 1840, 2480], [270, 2290, 3010], [570, 840, 2410], [300, 870, 2240]]; // a e i o u
+const PHYS = { ph_pos: ['ex', 'pos'], ph_pressure: ['ex', 'pressure'], ph_speed: ['ex', 'speed'], ph_ebow: ['ex', 'ebow'], ph_wind: ['ex', 'wind'], ph_jawari: ['nk', 'jawari'], ph_buzz: ['nk', 'buzz'] };
+
+const fz = x => (x > 1e-15 || x < -1e-15) ? x : 0; // flush tiny values: keeps decaying tails from hitting slow denormal maths
+function polyblep(t, dt) {
+  if (t < dt) { t /= dt; return t + t - t * t - 1; }
+  if (t > 1 - dt) { t = (t - 1) / dt; return t * t + t + t + 1; }
+  return 0;
+}
+// Shape 0 → 1 morphs sine → triangle → saw → square
+function oscWave(ph, dt, m) {
+  const sine = Math.sin(TWO_PI * ph);
+  if (m <= 0.001) return sine;
+  const tri = ph < 0.5 ? 4 * ph - 1 : 3 - 4 * ph;
+  if (m < 1 / 3) { const k = m * 3; return sine + (tri - sine) * k; }
+  let saw = 2 * ph - 1 - polyblep(ph, dt);
+  if (m < 2 / 3) { const k = (m - 1 / 3) * 3; return tri + (saw - tri) * k; }
+  let sq = (ph < 0.5 ? 1 : -1) + polyblep(ph, dt) - polyblep((ph + 0.5) % 1, dt);
+  const k = Math.min(1, (m - 2 / 3) * 3); return saw + (sq * 0.8 - saw) * k;
+}
+
+class SVF {
+  constructor() { this.a = 0; this.b = 0; }
+  // returns [lp, bp, hp] via fields to avoid allocation
+  run(x, g, k) {
+    const a1 = 1 / (1 + g * (g + k)), a2 = g * a1, a3 = g * a2;
+    const v3 = x - this.b, v1 = a1 * this.a + a2 * v3, v2 = this.b + a2 * this.a + a3 * v3;
+    this.a = fz(2 * v1 - this.a); this.b = fz(2 * v2 - this.b);
+    this.lp = v2; this.bp = v1; this.hp = x - k * v1 - v2;
+    if (!(this.a < 1e6 && this.a > -1e6)) { this.a = 0; this.b = 0; }
+  }
+}
+
+class Filter {
+  constructor() { this.s = [new SVF(), new SVF()]; this.fm = [[new SVF(), new SVF(), new SVF()], [new SVF(), new SVF(), new SVF()]]; this.g0 = 0.1; }
+  process(x, ch, g, k, type, drive, vowelF, mix) {
+    let y = x;
+    if (drive > 0.001) y = Math.tanh(y * (1 + drive * 6)) / (1 + drive * 1.5);
+    if (type === 'formant') {
+      const f = this.fm[ch]; let o = 0;
+      for (let j = 0; j < 3; j++) { f[j].run(y, vowelF[j], 0.12); o += f[j].bp * 0.12 * (j === 0 ? 1.6 : j === 1 ? 1.1 : 0.7); }
+      y = o * 2.2;
+    } else {
+      const s = this.s[ch]; s.run(y, g, k);
+      switch (type) {
+        case 'lp': y = s.lp; break;
+        case 'hp': y = s.hp; break;
+        case 'bp': y = s.bp * k * (1 + 3 / (k + 0.3)) * 0.55; break;
+        case 'notch': y = y - k * s.bp; break;
+        case 'peak': y = s.lp - s.hp; break;
+      }
+    }
+    return x + (y - x) * mix;
+  }
+}
+
+class Synth {
+  constructor(E) {
+    this.E = E; this.fs = E.fs;
+    this.p = {}; this.o = {}; this.def = {}; this.mods = []; this.eff = {}; this.modTargets = new Set(); this.physActive = false;
+    this.src = { lfo1: 0, lfo2: 0, env1: 0, env2: 0, fol: 0, vel: 0, note: 0, mw: 0, rnd: 0, energy: 0, gate: 0 };
+    this.lfo = [{ ph: 0, v: 0, sh: 0, tgt: 0, sm: 0 }, { ph: 0.25, v: 0, sh: 0, tgt: 0, sm: 0 }];
+    this.env = [{ v: 0, st: 0 }, { v: 0, st: 0 }];
+    this.folV = 0; this.nHeld = 0;
+    this.f1 = new Filter(); this.f2 = new Filter();
+    this.g = [0, 0]; this.gPrev = [0, 0]; this.vf = [[0, 0, 0], [0, 0, 0]];
+    this.md = [new Float32Array(16384), new Float32Array(16384)]; this.mdw = 0; this.mdPh = 0; this.mdT = 3; this.mdTPrev = 3;
+    this.ps = [new Float32Array(16384), new Float32Array(16384)]; this.psw = 0; this.psPh = 0;
+    this.gatePh = 0; this.gateStep = 0; this.gateEnv = 1; this.ampPrev = 1;
+    this.oscOn = false; this.oscMul = 1; this.oscLvl = 0; this.oscShape = 0;
+  }
+  setDefs(d) { this.def = d; }
+  set(d) {
+    if (d.p) Object.assign(this.p, d.p);
+    if (d.o) Object.assign(this.o, d.o);
+    if (d.mods) {
+      this.mods = d.mods.filter(m => this.def[m.d]);
+      this.modTargets = new Set(this.mods.map(m => m.d));
+      const wasPhys = this.physActive;
+      this.physActive = this.mods.some(m => PHYS[m.d]);
+      if (wasPhys && !this.physActive) { Object.assign(this.E.ex, this.E.exBase); Object.assign(this.E.nk, this.E.nkBase); this.E.derive(); }
+    }
+  }
+  toN(id, v) { const d = this.def[id]; if (!d) return 0; return d.log ? Math.log(v / d.min) / Math.log(d.max / d.min) : (v - d.min) / (d.max - d.min); }
+  fromN(id, n) { const d = this.def[id]; n = n < 0 ? 0 : n > 1 ? 1 : n; return d.log ? d.min * Math.pow(d.max / d.min, n) : d.min + (d.max - d.min) * n; }
+  base(id) { const ph = PHYS[id]; if (ph) return (ph[0] === 'ex' ? this.E.exBase : this.E.nkBase)[ph[1]]; return this.p[id]; }
+  noteOn(n, v, fromSilence) {
+    this.src.vel = v; this.src.note = Math.max(0, Math.min(1, (n - 24) / 72)); this.src.rnd = Math.random();
+    this.nHeld++;
+    for (const e of this.env) e.st = 1; // attack (retrigger from current level)
+    for (let i = 0; i < 2; i++) if (this.o['lfo' + (i + 1) + '_retrig']) this.lfo[i].ph = i * 0.25;
+    if (fromSilence) { this.gatePh = 0; this.gateStep = 0; }
+  }
+  allOff() { this.nHeld = 0; for (const e of this.env) if (e.st) e.st = 4; }
+  block(n) {
+    const fs = this.fs, p = this.p, o = this.o, src = this.src, dt = n / fs;
+    // LFOs
+    for (let i = 0; i < 2; i++) {
+      const L = this.lfo[i], k = 'lfo' + (i + 1), rate = p[k + '_rate'] || 1, sh = o[k + '_shape'] || 'sine';
+      L.ph += rate * dt; let wrapped = false; if (L.ph >= 1) { L.ph -= Math.floor(L.ph); wrapped = true; }
+      const ph = L.ph; let v;
+      switch (sh) {
+        case 'tri': v = ph < 0.5 ? 4 * ph - 1 : 3 - 4 * ph; break;
+        case 'saw': v = 2 * ph - 1; break;
+        case 'ramp': v = 1 - 2 * ph; break;
+        case 'square': v = ph < 0.5 ? 1 : -1; break;
+        case 'sh': if (wrapped) L.sh = Math.random() * 2 - 1; v = L.sh; break;
+        case 'smooth': if (wrapped) L.tgt = Math.random() * 2 - 1; L.sm += (L.tgt - L.sm) * Math.min(1, rate * dt * 4); v = L.sm; break;
+        default: v = Math.sin(TWO_PI * ph);
+      }
+      L.v = v; src[k] = v;
+    }
+    // envelopes: 1 attack, 2 decay, 3 sustain, 4 release, 0 idle
+    for (let i = 0; i < 2; i++) {
+      const e = this.env[i], k = 'env' + (i + 1), A = p[k + '_a'] || .01, D = p[k + '_d'] || .3, S = p[k + '_s'] ?? .6, R = p[k + '_r'] || .4;
+      if (e.st === 1) { e.v += dt / A; if (e.v >= 1) { e.v = 1; e.st = 2; } }
+      else if (e.st === 2) { e.v += (S - e.v) * (1 - Math.exp(-dt * 4 / D)); if (Math.abs(e.v - S) < 1e-3) e.st = 3; }
+      else if (e.st === 3) e.v = S;
+      else if (e.st === 4) { e.v *= Math.exp(-dt * 4.6 / R); if (e.v < 1e-4) { e.v = 0; e.st = 0; } }
+      src[k] = e.v;
+    }
+    // follower in dB, so quiet plucks and loud bowing both sweep a useful range: -36 dB → 0, 0 dB → 1 (Sensitivity shifts it ±12 dB)
+    { const fdb = 20 * Math.log10(this.folV + 1e-9); src.fol = Math.max(0, Math.min(1, (fdb + 36 + ((p.fol_gain ?? .5) - .5) * 24) / 36)); }
+    let en = 0; for (const s of this.E.S) if (s.role !== 'symp') en += s.env; src.energy = Math.min(1, en * 4);
+    src.gate = (o.gate_steps || [])[this.gateStep] ? 1 : 0;
+    // modulation
+    const eff = this.eff;
+    for (const id of this.modTargets) {
+      let nv = this.toN(id, this.base(id));
+      for (const m of this.mods) if (m.d === id) nv += m.a * (src[m.s] || 0);
+      eff[id] = this.fromN(id, nv); eff['n_' + id] = Math.max(0, Math.min(1, nv));
+    }
+    if (this.physActive) {
+      const E = this.E;
+      for (const id in PHYS) { const [sec, key] = PHYS[id]; E[sec][key] = this.modTargets.has(id) ? eff[id] : (sec === 'ex' ? E.exBase : E.nkBase)[key]; }
+      E.derive();
+    }
+    // per-block coefficients
+    const V = id => this.modTargets.has(id) ? eff[id] : p[id];
+    this.oscLvlP = this.oscLvl; this.oscLvl = V('osc_lvl') || 0; this.oscOn = this.oscLvl > 0.001 || this.oscLvlP > 0.001;
+    this.oscShape = V('osc_shape') ?? 0.66; this.oscMul = Math.pow(2, ((V('osc_semi') || 0) + (V('osc_fine') || 0) / 100) / 12);
+    this.srcLvlP = this.srcLvl ?? 1; this.srcLvl = V('src_lvl') ?? 1;
+    for (let f = 0; f < 2; f++) {
+      const pre = f ? 'f2_' : 'f1_';
+      this.gPrev[f] = this.g[f];
+      const cut = Math.min(fs * 0.45, V(pre + 'cut') || 1000);
+      this.g[f] = Math.tan(Math.PI * cut / fs);
+      this['k' + f] = 2 - 1.96 * Math.min(1, V(pre + 'res') ?? 0.1);
+      this['drv' + f] = V(pre + 'drive') || 0; this['mix' + f] = V(pre + 'mix') ?? 1;
+      if (o[pre + 'type'] === 'formant') {
+        const vw = (V(pre + 'vowel') || 0) * 4, i0 = Math.min(3, Math.floor(vw)), fr = vw - i0, sc = Math.max(0.5, Math.min(2, cut / 1000));
+        for (let j = 0; j < 3; j++) { const F = (VOWELS[i0][j] + (VOWELS[i0 + 1][j] - VOWELS[i0][j]) * fr) * sc; this.vf[f][j] = Math.tan(Math.PI * Math.min(fs * 0.45, F) / fs); }
+      }
+    }
+    this.mdTPrev = this.mdT; this.mdT = V('mfx_time') || 3;
+    this.mdDepth = V('mfx_depth') || 0; this.mdRate = V('mfx_rate') || 0.5; this.mdFb = V('mfx_fb') || 0; this.mdMixP = this.mdMix ?? 0.5; this.mdMix = V('mfx_mix') ?? 0.5; this.mdSpread = V('mfx_spread') ?? 0.5;
+    this.psRatio = Math.pow(2, ((V('ps_semi') || 0) + (V('ps_fine') || 0) / 100) / 12); this.psMixP = this.psMix ?? 0; this.psMix = V('ps_mix') || 0; this.psFb = V('ps_fb') || 0;
+    this.ampPrevBlk = this.ampNow ?? 1; this.ampNow = V('amp_lvl') ?? 1; this.pan = V('amp_pan') || 0;
+    this.gDepth = V('gate_depth') ?? 1; this.gSmooth = 1 - Math.exp(-1 / ((V('gate_smooth') || 6) * 0.001 * fs));
+    this.stepLen = 60 / (V('gate_bpm') || 120) * 4 / (o.gate_div || 16) * fs;
+    this.folA = 1 - Math.exp(-1 / ((p.fol_atk || .005) * fs)); this.folR = 1 - Math.exp(-1 / ((p.fol_rel || .15) * fs));
+  }
+  // one stereo sample through the chain; returns via this.l / this.r
+  run(l, r, oscSum, ringSum, i, n) {
+    const o = this.o, t = (i + 1) / n;
+    // source mix: pickup and oscillator
+    const sl = this.srcLvlP + (this.srcLvl - this.srcLvlP) * t; l *= sl; r *= sl;
+    if (this.oscOn) {
+      const lv = this.oscLvlP + (this.oscLvl - this.oscLvlP) * t, mode = o.osc_mode || 'layer';
+      if (mode === 'layer') { l += oscSum * lv; r += oscSum * lv; }
+      else if (mode === 'morph') { l = l * (1 - lv) + oscSum * lv; r = r * (1 - lv) + oscSum * lv; }
+      else { l = l * (1 - lv) + ringSum * lv; r = r * (1 - lv) + ringSum * lv; }
+    }
+    // envelope follower (after the source mix, before effects)
+    const a = Math.abs(l + r) * 0.5; this.folV += (a - this.folV) * (a > this.folV ? this.folA : this.folR);
+    // filters
+    const f1on = o.f1_on, f2on = o.f2_on;
+    if (f1on || f2on) {
+      const g1 = this.gPrev[0] + (this.g[0] - this.gPrev[0]) * t, g2 = this.gPrev[1] + (this.g[1] - this.gPrev[1]) * t;
+      if (o.f_route === 'parallel' && f1on && f2on) { // two filters side by side, each Mix knob sets how much of it you hear
+        const m0 = this.mix0, m1 = this.mix1, dry = Math.max(0, 1 - m0 - m1);
+        const al = this.f1.process(l, 0, g1, this.k0, o.f1_type, this.drv0, this.vf[0], 1), ar = this.f1.process(r, 1, g1, this.k0, o.f1_type, this.drv0, this.vf[0], 1);
+        const bl = this.f2.process(l, 0, g2, this.k1, o.f2_type, this.drv1, this.vf[1], 1), br = this.f2.process(r, 1, g2, this.k1, o.f2_type, this.drv1, this.vf[1], 1);
+        l = al * m0 + bl * m1 + l * dry; r = ar * m0 + br * m1 + r * dry;
+      } else {
+        if (f1on) { l = this.f1.process(l, 0, g1, this.k0, o.f1_type, this.drv0, this.vf[0], this.mix0); r = this.f1.process(r, 1, g1, this.k0, o.f1_type, this.drv0, this.vf[0], this.mix0); }
+        if (f2on) { l = this.f2.process(l, 0, g2, this.k1, o.f2_type, this.drv1, this.vf[1], this.mix1); r = this.f2.process(r, 1, g2, this.k1, o.f2_type, this.drv1, this.vf[1], this.mix1); }
+      }
+    }
+    // modulated delay: chorus / flanger / vibrato
+    if (o.mfx_on) {
+      const fs = this.fs, md = this.md, w = this.mdw;
+      this.mdPh += this.mdRate / fs; if (this.mdPh >= 1) this.mdPh -= 1;
+      const T = (this.mdTPrev + (this.mdT - this.mdTPrev) * t) * 0.001 * fs, dep = this.mdDepth * 0.95;
+      const tl = Math.max(1.5, T * (1 + dep * Math.sin(TWO_PI * this.mdPh)));
+      const tr = Math.max(1.5, T * (1 + dep * Math.sin(TWO_PI * (this.mdPh + this.mdSpread * 0.25))));
+      const rd = (buf, d) => { const rp = w - d, i0 = Math.floor(rp), f = rp - i0; const x0 = buf[i0 & 16383], x1 = buf[(i0 + 1) & 16383]; return x0 + (x1 - x0) * f; };
+      const yl = rd(md[0], tl), yr = rd(md[1], tr);
+      md[0][w] = fz(l + yl * this.mdFb); md[1][w] = fz(r + yr * this.mdFb); this.mdw = (w + 1) & 16383;
+      const mm = this.mdMixP + (this.mdMix - this.mdMixP) * t; l = l * (1 - mm) + yl * mm; r = r * (1 - mm) + yr * mm;
+    }
+    // two-grain pitch shifter
+    if (o.ps_on && (this.psMix > 0.001 || this.psMixP > 0.001)) {
+      const win = 0.06 * this.fs, ps = this.ps, w = this.psw;
+      this.psPh += (1 - this.psRatio) / win; this.psPh -= Math.floor(this.psPh);
+      const p1 = this.psPh, p2 = (p1 + 0.5) % 1, w1 = Math.sin(Math.PI * p1) ** 2, w2 = Math.sin(Math.PI * p2) ** 2;
+      const rd = (buf, d) => { const rp = w - d, i0 = Math.floor(rp), f = rp - i0; const x0 = buf[i0 & 16383], x1 = buf[(i0 + 1) & 16383]; return x0 + (x1 - x0) * f; };
+      const d1 = 2 + p1 * win, d2 = 2 + p2 * win;
+      const yl = rd(ps[0], d1) * w1 + rd(ps[0], d2) * w2, yr = rd(ps[1], d1) * w1 + rd(ps[1], d2) * w2;
+      ps[0][w] = fz(l + yl * this.psFb); ps[1][w] = fz(r + yr * this.psFb); this.psw = (w + 1) & 16383;
+      const pm = this.psMixP + (this.psMix - this.psMixP) * t, dry = 1 - Math.max(0, pm * 2 - 1), wet = Math.min(1, pm * 2); // up to 50%: adds the shifted copy; above: crossfades to it
+      l = l * dry + yl * wet; r = r * dry + yr * wet;
+    }
+    // gate
+    let gv = 1;
+    if (o.gate_on) {
+      if (++this.gatePh >= this.stepLen) { this.gatePh = 0; this.gateStep = (this.gateStep + 1) & 15; }
+      const on = (o.gate_steps || [])[this.gateStep];
+      this.gateEnv += ((on ? 1 : 1 - this.gDepth) - this.gateEnv) * this.gSmooth; gv = this.gateEnv;
+    } else if (++this.gatePh >= this.stepLen) { this.gatePh = 0; this.gateStep = (this.gateStep + 1) & 15; }
+    // amp + pan
+    const amp = (this.ampPrevBlk + (this.ampNow - this.ampPrevBlk) * t) * gv;
+    const pl = this.pan > 0 ? 1 - this.pan : 1, pr = this.pan < 0 ? 1 + this.pan : 1;
+    this.l = l * amp * pl; this.r = r * amp * pr;
+  }
+  viz() {
+    const mv = {}; for (const id of this.modTargets) mv[id] = this.eff['n_' + id];
+    return { src: this.src, lfoPh: [this.lfo[0].ph, this.lfo[1].ph], step: this.gateStep, mv };
+  }
+}
+
+/* Luither — string engine (AudioWorklet). Waveguide strings + modal body. */
+const DMAX = 8192, DM = DMAX - 1;
+const mtof = n => 440 * Math.pow(2, (n - 69) / 12);
+const CONT = { bow: 1, ebow: 1, wind: 1 };
+const OSC_G = 0.3, RING_G = 0.5;
+const SRR = sampleRate / 48000, SRK = 48000 / sampleRate; // keep the sound identical at 44.1 / 48 / 96 kHz
+const GHOST = 20 / 127; // plucks softer than this are ghost notes
+const TRIM = { pick: 3, finger: 9, hammer: 5, bow: 0.5, ebow: 2, wind: 0.5 };
+
+class Delay {
+  constructor() { this.b = new Float32Array(DMAX); this.w = 0; this.last = 0; }
+  tick(x, len) {
+    const rp = this.w - len, i = Math.floor(rp), f = rp - i;
+    const a = this.b[i & DM], c = this.b[(i + 1) & DM];
+    this.last = a + (c - a) * f;
+    this.b[this.w] = x; this.w = (this.w + 1) & DM;
+    return this.last;
+  }
+}
+
+class Str {
+  constructor(E) {
+    this.E = E; this.neck = new Delay(); this.br = new Delay();
+    this.hist = new Float32Array(DMAX); this.hw = 0; this.magD = 10;
+    this.lp = 0; this.a1x = 0; this.a1y = 0; this.a2x = 0; this.a2y = 0;
+    this.freq = 110; this.target = 110; this.gc = 1; this.note = 45; this.g = 0.99;
+    this.stack = []; this.held = false; this.pend = false; this.lastUse = 0;
+    this.pulse = null; this.pi = 0; this.cont = 0; this.contT = 0; this.bowDir = 1; this.bowAmp = 1;
+    this.damp = 1; this.wantDamp = 0; this.env = 0; this.acc = 0; this.rms = 0; this.t = 0;
+    this.vib = 1; this.vph = Math.random() * 6; this.drift = 0;
+    this.b1 = 0; this.b2 = 0; this.bpA1 = 0; this.bpA2 = 0; this.bpG = 0;
+    this.role = 'stopped'; this.open = 45; this.range = 12; this.mag = 0;
+    this.awake = 0; this.oph = Math.random(); this.oenv = 0; this.cf = 110; this.bj = 0; this.harm = false; this.touch = 45; this.d = 0.2; this.apA = -0.2; this.comp = 1; this.tm = 0.05; this.decay = 5;
+  }
+  set(p) {
+    const roleChanged = this.role !== p.role;
+    this.role = p.role; this.open = p.note; this.range = p.range;
+    const m = p.mat;
+    let stiff = m.stiff * (0.4 + 1.6 * p.gauge * p.gauge); if (p.wound) stiff *= 0.35;
+    this.apA = -0.75 * Math.min(1, stiff);
+    this.decay = m.decay * (1.2 - 0.4 * p.gauge) * (p.role === 'symp' ? 1.4 : 1);
+    this.d = Math.pow(Math.min(0.9, m.bright + 0.12 * p.gauge + (p.wound ? 0.08 : 0)), SRK); // same cutoff in Hz at any sample rate
+    this.tm = (1 - p.tension) * 0.12;
+    this.mag = m.magnetic;
+    this.comp = 2 + this.d / (1 - this.d) + 2 * (1 - this.apA) / (1 + this.apA);
+    if (!this.held || roleChanged) this.setNote(this.open, 0); else this.calcG();
+  }
+  calcG() { const f = this.target; const T60 = this.decay * Math.pow(110 / f, 0.4); this.g = Math.pow(10, -3 / (T60 * f)); }
+  setNote(n, glide) {
+    this.note = n; this.target = mtof(n);
+    if (glide <= 0) { this.freq = this.target; this.gc = 1; }
+    else this.gc = 1 - Math.exp(-1 / (glide * this.E.fs));
+    this.calcG();
+  }
+  // amp = how much energy goes in; vel = how hard (harder strikes are also brighter); click = extra contact noise
+  pluckPulse(v, vel = v, click = 0) {
+    const ex = this.E.ex, type = ex.type;
+    let L, noise = 0;
+    if (type === 'pick') { L = 4 + Math.round((1 - ex.pickStiff) * 30); noise = 48; } // 0.1–0.7 ms contact, like a real pick
+    else if (type === 'finger') L = 6 + Math.round(ex.fingerSoft * 70);
+    else L = 2 + Math.round((1 - ex.hammerHard) * 30);
+    L = Math.max(1, Math.round(L * (1.4 - 0.7 * Math.min(1, vel)) * SRR));
+    if (click) noise = Math.max(noise, 90); noise = Math.round(noise * SRR);
+    const arr = new Float32Array(L + noise), k = v * Math.PI / (2 * L) * SRR; // pulses are in per-sample velocity units
+    for (let i = 0; i < L; i++) arr[i] = k * Math.sin(Math.PI * (i + 0.5) / L);
+    for (let i = 0; i < noise; i++) arr[i] += (Math.random() - 0.5) * (v * 0.06 * ex.pickStiff + click) * (1 - i / noise);
+    if (type === 'hammer') for (let i = 0; i < L; i++) arr[i] *= 1.4; // hammers hit hard
+    this.pulse = arr; this.pi = 0;
+  }
+  excite(v) {
+    if (CONT[this.E.ex.type]) {
+      if (this.E.ex.bowChange && this.cont > 0.02) this.bowDir = -this.bowDir;
+      else if (this.E.ex.bowChange) this.bowDir = -this.bowDir;
+      this.contT = 1; this.bowAmp = 0.45 + 0.55 * v;
+      if (this.E.ex.type === 'ebow' && this.env < 0.02) { const t = this.E.ex.type; this.E.ex.type = 'finger'; this.pluckPulse(0.25 * v); this.E.ex.type = t; }
+    } else if (this.role === 'stopped' || this.role === 'open') {
+      // above the ghost range, loudness rises gently from a solid floor instead of fading to nothing
+      const k = Math.max(0, (v - GHOST) / (1 - GHOST));
+      this.pluckPulse(0.22 + 0.78 * Math.pow(k, 0.85), v);
+    } else this.pluckPulse(v);
+  }
+  // a pick or finger landing on a ringing string stops most of its motion first
+  restrike() {
+    if (this.env < 0.004) return;
+    const t = this.E.ex.type, k = t === 'finger' ? 0.15 : t === 'hammer' ? 0.6 : 0.3;
+    const a = this.neck.b, b = this.br.b;
+    for (let i = 0; i < DMAX; i++) { a[i] *= k; b[i] *= k; }
+    this.neck.last *= k; this.br.last *= k; this.lp *= k; this.env *= k;
+  }
+  // Ghost notes: a light fretting-hand touch. Heavier = dead thud; lighter = more ring;
+  // light enough on a harmonic node (12th, 7th, 5th, 4th, 9th, 19th... fret) = natural harmonic.
+  ghost(n, v, h) {
+    const p = Math.max(0, Math.min(1, v / GHOST));
+    this.restrike(); this.touch = n;
+    if (h) { // finger rests on the node nearest the nut: 12th fret for h=2, 7th for 3, 5th for 4...
+      this.touch = this.open - 12 * Math.log2(1 - 1 / h);
+      const c = 1 - p / 0.6; // clarity of the harmonic
+      this.harm = true; this.setNote(this.open + 12 * Math.log2(h), 0);
+      this.damp = Math.pow(10, -3 / ((0.2 + 6 * c * c) * this.freq));
+      this.pluckPulse(0.55 * (0.7 + 0.3 * c), 0.7, 0.01 * (1 - c));
+    } else {
+      this.setNote(n, 0);
+      this.damp = Math.pow(10, -3 / ((0.02 + 0.16 * (1 - p) * (1 - p)) * this.freq));
+      this.pluckPulse(0.42, 0.5, 0.03);
+    }
+  }
+  start(n, v, h = 0) {
+    this.idle = false; this.wake();
+    this.lastUse = this.E.clock; this.held = true; this.pend = false;
+    this.damp = 1; this.wantDamp = 0; this.t = 0; this.harm = false; this.touch = n;
+    const type = this.E.ex.type, plucked = type === 'pick' || type === 'finger';
+    this.bj = CONT[type] ? 0 : (Math.random() - 0.5) * 0.03 * this.E.ex.humanize; // hands never hit the exact same spot
+    if (plucked && v < GHOST && (this.role === 'stopped' || this.role === 'open')) { this.ghost(n, v, h); return; }
+    if (!CONT[type]) this.restrike();
+    this.setNote(n, 0); this.excite(v);
+  }
+  slur(n, v) {
+    this.idle = false; this.wake();
+    const E = this.E, nk = E.nk;
+    this.lastUse = E.clock; this.damp = 1; this.wantDamp = 0; this.held = true; this.harm = false; this.touch = n;
+    this.setNote(n, nk.frets ? Math.max(0.004, nk.glide * 0.25) : nk.glide);
+    if (CONT[E.ex.type]) { if (this.contT === 0) this.excite(v); }
+    else if (nk.frets) this.pluckPulse(v * 0.35);
+    else this.pluckPulse(v * 0.08);
+  }
+  wake() { this.awake = Math.round(3 * this.E.fs / Math.max(20, Math.min(this.freq, this.target))) + 1024; }
+  release() {
+    this.held = false; this.pend = false; this.contT = 0;
+    const nk = this.E.nk;
+    if (this.harm) return; // natural harmonics keep ringing after the finger lifts
+    if (this.role === 'stopped' || (this.role === 'open' && nk.dampOpen)) {
+      const mt = CONT[this.E.ex.type] ? 0.5 : nk.mute;
+      this.wantDamp = Math.pow(10, -3 / (mt * this.freq));
+      if (!CONT[this.E.ex.type]) this.damp = this.wantDamp;
+    }
+  }
+  block(n) {
+    const E = this.E, ex = E.ex, fs = E.fs;
+    this.t += n / fs;
+    if (this.wantDamp && !this.held && this.cont < 0.02) this.damp = this.wantDamp;
+    // auto vibrato (fades in after a delay on held notes)
+    if (this.held && ex.vibDepth > 0 && this.role !== 'symp') {
+      let r = (this.t - ex.vibDelay) / 0.6; r = r < 0 ? 0 : r > 1 ? 1 : r;
+      this.vph += 6.2832 * ex.vibRate * n / fs;
+      this.vib = Math.pow(2, ex.vibDepth * r * Math.sin(this.vph) / 1200);
+    } else this.vib = 1;
+    // wind band-pass around a harmonic
+    if (ex.type === 'wind') {
+      const h = 1 + Math.floor(ex.wind * 7);
+      let c = this.freq * h; if (c > fs * 0.4) c = this.freq;
+      const r = Math.exp(-Math.PI * (c / 18) / fs);
+      this.bpA1 = 2 * r * Math.cos(6.2832 * c / fs); this.bpA2 = r * r; this.bpG = 1 - r;
+    }
+    this.elC = 1 - Math.exp(-6.2832 * 1.3 * this.freq / fs);
+    this.rms = Math.sqrt(this.acc / n); this.acc = 0;
+    // a string that has fully died away goes to sleep (no CPU) until something excites it
+    this.awake -= n; // never sleep while a wave is still travelling toward the ends
+    const quiet = this.awake <= 0 && this.env < 2e-6 && this.rms < 1e-6 && !this.pulse && this.cont === 0 && this.contT === 0;
+    if (quiet && !this.idle) { this.idle = true; this.neck.b.fill(0); this.br.b.fill(0); this.neck.last = this.br.last = 0; this.lp = this.a1x = this.a1y = this.a2x = this.a2y = 0; this.env = 0; this.oenv = 0; }
+    else if (!quiet) this.idle = false;
+    const N = fs / this.freq - this.comp;
+    this.magD = Math.max(1, Math.round(E.pk.magPos * N));
+  }
+  tick(feed) {
+    const E = this.E;
+    this.freq += (this.target - this.freq) * this.gc;
+    const f = this.freq * E.tune * E.bendMul * this.vib * (1 + this.tm * this.env + E.jaw * 0.02 * (this.env > 0.3 ? 1 : this.env * 3.3));
+    this.cf = f;
+    const N = E.fs / f - this.comp;
+    let bl = N * (E.beta + this.bj); if (bl < 2) bl = 2;
+    let nl = N - bl; if (nl < 2) nl = 2;
+    // bridge-side loss + brightness (jawari makes loud notes brighter)
+    const d = E.jaw > 0 ? this.d * (1 - E.jaw * 0.8 * (this.env > 0.25 ? 1 : this.env * 4)) : this.d;
+    this.lp = (1 - d) * this.br.last + d * this.lp;
+    let x = this.lp * this.g * this.damp;
+    // stiffness (dispersion)
+    const a = this.apA;
+    let y = a * x + this.a1x - a * this.a1y; this.a1x = x; this.a1y = y; x = y;
+    y = a * x + this.a2x - a * this.a2y; this.a2x = x; this.a2y = y; x = y;
+    // jawari: one-sided grazing of a curved bridge
+    if (E.jaw > 0) { const th = 0.12 * (1.05 - E.jaw); if (x > th) x = th + (x - th) * 0.25; }
+    // fret buzz on fretted held strings
+    if (E.buzz > 0 && this.role === 'stopped' && this.held) {
+      const th = 0.35 * (1.05 - E.buzz);
+      if (x > th) x = th + (x - th) * 0.3 + E.noise() * 0.01 * E.buzz;
+      else if (x < -th) x = -th + (x + th) * 0.3 + E.noise() * 0.01 * E.buzz;
+    }
+    const bR = -x, nR = -this.neck.last, sv = bR + nR;
+    let nv = feed;
+    if (this.pulse) { nv += this.pulse[this.pi++]; if (this.pi >= this.pulse.length) this.pulse = null; }
+    if (this.contT > 0 || this.cont > 1e-4) {
+      this.cont += (this.contT - this.cont) * (this.contT > this.cont ? E.atkC : E.relC);
+      if (this.contT === 0 && this.cont < 0.02) this.cont = 0; // released exciters really stop
+      const type = E.ex.type, c = this.cont;
+      if (type === 'bow') {
+        this.drift += E.noise() * 0.004 - this.drift * 0.0004;
+        let vb = c * E.bowMax * this.bowAmp * this.bowDir * (1 + this.drift * E.ex.humanize);
+        vb += E.noise() * (E.grit + 0.004) * c; // rosin noise
+        const dv = vb - sv;
+        let s = dv * E.bowSlope; s = (s < 0 ? -s : s) + 0.75; s = s * s; s = 1 / (s * s); if (s > 1) s = 1;
+        if (c > 0.003) nv += dv * s;
+      } else if (type === 'ebow') {
+        // sense through a lowpass so the sustainer locks to the fundamental
+        this.el = (this.el || 0) + (sv - (this.el || 0)) * this.elC;
+        const tgt = 0.06 + 0.22 * E.ex.ebow, gn = 1 - this.env / tgt;   // automatic gain control
+        nv += c * (gn > 0 ? 0.8 * gn * SRK : 0) * this.el + E.noise() * 2e-4 * c;
+      } else if (type === 'wind') {
+        const gust = 1 + E.gustV * E.ex.gust;
+        const w = E.noise() * gust;
+        const yb = this.bpG * w + this.bpA1 * this.b1 - this.bpA2 * this.b2; this.b2 = this.b1; this.b1 = yb;
+        const tgt = 0.05 + 0.2 * E.ex.wind, gn = 1 - this.env / tgt;
+        nv += yb * c * E.ex.wind * 0.35 + (gn > 0 ? 0.01 * SRK * gn * c * E.ex.wind : 0) * sv;
+      }
+    } else this.cont = 0;
+    this.neck.tick(bR + nv, nl);
+    const o = this.br.tick(nR + nv, bl);
+    const av = sv < 0 ? -sv : sv;
+    this.env += (av - this.env) * 0.002 * SRK;
+    this.acc += o * o;
+    return o;
+  }
+  magOut(o) {
+    this.hist[this.hw] = o;
+    const v = o - this.hist[(this.hw - this.magD) & DM];
+    this.hw = (this.hw + 1) & DM;
+    return v * this.mag;
+  }
+}
+
+class LuitherProc extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.fs = sampleRate; this.S = []; this.modes = [];
+    this.ex = { type: 'pick', pos: 0.15, pickStiff: 0.6, fingerSoft: 0.4, hammerHard: 0.6, pressure: 0.5, speed: 0.5,
+      attack: 0.08, release: 0.2, bowChange: true, humanize: 0.3, vibDepth: 0, vibDelay: 0.4, vibRate: 5.5,
+      ebow: 0.6, wind: 0.5, gust: 0.3, drone: 0.35 };
+    this.nk = { frets: true, buzz: 0, jawari: 0, legato: 'smart', thr: 4, glide: 0.01, pbRange: 2, pressBend: 2,
+      dampOpen: false, mute: 0.25, coupling: 0.5, sympC: 0.3 };
+    this.pk = { mag: 0, magPos: 0.12, piezo: 0.3, mic: 0.8, master: 0.8 };
+    this.held = []; this.map = new Map(); this.sus = false; this.bendSemis = 0; this.bendMul = 1; this.clock = 0;
+    this.sympFeed = 0; this.dc = [0, 0, 0, 0, 0, 0, 0, 0]; this.lim = 1; this.limMin = 1; this.dcA = 1 - 2 * Math.PI * 5 / sampleRate; this.dcB = 1 - 2 * Math.PI * 3 / sampleRate; this.frame = 0; this.lastOn = -1e9; this.bin1 = 0; this.bin2 = 0; this.pa = 0; this.pb = 0;
+    { const g = Math.tan(Math.PI * Math.min(4500, sampleRate * .45) / sampleRate), k = 1 / 1.6; this.pa1 = 1 / (1 + g * (g + k)); this.pa2 = g * this.pa1; this.pa3 = g * this.pa2; } this.limRel = 1 - Math.exp(-1 / (0.12 * sampleRate)); this.blk = 0; this.seed = 22222; this.gustV = 0; this.gustT = 0;
+    this.exBase = { ...this.ex }; this.nkBase = { ...this.nk }; this.syn = new Synth(this);
+    this.derive();
+    this.port.onmessage = e => this.msg(e.data);
+  }
+  noise() { this.seed = (this.seed * 1664525 + 1013904223) >>> 0; return this.seed / 4294967296 - 0.5; }
+  derive() {
+    const ex = this.ex, nk = this.nk, fs = this.fs;
+    this.bowSlope = Math.max(0.8, 5 - 4.2 * ex.pressure);
+    this.bowMax = 0.03 + 0.3 * ex.speed;
+    this.grit = Math.max(0, ex.pressure - 0.7) * 0.25;
+    this.atkC = 1 - Math.exp(-1 / (Math.max(0.002, ex.attack) * fs));
+    this.relC = 1 - Math.exp(-1 / (Math.max(0.005, ex.release) * fs));
+    this.beta = Math.min(0.5, Math.max(0.02, ex.pos));
+    this.jaw = nk.jawari; this.tune = ex.type === 'bow' ? 0.9855 : ex.type === 'ebow' ? 0.99 : 1; this.buzz = nk.frets ? nk.buzz : 0;
+  }
+  msg(d) {
+    switch (d.t) {
+      case 'ex': Object.assign(this.ex, d.v); Object.assign(this.exBase, d.v); this.derive(); break;
+      case 'nk': Object.assign(this.nk, d.v); Object.assign(this.nkBase, d.v); this.derive(); break;
+      case 'sdefs': this.syn.setDefs(d.v); break;
+      case 'synth': this.syn.set(d.v); break;
+      case 'mw': this.syn.src.mw = d.v; break;
+      case 'pk': Object.assign(this.pk, d.v); break;
+      case 'strings': this.setStrings(d.v); break;
+      case 'modes': this.setModes(d.v); break;
+      case 'on': this.noteOn(d.n, d.v); break;
+      case 'off': this.noteOff(d.n); break;
+      case 'sus': this.setSus(d.v); break;
+      case 'bend': this.bendSemis = d.v * this.nk.pbRange; break;
+      case 'panic': this.panic(); break;
+    }
+  }
+  setStrings(list) {
+    if (list.length !== this.S.length) this.panic();
+    while (this.S.length < list.length) this.S.push(new Str(this));
+    this.S.length = list.length;
+    list.forEach((p, i) => this.S[i].set(p));
+  }
+  setModes(list) {
+    const fs = this.fs, old = this.modes;
+    this.modes = list.map((m, i) => {
+      const o = old[i] || { y1: 0, y2: 0, e: 0 };
+      const r = Math.exp(-Math.PI * m.f / (m.q * fs)), w = 2 * Math.PI * m.f / fs;
+      o.a1 = 2 * r * Math.cos(w); o.a2 = r * r; o.b0 = (1 - r * r) * 0.5; // band-pass form below: peak gain 1 at any sample rate
+      const k48 = 1 / (2 * Math.sin(Math.min(1.5, 2 * Math.PI * m.f / 48000))); // keeps the 48 kHz voicing
+      o.aL = m.amp * (1 - m.pan) * k48; o.aR = m.amp * (1 + m.pan) * k48; o.e = 0;
+      return o;
+    });
+  }
+  panic() {
+    for (const s of this.S) { s.stack = []; s.held = false; s.contT = 0; s.cont = 0; s.pulse = null; s.damp = 0.5; s.wantDamp = 0.5; }
+    this.held = []; this.map.clear();
+  }
+  reach(s, n) { return n >= s.open - 0.01 && n <= s.open + s.range + 0.01; }
+  pick(n) {
+    const S = this.S; let best = -1, bs = 1e12;
+    const consider = (i, score) => { if (score < bs) { bs = score; best = i; } };
+    // 1. an open string tuned exactly to the note
+    S.forEach((s, i) => { if (s.role === 'open' && Math.abs(s.open - n) < 0.01) consider(i, (s.held ? 1e6 : 0) + s.lastUse); });
+    if (best >= 0) return best;
+    // 2. a stopped string that can reach it (prefer free, then lowest fret)
+    S.forEach((s, i) => { if (s.role === 'stopped' && this.reach(s, n)) consider(i, (s.stack.length ? 1e6 + s.lastUse : 0) + (n - s.open)); });
+    if (best >= 0) return best;
+    // 3. an open string pressed behind the bridge (bends up only, koto-style)
+    S.forEach((s, i) => { const d = n - s.open; if (s.role === 'open' && d > 0 && d <= this.nk.pressBend + 0.01) consider(i, (s.held ? 1e6 : 0) + d); });
+    if (best >= 0) return best;
+    // 4. fallback: nearest playable string, so nothing goes silent
+    S.forEach((s, i) => { if (s.role === 'open' || s.role === 'stopped') {
+      const lo = s.open, hi = s.role === 'stopped' ? s.open + s.range : s.open;
+      const dist = n < lo ? lo - n : n > hi ? n - hi : 0; consider(i, dist * 10 + (s.held ? 1e5 : 0)); } });
+    return best;
+  }
+  // A string whose natural harmonic (2nd-6th) sounds this pitch
+  harmString(n) {
+    let best = null, bs = 1e9;
+    this.S.forEach((s, i) => { if (s.role !== 'stopped' && s.role !== 'open') return;
+      for (let h = 2; h <= 6; h++) { const d = Math.abs(n - (s.open + 12 * Math.log2(h)));
+        if (d < 0.2) { const sc = h * 10 + d + (s.held ? 100 : 0); if (sc < bs) { bs = sc; best = { i, h }; } } } });
+    return best;
+  }
+  noteOn(n, v) {
+    this.clock++;
+    if (this.map.has(n)) this.noteOff(n);
+    this.syn.noteOn(n, v, this.held.length === 0);
+    const nk = this.nk, S = this.S;
+    const together = this.frame - this.lastOn < 0.035 * this.fs; this.lastOn = this.frame;
+    if (nk.legato !== 'poly' && this.held.length && (!together || nk.legato === 'legato')) {
+      const last = this.held[this.held.length - 1], si = this.map.get(last), s = S[si];
+      if (s && s.role === 'stopped' && this.reach(s, n) && (nk.legato === 'legato' || Math.abs(n - last) <= nk.thr)) {
+        s.stack.push(n); this.map.set(n, si); this.held.push(n); s.slur(n, v); return;
+      }
+    }
+    let si = -1, hh = 0;
+    const ty = this.ex.type;
+    if ((ty === 'pick' || ty === 'finger') && v < GHOST * 0.6) { const hs = this.harmString(n); if (hs) { si = hs.i; hh = hs.h; } }
+    if (si < 0) si = this.pick(n);
+    if (si < 0) return;
+    const s = S[si];
+    for (const hn of s.stack) if (this.map.get(hn) === si) { this.map.delete(hn); this.held = this.held.filter(x => x !== hn); }
+    s.stack = [n]; this.map.set(n, si); this.held.push(n);
+    // A note outside a fallback string's reach still plays at the asked pitch
+    s.start(n, v, hh);
+    // drones
+    const cont = CONT[this.ex.type];
+    for (const d of S) if (d.role === 'drone') { if (cont ? d.contT === 0 : (!d.held || d.t > 0.35)) d.start(d.open, v * this.ex.drone); }
+  }
+  noteOff(n) {
+    this.held = this.held.filter(x => x !== n);
+    const si = this.map.get(n); if (si === undefined) return;
+    this.map.delete(n);
+    const s = this.S[si]; if (!s) return;
+    const idx = s.stack.lastIndexOf(n); if (idx >= 0) s.stack.splice(idx, 1);
+    if (s.stack.length) { if (idx === s.stack.length) s.slur(s.stack[s.stack.length - 1], 0.6); }
+    else if (this.sus) s.pend = true; else s.release();
+    if (!this.held.length && !this.sus) { for (const d of this.S) if (d.role === 'drone' && d.held) d.release(); this.syn.allOff(); }
+  }
+  setSus(v) {
+    this.sus = v;
+    if (!v) { for (const s of this.S) if (s.pend) s.release();
+      if (!this.held.length) { for (const d of this.S) if (d.role === 'drone' && d.held) d.release(); this.syn.allOff(); } }
+  }
+  process(inputs, outputs) {
+    const out = outputs[0], L = out[0], R = out[1] || out[0], n = L.length;
+    const S = this.S, M = this.modes, pk = this.pk, nS = S.length, nM = M.length;
+    for (let k = 0; k < nS; k++) S[k].block(n);
+    for (let k = 0; k < nM; k++) { const m = M[k]; if (m.y1 < 1e-15 && m.y1 > -1e-15 && m.y2 < 1e-15 && m.y2 > -1e-15) m.y1 = m.y2 = 0; }
+    const syn = this.syn; syn.block(n); this.frame += n;
+    const oscOn = syn.oscOn, oscShape = syn.oscShape, oscMul = syn.oscMul / this.fs;
+    this.bendMul = Math.pow(2, this.bendSemis / 12);
+    if ((this.gustT -= n) <= 0) { this.gustT = 2000 + Math.random() * 6000; this.gustTarget = Math.random() * 2 - 0.6; }
+    this.gustV += ((this.gustTarget || 0) - this.gustV) * 0.02;
+    const cpl = this.nk.coupling * 0.6, sc = this.nk.sympC * 0.1 * SRK;
+    const mg = pk.mag * 0.6, pz = pk.piezo, mic = pk.mic; let mast = pk.master * 2.5;
+    const dc = this.dc; mast *= TRIM[this.ex.type] || 1;
+    for (let i = 0; i < n; i++) {
+      let bm = 0, bsy = 0, mgs = 0, oscSum = 0, ringSum = 0;
+      const feed = this.sympFeed;
+      for (let k = 0; k < nS; k++) {
+        const s = S[k];
+        if (s.idle && (s.role !== 'symp' || (feed < 1e-7 && feed > -1e-7))) continue;
+        if (s.role === 'symp') { if (s.idle) s.wake(); s.idle = false; const o = s.tick(feed); bsy += o; if (s.mag > 0) mgs += s.magOut(o) * 0.5; }
+        else {
+          const o = s.tick(0); bm += o; if (s.mag > 0) mgs += s.magOut(o);
+          if (oscOn && s.role !== 'drone') { // the synth oscillator follows each string's pitch and loudness
+            const ao = o < 0 ? -o : o; s.oenv += (ao - s.oenv) * (ao > s.oenv ? 0.02 * SRK : 0.0006 * SRK);
+            const dt = s.cf * oscMul; s.oph += dt; if (s.oph >= 1) s.oph -= 1;
+            const w = oscWave(s.oph, dt, oscShape); oscSum += w * s.oenv; ringSum += w * o;
+          }
+        }
+      }
+      this.sympFeed = bm * sc;
+      const bin = (bm + bsy) * cpl;
+      let bl = 0, br = 0; const bx = bin - this.bin2; this.bin2 = this.bin1; this.bin1 = bin;
+      for (let k = 0; k < nM; k++) {
+        const m = M[k]; const y = m.b0 * bx + m.a1 * m.y1 - m.a2 * m.y2;
+        m.y2 = m.y1; m.y1 = y; bl += y * m.aL; br += y * m.aR; m.e += y * y;
+      }
+      const bs = bm + bsy, p = bs * 0.5 + (bl + br) * 0.04, direct = bs * 0.06;
+      // magnetic pickup coil: resonant low-pass around 4.5 kHz, like a real single-coil's inductance
+      { const v3 = mgs - this.pb, v1 = this.pa1 * this.pa + this.pa2 * v3, v2 = this.pb + this.pa2 * this.pa + this.pa3 * v3; this.pa = 2 * v1 - this.pa; this.pb = 2 * v2 - this.pb; mgs = v2 * 1.6; }
+      let l = mgs * mg + p * pz + (bl + direct) * mic;
+      let r = mgs * mg + p * pz + (br + direct) * mic;
+      // DC blockers
+      let yl = l - dc[0] + this.dcA * dc[1]; dc[0] = l; dc[1] = yl;
+      let yr = r - dc[2] + this.dcA * dc[3]; dc[2] = r; dc[3] = yr;
+      syn.run(yl * mast, yr * mast, oscSum * mast * OSC_G, ringSum * mast * RING_G, i, n);
+      // output: DC blocker after the synth, then a clean peak limiter at -1 dBFS (no colouring below it)
+      let ol = syn.l - dc[4] + this.dcB * dc[5]; dc[4] = syn.l; dc[5] = ol;
+      let or = syn.r - dc[6] + this.dcB * dc[7]; dc[6] = syn.r; dc[7] = or;
+      const pk = Math.max(ol < 0 ? -ol : ol, or < 0 ? -or : or);
+      if (pk * this.lim > 0.891) this.lim = 0.891 / pk; else this.lim += (1 - this.lim) * this.limRel;
+      ol *= this.lim; or *= this.lim;
+      L[i] = ol > 1 ? 1 : ol < -1 ? -1 : ol; if (R !== L) R[i] = or > 1 ? 1 : or < -1 ? -1 : or;
+      if (this.lim < this.limMin) this.limMin = this.lim;
+    }
+    if (++this.blk >= 6) {
+      this.blk = 0;
+      this.port.postMessage({ t: 'viz', amp: S.map(s => s.rms), note: S.map(s => s.harm ? s.touch : s.note + 12 * Math.log2(s.freq / s.target)), harm: S.map(s => !!s.harm),
+        held: S.map(s => s.held || s.cont > 0.02), syn: syn.viz(), lim: this.limMin, modeE: M.map(m => { const e = m.e; m.e = 0; return e; }) });
+      this.limMin = 1;
+    }
+    return true;
+  }
+}
+registerProcessor('luither', LuitherProc);
+</script>
+<script>
+"use strict";
+// ───────────────────────── data ─────────────────────────
+const NN = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
+const nn = n => { n = Math.round(n); return NN[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1); };
+function parseNote(s) {
+  s = String(s).trim().replace('♯','#').replace('♭','b');
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Math.max(12, Math.min(108, +s));
+  const m = /^([A-Ga-g])([#b]?)(-?\d)$/.exec(s); if (!m) return null;
+  const base = { c:0, d:2, e:4, f:5, g:7, a:9, b:11 }[m[1].toLowerCase()];
+  const n = base + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (+m[3] + 1) * 12;
+  return Math.max(12, Math.min(108, n));
+}
+const SMAT = {
+  'Steel':        { decay: 9,   bright: .08, stiff: .35, magnetic: 1,  color: '#dfe3ea' },
+  'Bronze-wound': { decay: 8,   bright: .14, stiff: .2,  magnetic: .4, color: '#cc9450' },
+  'Nickel-wound': { decay: 8,   bright: .12, stiff: .22, magnetic: 1,  color: '#bfc2c6' },
+  'Nylon':        { decay: 4.5, bright: .38, stiff: .08, magnetic: 0,  color: '#f2efe6' },
+  'Gut':          { decay: 3.5, bright: .42, stiff: .12, magnetic: 0,  color: '#e3cf98' },
+  'Silk':         { decay: 3,   bright: .48, stiff: .06, magnetic: 0,  color: '#f7f1de' },
+  'Tetron':       { decay: 4,   bright: .35, stiff: .1,  magnetic: 0,  color: '#efe6cf' },
+  'Carbon':       { decay: 6,   bright: .25, stiff: .25, magnetic: 0,  color: '#8a8a8a' },
+  '✦ Glass fiber':{ decay: 14,  bright: .03, stiff: .7,  magnetic: 0,  color: '#aee8f0' },
+  '✦ Spider silk':{ decay: 12,  bright: .2,  stiff: .05, magnetic: 0,  color: '#ffffff' },
+  '✦ Light beam': { decay: 30,  bright: 0,   stiff: 0,   magnetic: 1,  color: '#ffe66b' },
+  '✦ Mud':        { decay: .6,  bright: .85, stiff: 0,   magnetic: 0,  color: '#7a5530' },
+};
+// E in GPa (effective, across both grain directions), density kg/m³, Q = how long it rings
+const BMAT = {
+  'Spruce':        { E: 4.5, rho: 420,  Q: 60,   color: '#e6cf98' },
+  'Cedar':         { E: 3.8, rho: 380,  Q: 55,   color: '#c98a5a' },
+  'Maple':         { E: 6,   rho: 650,  Q: 50,   color: '#e8c48a' },
+  'Rosewood':      { E: 7,   rho: 850,  Q: 70,   color: '#6e3b28' },
+  'Mahogany':      { E: 5,   rho: 560,  Q: 55,   color: '#8f4c2e' },
+  'Walnut':        { E: 5.5, rho: 610,  Q: 50,   color: '#5e4330' },
+  'Paulownia':     { E: 2.6, rho: 280,  Q: 45,   color: '#d9bc8c' },
+  'Toon (tun)':    { E: 3.2, rho: 450,  Q: 45,   color: '#a8653b' },
+  'Calabash gourd':{ E: 2,   rho: 500,  Q: 30,   color: '#c99f4e' },
+  'Carbon fiber':  { E: 40,  rho: 1550, Q: 120,  color: '#3a3a3a' },
+  'Aluminum':      { E: 69,  rho: 2700, Q: 400,  color: '#b9bec4' },
+  'Brass':         { E: 100, rho: 8500, Q: 600,  color: '#c9a33a' },
+  'Glass':         { E: 70,  rho: 2500, Q: 900,  color: '#9fd6e0' },
+  'Marble':        { E: 50,  rho: 2700, Q: 300,  color: '#d9d5cf' },
+  '✦ Aerogel':     { E: .01, rho: 3,    Q: 4,    color: '#dcecff' },
+  '✦ Diamond':     { E: 1050,rho: 3500, Q: 3000, color: '#e9fbff' },
+  '✦ Jelly':       { E: .0005,rho:1050, Q: 2.5,  color: '#e05a86' },
+  '✦ Singing crystal':{ E: 20, rho: 300, Q: 8000, color: '#c2a6ff' },
+};
+const BRACING = {
+  none:    { label: 'None',               f: 1,    asym: .3, mx: 1,   ny: 1 },
+  ladder:  { label: 'Ladder',             f: 1.25, asym: .3, mx: 1,   ny: 1.4 },
+  x:       { label: 'X-brace',            f: 1.35, asym: .6, mx: 1.1, ny: 1.1 },
+  fan:     { label: 'Fan',                f: 1.15, asym: .4, mx: 1.2, ny: 1 },
+  bassbar: { label: 'Bass bar + soundpost', f: 1.3, asym: .9, mx: 1.05, ny: 1.15 },
+};
+const BACKS = {
+  flat:   { label: 'Flat (guitar)',          f: r => 1 },
+  arched: { label: 'Carved arch (violin)',   f: r => 1 - .4 * Math.pow(r, 2.2) },
+  bowl:   { label: 'Round bowl (oud)',       f: r => Math.max(.1, Math.sqrt(1 - r * r)) },
+  ribbed: { label: 'Ribbed staves (lute)',   f: r => Math.max(.1, Math.sqrt(1 - r * r)), ribs: 11 },
+  gourd:  { label: 'Gourd (sitar)',          f: r => Math.max(.15, Math.pow(1 - Math.pow(r, 2.5), .55)) },
+  keel:   { label: '✦ Keel (boat hull)',     f: r => Math.max(.08, 1 - r * .92) },
+  custom: { label: 'Custom (drag the points)' },
+};
+function applyBack(shape) { const b = cfg.body, D = Math.max(...b.depth); b.backShape = shape; const f = BACKS[shape]?.f; if (f) b.depth = b.depth.map((_, i) => +(D * f(i / (b.depth.length - 1))).toFixed(4)); }
+const ROLE = { stopped: { c: '#e9b65a', l: 'Stopped' }, open: { c: '#7fc4b8', l: 'Open' }, drone: { c: '#d97a5b', l: 'Drone' }, symp: { c: '#a99be0', l: 'Sympathetic' } };
+const EXC = [
+  ['pick', 'Pick', '◣'], ['finger', 'Finger', '●'], ['hammer', 'Hammer', '▮'],
+  ['bow', 'Bow', '〰'], ['ebow', 'E-bow', '◉'], ['wind', 'Wind', '≋'],
+];
+const S = (role, note, mat, gauge, o = {}) => ({ role, note, range: o.range ?? 12, mat, gauge, wound: !!o.wound, tension: o.tension ?? .5 });
+const exDefault = () => ({ type: 'pick', pos: .15, pickStiff: .6, fingerSoft: .4, hammerHard: .6, pressure: .5, speed: .5,
+  attack: .08, release: .25, bowChange: true, humanize: .3, vibDepth: 0, vibDelay: .45, vibRate: 5.5, ebow: .6, wind: .5, gust: .3, drone: .2 });
+const nkDefault = () => ({ frets: true, buzz: 0, jawari: 0, legato: 'smart', thrAuto: true, thr: 4, glide: .01, pbRange: 2, pressBend: 2,
+  dampOpen: false, mute: .25, coupling: .5, sympC: .3 });
+const PRESETS = {
+  'Acoustic guitar': () => ({
+    strings: [S('stopped',40,'Bronze-wound',.9,{range:19,wound:1}), S('stopped',45,'Bronze-wound',.75,{range:19,wound:1}), S('stopped',50,'Bronze-wound',.6,{range:19,wound:1}),
+      S('stopped',55,'Bronze-wound',.45,{range:19,wound:1}), S('stopped',59,'Steel',.3,{range:19}), S('stopped',64,'Steel',.2,{range:19})],
+    ex: { ...exDefault(), type: 'pick', pos: .16, pickStiff: .6, vibDepth: 0 },
+    nk: { ...nkDefault(), frets: true, buzz: .05, glide: .01 },
+    body: { length: .505, hw: [.07,.125,.142,.135,.12,.125,.16,.185,.19,.17,.08], depth: [.1,.1,.1,.1,.1,.1,.1],
+      top: 'Spruce', back: 'Rosewood', topT: 2.8, backT: 2.5, bracing: 'x', braceS: .5, hole: { type: 'round', x: .28, size: .8 }, bridgeX: .57, neckLen: .36, nutX: .05 , backShape: 'flat' },
+    pk: { mag: 0, magPos: .12, piezo: .3, mic: .9, master: .8 },
+  }),
+  'Cello': () => ({
+    strings: [S('stopped',36,'Nickel-wound',.85,{range:26,wound:1}), S('stopped',43,'Nickel-wound',.7,{range:26,wound:1}),
+      S('stopped',50,'Steel',.45,{range:26}), S('stopped',57,'Steel',.35,{range:26})],
+    ex: { ...exDefault(), type: 'bow', pos: .12, pressure: .5, speed: .5, attack: .09, release: .22, vibDepth: 18, vibDelay: .35, vibRate: 5.6 },
+    nk: { ...nkDefault(), frets: false, glide: .09, thr: 5 },
+    body: { length: .75, hw: [.09,.16,.17,.15,.115,.12,.18,.215,.22,.19,.09], depth: [.13,.128,.125,.12,.115,.11,.1],
+      top: 'Spruce', back: 'Maple', topT: 3.5, backT: 4, bracing: 'bassbar', braceS: .5, hole: { type: 'f', x: .55, size: .55 }, bridgeX: .55, neckLen: .28, nutX: .05 , backShape: 'arched' },
+    pk: { mag: 0, magPos: .12, piezo: .15, mic: 1, master: .8 },
+  }),
+  'Sitar': () => ({
+    strings: [S('stopped',53,'Steel',.25,{range:26}), S('stopped',48,'Bronze-wound',.45,{range:12,wound:1}),
+      S('drone',36,'Bronze-wound',.6,{wound:1}), S('drone',43,'Bronze-wound',.5,{wound:1}), S('drone',60,'Steel',.2), S('drone',72,'Steel',.15),
+      ...[60,62,64,65,67,69,71,72,74,76,77].map(n => S('symp', n, 'Steel', .1))],
+    ex: { ...exDefault(), type: 'pick', pos: .08, pickStiff: .82, drone: .12, vibDepth: 0 },
+    nk: { ...nkDefault(), frets: true, jawari: .75, glide: .12, sympC: .8, thr: 4 },
+    body: { length: .42, hw: [.06,.13,.17,.195,.207,.21,.207,.195,.17,.13,.06], depth: [.2,.195,.18,.16,.13,.09,.04],
+      top: 'Toon (tun)', back: 'Calabash gourd', topT: 4, backT: 6, bracing: 'none', braceS: .5, hole: { type: 'none', x: .5, size: .4 }, bridgeX: .62, neckLen: .62, nutX: .05 , backShape: 'gourd' },
+    pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8 },
+  }),
+  'Koto': () => ({
+    strings: [50,43,45,46,50,51,55,57,58,62,63,67,69].map(n => S('open', n, 'Tetron', .35, { tension: .4 })),
+    ex: { ...exDefault(), type: 'pick', pos: .1, pickStiff: .72 },
+    nk: { ...nkDefault(), frets: false, glide: .12, pressBend: 2 },
+    body: { length: 1.82, hw: [.11,.12,.12,.12,.12,.12,.12,.12,.12,.12,.11], depth: [.07,.07,.068,.065,.06,.05,.035],
+      top: 'Paulownia', back: 'Paulownia', topT: 10, backT: 10, bracing: 'none', braceS: .5, hole: { type: 'under', x: .6, size: .6 }, bridgeX: .93, neckLen: 0, nutX: .06 , backShape: 'arched' },
+    pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8 },
+  }),
+};
+// ── more factory instruments ──
+BMAT['Snakeskin'] = { E: .35, rho: 1100, Q: 14, color: '#bfa77a' };
+const diat = (root, steps, count) => { const out = []; for (let i = 0; out.length < count; i++) out.push(root + 12 * Math.floor(i / steps.length) + steps[i % steps.length]); return out; };
+const body = (o) => ({ topT: 3, backT: 3, bracing: 'none', braceS: .5, hole: { type: 'round', x: .3, size: .6 }, bridgeX: .6, neckLen: .3, nutX: .05, backShape: 'flat', ...o });
+const pre = (o) => () => ({ ex: { ...exDefault(), ...o.ex }, nk: { ...nkDefault(), ...o.nk }, pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8, ...o.pk }, strings: o.strings(), body: body(o.body) });
+Object.assign(PRESETS, {
+  'Violin': pre({
+    strings: () => [S('stopped',55,'Gut',.45,{range:31}), S('stopped',62,'Gut',.35,{range:31}), S('stopped',69,'Steel',.25,{range:31}), S('stopped',76,'Steel',.15,{range:31})],
+    ex: { type: 'bow', pos: .1, pressure: .5, speed: .5, attack: .06, release: .2, vibDepth: 22, vibDelay: .3, vibRate: 6 },
+    nk: { frets: false, glide: .07, thr: 5 },
+    body: { length: .355, hw: [.06,.085,.083,.075,.055,.058,.09,.103,.105,.09,.05], depth: [.045,.044,.043,.041,.038,.034,.028], top: 'Spruce', back: 'Maple', topT: 3, backT: 3.5,
+      bracing: 'bassbar', hole: { type: 'f', x: .55, size: .3 }, bridgeX: .55, neckLen: .13, backShape: 'arched' } }),
+  'Double bass': pre({
+    strings: () => [S('stopped',28,'Nickel-wound',.95,{range:24,wound:1}), S('stopped',33,'Nickel-wound',.85,{range:24,wound:1}), S('stopped',38,'Nickel-wound',.7,{range:24,wound:1}), S('stopped',43,'Nickel-wound',.6,{range:24,wound:1})],
+    ex: { type: 'bow', pos: .13, pressure: .55, speed: .45, attack: .12, release: .3, vibDepth: 12, vibDelay: .5, vibRate: 5 },
+    nk: { frets: false, glide: .1, thr: 5 },
+    body: { length: 1.1, hw: [.14,.24,.26,.23,.17,.18,.27,.32,.34,.29,.13], depth: [.2,.2,.2,.2,.2,.2,.2], top: 'Spruce', back: 'Maple', topT: 4.5, backT: 4.5,
+      bracing: 'bassbar', hole: { type: 'f', x: .55, size: .9 }, bridgeX: .55, neckLen: .455, backShape: 'flat' } }),
+  'Classical guitar': pre({
+    strings: () => [S('stopped',40,'Nylon',.8,{range:19,wound:1}), S('stopped',45,'Nylon',.7,{range:19,wound:1}), S('stopped',50,'Nylon',.6,{range:19,wound:1}),
+      S('stopped',55,'Nylon',.5,{range:19}), S('stopped',59,'Nylon',.4,{range:19}), S('stopped',64,'Nylon',.3,{range:19})],
+    ex: { type: 'finger', pos: .18, fingerSoft: .45 }, nk: { frets: true, glide: .01 },
+    body: { length: .49, hw: [.07,.12,.14,.135,.12,.125,.15,.17,.18,.165,.08], depth: [.095,.095,.095,.095,.095,.095,.095], top: 'Cedar', back: 'Rosewood', topT: 2.5, backT: 2.4,
+      bracing: 'fan', hole: { type: 'round', x: .3, size: .75 }, bridgeX: .63, neckLen: .34 } }),
+  'Electric guitar': pre({
+    strings: () => [S('stopped',40,'Nickel-wound',.75,{range:22,wound:1}), S('stopped',45,'Nickel-wound',.6,{range:22,wound:1}), S('stopped',50,'Nickel-wound',.5,{range:22,wound:1}),
+      S('stopped',55,'Steel',.35,{range:22}), S('stopped',59,'Steel',.25,{range:22}), S('stopped',64,'Steel',.18,{range:22})],
+    ex: { type: 'pick', pos: .13, pickStiff: .7 }, nk: { frets: true, buzz: .03, glide: .01 }, pk: { mag: 1.1, magPos: .18, piezo: 0, mic: 0 },
+    body: { length: .45, hw: [.1,.15,.16,.15,.12,.13,.16,.17,.165,.14,.07], depth: [.045,.045,.045,.045,.045,.045,.045], top: 'Mahogany', back: 'Mahogany', topT: 25, backT: 20,
+      hole: { type: 'none', x: .5, size: .5 }, bridgeX: .48, neckLen: .43 } }),
+  'Electric bass': pre({
+    strings: () => [S('stopped',28,'Nickel-wound',.95,{range:20,wound:1}), S('stopped',33,'Nickel-wound',.85,{range:20,wound:1}), S('stopped',38,'Nickel-wound',.72,{range:20,wound:1}), S('stopped',43,'Nickel-wound',.6,{range:20,wound:1})],
+    ex: { type: 'finger', pos: .2, fingerSoft: .3 }, nk: { frets: true, glide: .01 }, pk: { mag: 1.1, magPos: .2, piezo: 0, mic: 0 },
+    body: { length: .5, hw: [.11,.16,.17,.16,.13,.14,.17,.18,.175,.15,.08], depth: [.045,.045,.045,.045,.045,.045,.045], top: 'Mahogany', back: 'Mahogany', topT: 25, backT: 20,
+      hole: { type: 'none', x: .5, size: .5 }, bridgeX: .49, neckLen: .62 } }),
+  'Oud': pre({
+    strings: () => [36,41,45,50,55,60].map((n, i) => S('stopped', n, 'Nylon', .75 - i * .09, { range: 14, wound: i < 3 })),
+    ex: { type: 'pick', pos: .12, pickStiff: .5 }, nk: { frets: false, glide: .1, thr: 4 },
+    body: { length: .5, hw: [.05,.1,.135,.16,.175,.182,.18,.17,.15,.11,.04], depth: [.2,.197,.187,.17,.145,.11,.04], top: 'Spruce', back: 'Walnut', topT: 2, backT: 2,
+      hole: { type: 'rose', x: .35, size: .6 }, bridgeX: .82, neckLen: .2, backShape: 'ribbed' } }),
+  'Concert harp': pre({
+    strings: () => diat(36, [0,2,4,5,7,9,11], 24).map((n, i) => S('open', n, i < 7 ? 'Nickel-wound' : 'Gut', .7 - i * .025, { wound: i < 7 })),
+    ex: { type: 'finger', pos: .32, fingerSoft: .55 }, nk: { frets: false, pressBend: 0 },
+    body: { length: 1.3, hw: [.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15], depth: [.22,.218,.21,.195,.17,.13,.05], top: 'Spruce', back: 'Maple', topT: 3, backT: 5,
+      hole: { type: 'under', x: .55, size: .7 }, bridgeX: .96, neckLen: 0, nutX: .04, backShape: 'bowl' } }),
+  'Hammered dulcimer': pre({
+    strings: () => diat(50, [0,2,4,5,7,9,11], 22).map((n, i) => S('open', n, i < 6 ? 'Bronze-wound' : 'Steel', .45 - i * .012)),
+    ex: { type: 'hammer', pos: .3, hammerHard: .55 }, nk: { frets: false, pressBend: 0 },
+    body: { length: .95, hw: [.36,.34,.32,.3,.28,.26,.24,.22,.2,.18,.16], depth: [.07,.07,.07,.07,.07,.07,.07], top: 'Spruce', back: 'Maple', topT: 6, backT: 8,
+      bracing: 'ladder', hole: { type: 'rose', x: .3, size: .45 }, bridgeX: .95, neckLen: 0, nutX: .05 } }),
+  'Guzheng': pre({
+    strings: () => diat(38, [0,2,4,7,9], 21).map((n, i) => S('open', n, 'Tetron', .5 - i * .015, { tension: .45 })),
+    ex: { type: 'pick', pos: .1, pickStiff: .7 }, nk: { frets: false, glide: .12, pressBend: 2 },
+    body: { length: 1.63, hw: [.12,.13,.14,.145,.15,.15,.15,.15,.15,.15,.14], depth: [.08,.08,.078,.074,.068,.058,.04], top: 'Paulownia', back: 'Paulownia', topT: 9, backT: 9,
+      hole: { type: 'under', x: .55, size: .7 }, bridgeX: .94, neckLen: 0, nutX: .05, backShape: 'arched' } }),
+  'Tanpura': pre({
+    strings: () => [S('open',43,'Steel',.3), S('open',48,'Steel',.25), S('open',48,'Steel',.25), S('open',36,'Bronze-wound',.55,{wound:1})],
+    ex: { type: 'finger', pos: .3, fingerSoft: .5 }, nk: { frets: false, jawari: .85, sympC: .5 },
+    body: { length: .5, hw: [.07,.15,.2,.23,.245,.25,.245,.23,.2,.15,.07], depth: [.25,.245,.23,.2,.16,.11,.05], top: 'Toon (tun)', back: 'Calabash gourd', topT: 4, backT: 6,
+      hole: { type: 'none', x: .5, size: .4 }, bridgeX: .62, neckLen: .9, backShape: 'gourd' } }),
+  'Hurdy-gurdy': pre({
+    strings: () => [S('stopped',55,'Gut',.35,{range:24}), S('stopped',55,'Gut',.35,{range:24}), S('drone',36,'Gut',.7,{wound:1}), S('drone',43,'Gut',.55,{wound:1}), S('drone',48,'Gut',.45)],
+    ex: { type: 'bow', pos: .14, pressure: .6, speed: .55, attack: .03, release: .08, bowChange: false, humanize: .15, drone: .5 },
+    nk: { frets: true, legato: 'legato', glide: .01 },
+    body: { length: .5, hw: [.09,.12,.14,.15,.15,.15,.15,.14,.13,.11,.08], depth: [.1,.1,.1,.1,.1,.1,.1], top: 'Spruce', back: 'Maple', topT: 3, backT: 3,
+      bracing: 'ladder', hole: { type: 'f', x: .7, size: .4 }, bridgeX: .82, neckLen: 0, nutX: .05 } }),
+  'Alpine zither': pre({
+    strings: () => [S('stopped',69,'Steel',.2,{range:29}), S('stopped',69,'Steel',.2,{range:29}), S('stopped',62,'Steel',.25,{range:29}), S('stopped',55,'Bronze-wound',.35,{range:29,wound:1}), S('stopped',48,'Bronze-wound',.45,{range:29,wound:1}),
+      ...[51,46,53,48,55,50,57,52,59,54,49,56,44,39,46,41,36,43,38].map((n, i) => S('open', n, n < 46 ? 'Bronze-wound' : 'Steel', n < 46 ? .55 : .3, { wound: n < 46 }))],
+    ex: { type: 'pick', pos: .15, pickStiff: .65 }, nk: { frets: true, glide: .01 },
+    body: { length: .6, hw: [.15,.17,.18,.18,.18,.18,.18,.18,.18,.17,.15], depth: [.05,.05,.05,.05,.05,.05,.05], top: 'Spruce', back: 'Maple', topT: 3, backT: 4,
+      bracing: 'ladder', hole: { type: 'round', x: .4, size: .6 }, bridgeX: .93, neckLen: 0, nutX: .05 } }),
+  'Erhu': pre({
+    strings: () => [S('stopped',62,'Steel',.3,{range:30}), S('stopped',69,'Steel',.22,{range:30})],
+    ex: { type: 'bow', pos: .08, pressure: .55, speed: .5, attack: .05, release: .15, vibDepth: 30, vibDelay: .25, vibRate: 5.5 },
+    nk: { frets: false, legato: 'legato', glide: .09 },
+    body: { length: .13, hw: [.035,.042,.045,.045,.045,.045,.045,.045,.045,.042,.035], depth: [.13,.13,.13,.13,.13,.13,.13], top: 'Snakeskin', back: 'Rosewood', topT: .6, backT: 6,
+      hole: { type: 'under', x: .5, size: .9 }, bridgeX: .5, neckLen: .7 } }),
+  'Aeolian harp': pre({
+    strings: () => [38,50,57,62,66,69,72,74,76,78].map((n, i) => S('open', n, 'Gut', .55 - i * .04)),
+    ex: { type: 'wind', pos: .3, wind: .55, gust: .65, attack: .9, release: 1.6 }, nk: { frets: false, pressBend: 0 },
+    body: { length: .9, hw: [.11,.12,.12,.12,.12,.12,.12,.12,.12,.12,.11], depth: [.07,.07,.07,.07,.07,.07,.07], top: 'Spruce', back: 'Maple', topT: 3, backT: 4,
+      hole: { type: 'round', x: .5, size: .55 }, bridgeX: .95, neckLen: 0, nutX: .05 } }),
+  '✦ Glass cello': pre({
+    strings: () => [36,43,50,57].map((n, i) => S('stopped', n, '✦ Glass fiber', .7 - i * .12, { range: 26 })),
+    ex: { type: 'bow', pos: .12, pressure: .45, speed: .5, attack: .12, release: .4, vibDepth: 14 }, nk: { frets: false, glide: .09, thr: 5 },
+    body: { length: .75, hw: [.09,.16,.17,.15,.115,.12,.18,.215,.22,.19,.09], depth: [.13,.128,.125,.12,.115,.11,.1], top: 'Glass', back: 'Glass', topT: 3, backT: 3,
+      bracing: 'bassbar', hole: { type: 'f', x: .55, size: .55 }, bridgeX: .55, neckLen: .28, backShape: 'arched' } }),
+  '✦ Crystal harp': pre({
+    strings: () => [...diat(48, [0,2,4,7,9], 16).map(n => S('open', n, '✦ Light beam', .2)), ...[60,64,67,72,76,79,84,88].map(n => S('symp', n, '✦ Spider silk', .1))],
+    ex: { type: 'finger', pos: .3, fingerSoft: .6 }, nk: { frets: false, pressBend: 0, sympC: .7 },
+    body: { length: 1.1, hw: [.06,.07,.08,.09,.1,.11,.12,.13,.14,.15,.16], depth: [.2,.198,.19,.175,.15,.11,.04], top: '✦ Singing crystal', back: '✦ Singing crystal', topT: 2, backT: 2,
+      hole: { type: 'under', x: .55, size: .6 }, bridgeX: .96, neckLen: 0, nutX: .04, backShape: 'bowl' } }),
+});
+
+// ── output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS ──
+const CAL = {"Acoustic guitar": 1.007, "Cello": 0.697, "Sitar": 1.043, "Koto": 1.328, "Violin": 0.809, "Double bass": 0.361, "Classical guitar": 0.65, "Electric guitar": 0.213, "Electric bass": 0.16, "Oud": 2.153, "Concert harp": 0.488, "Hammered dulcimer": 0.45, "Guzheng": 1.374, "Tanpura": 1.596, "Hurdy-gurdy": 0.857, "Alpine zither": 1.055, "Erhu": 0.326, "Aeolian harp": 0.996, "✦ Glass cello": 0.847, "✦ Crystal harp": 0.281};
+for (const k in CAL) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.pk.master = CAL[k]; return p; }; }
+
+// ───────────────────────── state ─────────────────────────
+let cfg = PRESETS['Acoustic guitar']();
+let quality = 'med';
+let node = null, actx = null;
+const viz = { amp: [], note: [], held: [], modeE: [] };
+let modesInfo = { modes: [], top: [], info: {} };
+let sustain = false;
+
+// ───────────────────────── body physics → modes ─────────────────────────
+function bodyGeom(b) {
+  const n = b.hw.length, dx = b.length / (n - 1);
+  let A = 0; for (let i = 0; i < n; i++) A += 2 * b.hw[i] * dx * (i === 0 || i === n - 1 ? .5 : 1);
+  // depth profile: centre → edge; volume = area × mean depth (weighted toward edge, where there is more area)
+  let num = 0, den = 0; b.depth.forEach((d, i) => { const r = (i + .5) / b.depth.length; num += d * r; den += r; });
+  const meanD = num / den;
+  return { A, W: A / b.length, V: A * meanD, meanD };
+}
+function holeArea(h) {
+  if (h.type === 'none') return 0;
+  if (h.type === 'f') return 2 * h.size * .0015;
+  const r = .015 + h.size * .045; let a = Math.PI * r * r;
+  if (h.type === 'rose') a *= .55;
+  return a;
+}
+function computeBody() {
+  const b = cfg.body, g = bodyGeom(b), br = BRACING[b.bracing] || BRACING.none;
+  const s = .5 + b.braceS; // brace strength scaling
+  const bf = 1 + (br.f - 1) * s;
+  const count = { low: [8, 4], med: [16, 10], high: [30, 18] }[quality];
+  const fs = actx ? actx.sampleRate : 48000;
+  // a curved shell is much stiffer than a flat plate of the same wood; glued staves lose a little energy
+  const curve = 1 + .9 * bulge(b), ribQ = (BACKS[b.backShape] || {}).ribs ? .75 : 1;
+  function plate(matName, tmm, amp, nKeep, isTop) {
+    const m = BMAT[matName], h = tmm / 1000;
+    const f11 = 4 * h * Math.sqrt(m.E * 1e9 / m.rho) / g.A * (isTop ? bf : curve);
+    const L = b.length, W = g.W, base = 1 / (L * L) + 1 / (W * W), out = [];
+    for (let mi = 1; mi <= 9; mi++) for (let ni = 1; ni <= 6; ni++) {
+      const r = ((mi * br.mx / L) ** 2 + (ni * br.ny / W) ** 2) / ((br.mx / L) ** 2 + (br.ny / W) ** 2);
+      const f = f11 * r;
+      if (f < 25 || f > fs * .42) continue;
+      const rad = (mi % 2 && ni % 2) ? 1 : br.asym;
+      out.push({ f, q: Math.max(2, Math.min(5000, m.Q * (isTop ? 1 : ribQ) / (1 + .03 * (mi + ni)))), amp: amp * rad / Math.pow(mi * ni, .6),
+        pan: isTop ? ((mi + ni) % 2 ? .45 : -.45) * Math.min(1, ni / 2) : 0, m: mi, n: ni, top: isTop });
+    }
+    out.sort((a, c) => a.f - c.f);
+    return { list: out.slice(0, nKeep), f11 };
+  }
+  const top = plate(b.top, b.topT, 1, count[0], true);
+  const back = plate(b.back, b.backT, .45, count[1], false);
+  // Helmholtz air resonance from cavity volume and soundhole
+  const S = holeArea(b.hole);
+  let air, airAmp;
+  if (S > 0) { const Leff = b.topT / 1000 + 1.7 * (b.hole.type === 'f' ? .012 : Math.sqrt(S / Math.PI));
+    air = 343 / (2 * Math.PI) * Math.sqrt(S / (g.V * Leff)); airAmp = 1.3 * Math.min(1, S / .006) * (b.hole.type === 'under' ? .7 : 1); }
+  else { air = 343 / (2 * b.length); airAmp = .12; }
+  const modes = [...top.list, ...back.list];
+  if (air > 25 && air < fs * .4) modes.push({ f: air, q: 25, amp: airAmp, pan: 0, air: true });
+  modesInfo = { modes, top: top.list, back: back.list, info: { area: g.A, vol: g.V, air, f11: top.list[0]?.f || top.f11, back: back.list[0]?.f, n: modes.length } };
+  return modes;
+}
+function autoThr() {
+  const hasStop = cfg.strings.some(s => s.role === 'stopped');
+  if (!hasStop) return 2;
+  return cfg.nk.frets ? 4 : 5;
+}
+
+// ───────────────────────── audio ─────────────────────────
+function send(t, v) { if (node) node.port.postMessage({ t, v }); }
+function pushStrings() { send('strings', cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] || SMAT.Steel }))); }
+function pushEx() { send('ex', cfg.ex); }
+function pushNk() { const nk = { ...cfg.nk }; if (nk.thrAuto) nk.thr = autoThr(); send('nk', nk); }
+function pushBody() { const m = computeBody(); send('modes', m.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan }))); renderInfo(); }
+function pushPk() { send('pk', { ...cfg.pk, master: cfg.pk.master * +$('vol').value }); }
+function pushAll() { pushStrings(); pushEx(); pushNk(); pushBody(); pushPk(); if (cfg.synth) pushSynth(); }
+async function startAudio() {
+  actx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+  const src = $('dsp').textContent;
+  try { await actx.audioWorklet.addModule(URL.createObjectURL(new Blob([src], { type: 'application/javascript' }))); }
+  catch (e) { await actx.audioWorklet.addModule('data:application/javascript;base64,' + btoa(unescape(encodeURIComponent(src)))); }
+  node = new AudioWorkletNode(actx, 'luither', { numberOfInputs: 0, outputChannelCount: [2] });
+  node.connect(actx.destination);
+  node.port.onmessage = e => { if (e.data.t === 'viz') Object.assign(viz, e.data); };
+  send('sdefs', synthDefs());
+  pushAll();
+  await actx.resume();
+  initMidi();
+}
+const heldKeys = new Set();
+// ── scale purity: keys outside the chosen scale jump to the nearest scale note
+let purity = { on: false, root: 0, scale: 'Major (Bilawal)' };
+try { Object.assign(purity, JSON.parse(localStorage.getItem('luither.purity') || '{}')); } catch (e) {}
+const inScale = n => (SCALES[purity.scale] || SCALES.Chromatic).includes((((n - purity.root) % 12) + 12) % 12);
+function snap(n) { if (!purity.on) return n; for (let d = 0; d < 12; d++) { if (inScale(n + d)) return n + d; if (inScale(n - d)) return n - d; } return n; }
+function setPurity(p) { Object.assign(purity, p); try { localStorage.setItem('luither.purity', JSON.stringify(purity)); } catch (e) {}
+  $('purBtn').textContent = purity.on ? `Purity: ${PC[purity.root]} ${purity.scale.split(' (')[0]}` : 'Scale purity: off'; $('purBtn').classList.toggle('on', purity.on); drawKb(); if (Object.keys(p).length) buildNeck(); }
+const keyMap = new Map(), refs = new Map();
+function noteOn(k, v = .8) {
+  if (k < 0 || k > 127 || !node) return;
+  if (keyMap.has(k)) noteOff(k);
+  const n = snap(k); keyMap.set(k, n); refs.set(n, (refs.get(n) || 0) + 1); heldKeys.add(k);
+  node.port.postMessage({ t: 'on', n, v }); drawKb();
+}
+function noteOff(k) {
+  const n = keyMap.has(k) ? keyMap.get(k) : k; keyMap.delete(k); heldKeys.delete(k);
+  const c = (refs.get(n) || 1) - 1; if (c <= 0) { refs.delete(n); node && node.port.postMessage({ t: 'off', n }); } else refs.set(n, c);
+  drawKb();
+}
+function setSus(v) { sustain = v; node && node.port.postMessage({ t: 'sus', v }); $('susPill').textContent = v ? 'Sustain ON' : 'Sustain off'; $('susPill').classList.toggle('ok', v); }
+
+// ───────────────────────── MIDI ─────────────────────────
+let learnCC = false, posCC = 74;
+try { const v = localStorage.getItem('luither.posCC'); if (v) posCC = +v; } catch (e) {}
+function initMidi() {
+  if (!navigator.requestMIDIAccess) { $('midiPill').textContent = 'MIDI: not supported here'; return; }
+  navigator.requestMIDIAccess().then(acc => {
+    const bind = () => { let names = []; acc.inputs.forEach(inp => { inp.onmidimessage = onMidi; names.push(inp.name); });
+      $('midiPill').textContent = names.length ? 'MIDI: ' + names[0].slice(0, 22) : 'MIDI: no device'; $('midiPill').classList.toggle('ok', names.length > 0); };
+    bind(); acc.onstatechange = bind;
+  }).catch(() => { $('midiPill').textContent = 'MIDI: blocked'; });
+}
+function onMidi(e) {
+  const [st, a, b] = e.data, cmd = st & 0xf0;
+  if (cmd === 0x90 && b > 0) noteOn(a, b / 127);
+  else if (cmd === 0x80 || (cmd === 0x90 && b === 0)) noteOff(a);
+  else if (cmd === 0xE0) node.port.postMessage({ t: 'bend', v: ((b << 7 | a) - 8192) / 8192 });
+  else if (cmd === 0xB0) {
+    if (a === 64) setSus(b >= 64);
+    else if (a === 123 || a === 120) node.port.postMessage({ t: 'panic' });
+    else if (learnCC && a !== 1) { posCC = a; learnCC = false; try { localStorage.setItem('luither.posCC', a); } catch (err) {} buildExciter(); }
+    else if (a === 1) modWheel(b / 127);
+    else if (a === posCC) { cfg.ex.pos = .02 + .48 * (b / 127); pushEx(); syncCtl('ex.pos'); }
+  }
+}
+// The mod wheel drives the exciter's main expressive control
+function modWheel(v) {
+  const t = cfg.ex.type;
+  const key = t === 'bow' ? 'pressure' : t === 'ebow' ? 'ebow' : t === 'wind' ? 'wind' : 'pos';
+  cfg.ex[key] = key === 'pos' ? .02 + .48 * v : v; pushEx(); syncCtl('ex.' + key);
+  send('mw', v); if (face === 'synth') renderKnob('ph_' + (key === 'pos' ? 'pos' : key));
+}
+
+// ───────────────────────── UI helpers ─────────────────────────
+const $ = id => document.getElementById(id);
+const ctlReg = {};
+function el(tag, attrs = {}, ...kids) { const e = document.createElement(tag); for (const k in attrs) { if (k === 'class') e.className = attrs[k]; else if (k.startsWith('on')) e[k] = attrs[k]; else e.setAttribute(k, attrs[k]); } kids.forEach(k => e.append(k)); return e; }
+function slider(parent, label, path, min, max, step, fmt, onch) {
+  const [sec, key] = path.split('.');
+  const out = el('output'), inp = el('input', { type: 'range', min, max, step });
+  const obj = () => cfg[sec];
+  const show = () => { inp.value = obj()[key]; out.textContent = fmt ? fmt(+obj()[key]) : (+obj()[key]).toFixed(2); };
+  inp.oninput = () => { obj()[key] = +inp.value; show(); onch(); };
+  const row = el('div', { class: 'row' }, el('label', {}, label), inp, out);
+  parent.append(row); ctlReg[path] = show; show(); return row;
+}
+function select(parent, label, path, options, onch) {
+  const [sec, key] = path.split('.');
+  const s = el('select'); options.forEach(([v, l]) => s.append(el('option', { value: v }, l)));
+  s.value = cfg[sec][key]; s.onchange = () => { cfg[sec][key] = s.value; onch(); };
+  parent.append(el('div', { class: 'row sel' }, el('label', {}, label), s)); ctlReg[path] = () => s.value = cfg[sec][key]; return s;
+}
+function check(parent, label, path, onch) {
+  const [sec, key] = path.split('.');
+  const c = el('input', { type: 'checkbox' }); c.checked = !!cfg[sec][key];
+  c.onchange = () => { cfg[sec][key] = c.checked; onch(); };
+  const l = el('label', { class: 'chk' }, c, label); parent.append(l); ctlReg[path] = () => c.checked = !!cfg[sec][key]; return l;
+}
+function syncCtl(path) { ctlReg[path]?.(); }
+const h3 = (p, t) => p.append(el('h3', {}, t));
+const noteP = (p, t) => p.append(el('div', { class: 'note' }, t));
+const fmt = {
+  pct: v => Math.round(v * 100) + '%', s: v => v < 1 ? Math.round(v * 1000) + 'ms' : v.toFixed(2) + 's', m: v => v.toFixed(2) + 'm',
+  mm: v => v.toFixed(1) + 'mm', c: v => Math.round(v) + '¢', hz: v => v.toFixed(1) + 'Hz', st: v => v.toFixed(1) + 'st', x: v => '×' + v.toFixed(2),
+};
+
+// ───────────────────────── panels ─────────────────────────
+function buildStrings() {
+  const p = $('p-strings'); p.innerHTML = '';
+  const n = cfg.strings.length;
+  const tools = el('div', { class: 'strtools' });
+  [['stopped', '+ Stopped'], ['open', '+ Open'], ['drone', '+ Drone'], ['symp', '+ Sympathetic']].forEach(([r, l]) => {
+    const b = el('button', { onclick: () => addString(r) }, l); b.disabled = n >= 24; b.style.borderColor = ROLE[r].c + '88'; tools.append(b);
+  });
+  tools.append(el('span', { class: 'pill' }, `${n} / 24`));
+  tools.append(el('button', { onclick: smartTune, style: 'margin-left:auto;border-color:#d9a441;color:#f2c568' }, '♪ Smart tune'));
+  p.append(tools);
+  noteP(p, 'Stopped strings are fingered along a neck. Open strings sound only their tuning (pressing behind the bridge bends them up, as on a koto). Drones ring whenever you play. Sympathetic strings are never touched; they only resonate.');
+  cfg.strings.forEach((s, i) => {
+    const row = el('div', { class: 'srow', 'data-i': i });
+    const dot = el('div', { class: 'dot' }); dot.style.background = ROLE[s.role].c;
+    const role = el('select'); Object.entries(ROLE).forEach(([k, v]) => role.append(el('option', { value: k }, v.l))); role.value = s.role;
+    role.onchange = () => { s.role = role.value; pushStrings(); pushNk(); buildStrings(); draw(); };
+    const note = el('select', { title: 'Tuning' });
+    for (let m = 24; m <= 96; m++) note.append(el('option', { value: m }, nn(m)));
+    if (s.note < 24 || s.note > 96) note.prepend(el('option', { value: s.note }, nn(s.note)));
+    note.value = Math.round(s.note); note.onchange = () => { s.note = +note.value; pushStrings(); draw(); };
+    const mat = el('select'); Object.keys(SMAT).forEach(k => mat.append(el('option', { value: k }, k))); mat.value = s.mat;
+    mat.onchange = () => { s.mat = mat.value; pushStrings(); draw(); };
+    const x = el('button', { class: 'x', title: 'Remove string', onclick: () => { cfg.strings.splice(i, 1); pushStrings(); pushNk(); buildStrings(); } }, '×');
+    row.append(dot, role, note, mat, x);
+    const sub = el('div', { class: 'sub' });
+    const rng = (lbl, key, min, max, step) => { const r = el('input', { type: 'range', min, max, step }); r.value = s[key]; r.oninput = () => { s[key] = +r.value; pushStrings(); draw(); }; sub.append(lbl, r); };
+    rng('gauge', 'gauge', 0, 1, .01); rng('tension', 'tension', 0, 1, .01);
+    const w = el('input', { type: 'checkbox' }); w.checked = s.wound; w.onchange = () => { s.wound = w.checked; pushStrings(); };
+    sub.append(el('label', { class: 'chk', style: 'margin:0' }, w, 'wound'));
+    if (s.role === 'stopped') {
+      const r = el('input', { type: 'number', min: 1, max: 48, value: s.range, title: 'How many semitones up the neck this string can reach', style: 'width:44px' });
+      r.onchange = () => { s.range = Math.max(1, Math.min(48, +r.value || 12)); pushStrings(); }; sub.append(r);
+    } else sub.append(el('span'));
+    row.append(sub); p.append(row);
+  });
+}
+// ───────────────────────── smart tune ─────────────────────────
+const SCALES = {
+  'Major (Bilawal)': [0,2,4,5,7,9,11], 'Natural minor (Asavari)': [0,2,3,5,7,8,10], 'Dorian (Kafi)': [0,2,3,5,7,9,10],
+  'Mixolydian (Khamaj)': [0,2,4,5,7,9,10], 'Phrygian (Bhairavi)': [0,1,3,5,7,8,10], 'Lydian (Yaman)': [0,2,4,6,7,9,11],
+  'Bhairav': [0,1,4,5,7,8,11], 'Marwa': [0,1,4,6,7,9,11], 'Todi': [0,1,3,6,7,8,11], 'Purvi': [0,1,4,6,7,8,11],
+  'Harmonic minor': [0,2,3,5,7,8,11], 'Major pentatonic': [0,2,4,7,9], 'Minor pentatonic': [0,3,5,7,10],
+  'Hirajoshi': [0,2,3,7,8], 'Kumoi': [0,2,3,7,9], 'In (Miyako-bushi)': [0,1,5,7,8], 'Iwato': [0,1,5,6,10], 'Yo': [0,2,5,7,9],
+  'Whole tone': [0,2,4,6,8,10], 'Chromatic': [0,1,2,3,4,5,6,7,8,9,10,11],
+};
+const TUNINGS = { // by number of playing (stopped + open) strings, in string order
+  4: { 'Cello (C G D A)': [36,43,50,57], 'Viola (C G D A)': [48,55,62,69], 'Violin (G D A E)': [55,62,69,76], 'Bass (E A D G)': [28,33,38,43] },
+  6: { 'Standard (E A D G B E)': [40,45,50,55,59,64], 'Drop D': [38,45,50,55,59,64], 'DADGAD': [38,45,50,55,57,62], 'Open G': [38,43,50,55,59,62],
+       'Open D': [38,45,50,54,57,62], 'Open E': [40,47,52,56,59,64], 'Half-step down': [39,44,49,54,58,63] },
+  13: { 'Hirajoshi in D (koto)': [50,43,45,46,50,51,55,57,58,62,63,67,69] },
+};
+const PC = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
+// Move each string to the nearest note allowed by the scale, keeping the strings in the same pitch order
+function fitStrings(idxs, root, steps) {
+  const ok = n => steps.includes((((n - root) % 12) + 12) % 12);
+  const sorted = idxs.slice().sort((a, b) => cfg.strings[a].note - cfg.strings[b].note);
+  let prevOld = -1e9, prevNew = -1e9, moved = 0;
+  for (const i of sorted) {
+    const s = cfg.strings[i], n0 = Math.round(s.note), strict = s.note > prevOld + .01;
+    let pick = null;
+    for (let d = 0; d < 24 && pick == null; d++) for (const c of d ? [n0 - d, n0 + d] : [n0]) if (pick == null && ok(c) && (strict ? c > prevNew : c >= prevNew)) pick = c;
+    if (pick == null) pick = n0;
+    if (pick !== s.note) moved++;
+    prevOld = s.note; s.note = pick; prevNew = pick;
+  }
+  return moved;
+}
+function smartTune() {
+  const snap = JSON.stringify(cfg.strings);
+  const idx = f => cfg.strings.map((s, i) => f(s) ? i : -1).filter(i => i >= 0);
+  const play = idx(s => s.role === 'stopped' || s.role === 'open');
+  const named = TUNINGS[play.length] || {};
+  const drones = idx(s => s.role === 'drone');
+  const rootGuess = ((Math.round(drones.length ? Math.min(...drones.map(i => cfg.strings[i].note)) : cfg.strings[play[0] ?? 0]?.note ?? 48) % 12) + 12) % 12;
+  const groups = [['symp', 'Sympathetic strings'], ['open', 'Open strings'], ['drone', 'Drones (root + fifth)'], ['stopped', 'Stopped strings (their open pitch)']].filter(([r]) => cfg.strings.some(s => s.role === r));
+  modal(`<h3>♪ Smart tune</h3>
+    ${Object.keys(named).length ? `<div class="note">Named tunings for ${play.length} playing strings</div><div class="strtools" id="stNamed">${Object.keys(named).map(k => `<button data-k="${k}">${k}</button>`).join('')}</div>` : ''}
+    <h3>Fit strings to a scale</h3>
+    <div class="row sel"><label>Root</label><select id="stRoot">${PC.map((p, i) => `<option value="${i}">${p}</option>`).join('')}</select></div>
+    <div class="row sel"><label>Scale / raga / mode</label><select id="stScale">${Object.keys(SCALES).map(k => `<option>${k}</option>`).join('')}</select></div>
+    ${groups.map(([r, l]) => `<label class="chk"><input type="checkbox" data-r="${r}" ${r === 'stopped' ? '' : 'checked'}> ${l}</label>`).join('')}
+    <div class="note">Each string moves to the nearest note of the scale, staying in the same order, so a 13-string koto or 11 sitar sympathetics retune in one go.</div>
+    <h3>Transpose whole instrument</h3>
+    <div class="strtools"><button id="stDn">− semitone</button><button id="stUp">+ semitone</button><button id="stDn12">− octave</button><button id="stUp12">+ octave</button><span class="pill" id="stOff">±0</span></div>
+    <div class="btns"><span id="stMsg" class="note" style="flex:1"></span><button class="hbtn" id="stRevert">Revert</button><button class="hbtn" id="stApply">Apply scale</button><button class="hbtn" id="stDone">Done</button></div>`, () => {
+    $('stRoot').value = rootGuess;
+    let off = 0; const after = msg => { pushStrings(); buildStrings(); draw(); $('stMsg').textContent = msg; $('stOff').textContent = (off > 0 ? '+' : off < 0 ? '−' : '±') + Math.abs(off); };
+    document.querySelectorAll('#stNamed button').forEach(b => b.onclick = () => { named[b.dataset.k].forEach((n, k) => cfg.strings[play[k]].note = n); after(b.dataset.k); });
+    $('stApply').onclick = () => {
+      const root = +$('stRoot').value, steps = SCALES[$('stScale').value]; let moved = 0;
+      document.querySelectorAll('#modalCard input[data-r]').forEach(cb => { if (!cb.checked) return;
+        const r = cb.dataset.r, ids = idx(s => s.role === r);
+        moved += fitStrings(ids, root, r === 'drone' ? (steps.includes(7) ? [0, 7] : steps.includes(5) ? [0, 5] : [0]) : steps); });
+      after(`${moved} string${moved === 1 ? '' : 's'} retuned to ${PC[root]} ${$('stScale').value}.`);
+    };
+    const tr = d => { if (cfg.strings.some(s => s.note + d < 12 || s.note + d > 108)) return; cfg.strings.forEach(s => s.note += d); off += d; after(`Transposed ${off > 0 ? 'up' : 'down'} ${Math.abs(off)} semitone${Math.abs(off) === 1 ? '' : 's'}.`); };
+    $('stDn').onclick = () => tr(-1); $('stUp').onclick = () => tr(1); $('stDn12').onclick = () => tr(-12); $('stUp12').onclick = () => tr(12);
+    $('stRevert').onclick = () => { cfg.strings = JSON.parse(snap); off = 0; after('Reverted.'); };
+    $('stDone').onclick = closeModal;
+  });
+}
+function addString(role) {
+  if (cfg.strings.length >= 24) return;
+  const last = [...cfg.strings].reverse().find(s => s.role === role);
+  const note = last ? last.note + (role === 'symp' ? 2 : 5) : role === 'symp' ? 60 : 48;
+  cfg.strings.push(S(role, Math.min(96, note), last?.mat || (role === 'symp' ? 'Steel' : 'Steel'), last?.gauge ?? .3, { range: last?.range ?? 12 }));
+  pushStrings(); pushNk(); buildStrings(); draw();
+}
+function buildExciter() {
+  const p = $('p-exciter'); p.innerHTML = '';
+  h3(p, 'Exciter');
+  const g = el('div', { class: 'exc' });
+  EXC.forEach(([k, l, ic]) => g.append(el('button', { class: cfg.ex.type === k ? 'on' : '', onclick: () => { cfg.ex.type = k; pushEx(); buildExciter(); draw(); } }, el('span', {}, ic), l)));
+  p.append(g);
+  const t = cfg.ex.type, on = () => { pushEx(); draw(); };
+  slider(p, 'Position', 'ex.pos', .02, .5, .005, v => Math.round(v * 100) + '% from bridge', on);
+  noteP(p, 'Near the bridge = bright and glassy; toward the middle = soft and round. You can also drag the marker on the instrument.');
+  if (t === 'pick') { h3(p, 'Pick'); slider(p, 'Stiffness', 'ex.pickStiff', 0, 1, .01, fmt.pct, on); }
+  if (t === 'finger') { h3(p, 'Finger'); slider(p, 'Softness', 'ex.fingerSoft', 0, 1, .01, fmt.pct, on); }
+  if (t === 'pick' || t === 'finger') { h3(p, 'Ghost notes & harmonics');
+    noteP(p, 'Velocity under 20 is a ghost note: the fretting hand only rests on the string. Near 20 it is a dead thud; softer touches ring more. A very soft touch (under ~12) on a pitch that is a natural harmonic of one of the strings rings as that harmonic, e.g. on a guitar A3, E4, A4 or C♯5 from the A string. Harder plucks are brighter as well as louder.'); }
+  if (t === 'hammer') { h3(p, 'Hammer'); slider(p, 'Hardness', 'ex.hammerHard', 0, 1, .01, fmt.pct, on); noteP(p, 'Soft = felt piano hammer, hard = dulcimer mallet.'); }
+  if (t === 'bow') {
+    h3(p, 'Bow');
+    slider(p, 'Pressure', 'ex.pressure', 0, 1, .01, fmt.pct, on);
+    slider(p, 'Speed', 'ex.speed', 0, 1, .01, fmt.pct, on);
+    slider(p, 'Attack', 'ex.attack', .005, .6, .005, fmt.s, on);
+    slider(p, 'Release', 'ex.release', .01, 1.5, .01, fmt.s, on);
+    slider(p, 'Humanize', 'ex.humanize', 0, 1, .01, fmt.pct, on);
+    check(p, 'Auto up/down bow changes', 'ex.bowChange', on);
+    noteP(p, 'Low pressure = airy and whistly; high pressure = gritty, until it crunches. Velocity sets how hard the bow bites.');
+  }
+  if (t === 'ebow') { h3(p, 'E-bow'); slider(p, 'Strength', 'ex.ebow', 0, 1, .01, fmt.pct, on); slider(p, 'Attack', 'ex.attack', .005, 1.5, .005, fmt.s, on); slider(p, 'Release', 'ex.release', .01, 1.5, .01, fmt.s, on); }
+  if (t === 'wind') { h3(p, 'Wind (Aeolian)'); slider(p, 'Wind speed', 'ex.wind', 0, 1, .01, fmt.pct, on); slider(p, 'Gustiness', 'ex.gust', 0, 1, .01, fmt.pct, on);
+    slider(p, 'Attack', 'ex.attack', .005, 2, .005, fmt.s, on); slider(p, 'Release', 'ex.release', .01, 2, .01, fmt.s, on); noteP(p, 'Faster wind locks onto higher harmonics, like an Aeolian harp.'); }
+  h3(p, 'Vibrato');
+  slider(p, 'Depth', 'ex.vibDepth', 0, 60, 1, fmt.c, on);
+  slider(p, 'Fade-in delay', 'ex.vibDelay', 0, 2, .01, fmt.s, on);
+  slider(p, 'Rate', 'ex.vibRate', 2, 9, .1, fmt.hz, on);
+  if (cfg.strings.some(s => s.role === 'drone')) { h3(p, 'Drones'); slider(p, 'Drone level', 'ex.drone', 0, 1, .01, fmt.pct, on); }
+  h3(p, 'Keyboard control');
+  const modTarget = { bow: 'bow pressure', ebow: 'e-bow strength', wind: 'wind speed' }[t] || 'pick/strike position';
+  noteP(p, `Mod wheel → ${modTarget}. Velocity → attack. Sustain pedal → hold notes / keep bowing. Pitch bend → ±${cfg.nk.pbRange} semitones.`);
+  const lb = el('button', { class: 'hbtn', onclick: () => { learnCC = true; lb.textContent = 'Move a knob or fader…'; } }, `Position knob: CC ${posCC} (click to learn)`);
+  p.append(lb);
+}
+function buildNeck() {
+  const p = $('p-neck'); p.innerHTML = '';
+  const onN = () => { pushNk(); buildNeck(); draw(); };
+  h3(p, 'Neck');
+  check(p, 'Frets', 'nk.frets', onN);
+  slider(p, 'Fret buzz', 'nk.buzz', 0, 1, .01, fmt.pct, () => pushNk());
+  slider(p, 'Jawari (buzzing bridge)', 'nk.jawari', 0, 1, .01, fmt.pct, () => pushNk());
+  noteP(p, 'Jawari is the curved sitar bridge the string grazes. Loud notes get bright and buzzy, then bloom as they fade.');
+  slider(p, 'Neck length', 'body.neckLen', 0, 1.2, .01, fmt.m, () => { draw(); renderInfo(); });
+  if (cfg.body.neckLen < .02) slider(p, 'Nut position', 'body.nutX', 0, .4, .01, fmt.pct, () => draw());
+  h3(p, 'Scale purity');
+  const pc = el('input', { type: 'checkbox' }); pc.checked = purity.on; pc.onchange = () => setPurity({ on: pc.checked });
+  p.append(el('label', { class: 'chk' }, pc, 'Lock the keyboard to a scale'));
+  const pr = el('select'); PC.forEach((x, i) => pr.append(el('option', { value: i }, x))); pr.value = purity.root; pr.onchange = () => setPurity({ root: +pr.value });
+  const ps = el('select'); Object.keys(SCALES).forEach(k => ps.append(el('option', { value: k }, k))); ps.value = purity.scale; ps.onchange = () => setPurity({ scale: ps.value });
+  p.append(el('div', { class: 'row sel' }, el('label', {}, 'Root'), pr), el('div', { class: 'row sel' }, el('label', {}, 'Scale'), ps));
+  noteP(p, 'Wrong keys jump to the nearest note in the scale. Keys outside it are dimmed on the keyboard below, and the root has a dot.');
+  h3(p, 'Playing');
+  select(p, 'Legato', 'nk.legato', [['poly', 'Poly — every note fresh'], ['legato', 'Legato — always slur'], ['smart', 'Smart legato']], onN);
+  if (cfg.nk.legato === 'smart') {
+    check(p, `Auto threshold (${autoThr()} semitones for this instrument)`, 'nk.thrAuto', onN);
+    const r = slider(p, 'Slur threshold', 'nk.thr', 1, 12, 1, fmt.st, () => pushNk()); if (cfg.nk.thrAuto) r.classList.add('dis');
+    noteP(p, 'Overlapping notes closer than the threshold slur on the same string (hammer-ons, trills, slides). Wider jumps ring on another string, so they become chords.');
+  }
+  slider(p, cfg.nk.frets ? 'Slur time' : 'Slide time', 'nk.glide', .002, .5, .002, fmt.s, () => pushNk());
+  slider(p, 'Pitch-bend range', 'nk.pbRange', 0, 12, 1, fmt.st, () => { pushNk(); });
+  slider(p, 'Press-bend (open strings)', 'nk.pressBend', 0, 4, .5, fmt.st, () => pushNk());
+  check(p, 'Damp open strings on key-up', 'nk.dampOpen', () => pushNk());
+  slider(p, 'Key-up mute time', 'nk.mute', .03, 2, .01, fmt.s, () => pushNk());
+}
+function buildBody() {
+  const p = $('p-body'); p.innerHTML = '';
+  const onB = () => { pushBody(); draw(); };
+  h3(p, 'Shape');
+  slider(p, 'Body length', 'body.length', .15, 2.2, .005, fmt.m, onB);
+  const wrow = el('div', { class: 'row' }, el('label', {}, 'Width (scale)'), el('input', { type: 'range', min: .5, max: 1.5, step: .01, value: 1 }), el('output', {}, '×1.00'));
+  const base = cfg.body.hw.slice(); wrow.children[1].oninput = e => { const k = +e.target.value; cfg.body.hw = base.map(v => Math.max(.01, v * k)); wrow.children[2].textContent = '×' + k.toFixed(2); onB(); };
+  p.append(wrow);
+  const bs = select(p, 'Back shape', 'body.backShape', Object.entries(BACKS).map(([k, v]) => [k, v.label]), () => { applyBack(cfg.body.backShape); onB(); drawDepth(); });
+  const drow = el('div', { class: 'row' }, el('label', {}, 'Depth'), el('input', { type: 'range', min: .02, max: .3, step: .002 }), el('output'));
+  const dShow = () => { const D = Math.max(...cfg.body.depth); drow.children[1].value = D; drow.children[2].textContent = (D * 100).toFixed(1) + 'cm'; };
+  drow.children[1].oninput = e => { const D = Math.max(...cfg.body.depth), k = +e.target.value / D; cfg.body.depth = cfg.body.depth.map(v => v * k); dShow(); onB(); drawDepth(); };
+  p.append(drow); dShow(); ctlReg['body.depthMax'] = dShow;
+  noteP(p, 'Curved backs are stiffer than flat ones and ring higher; ribbed staves are a touch more damped. Use ⟲ Back view to see it.');
+  noteP(p, 'Turn on ✎ Edit outline to drag the body\'s edge. Drag the points in the cross-section below the instrument to set depth: flat sides like a guitar, or a bulging bowl like a lute or gourd.');
+  h3(p, 'Materials');
+  const mats = Object.keys(BMAT).map(k => [k, k]);
+  select(p, 'Top (soundboard)', 'body.top', mats, onB);
+  slider(p, 'Top thickness', 'body.topT', .5, 25, .1, fmt.mm, onB);
+  select(p, 'Back & sides', 'body.back', mats, onB);
+  slider(p, 'Back thickness', 'body.backT', .5, 25, .1, fmt.mm, onB);
+  h3(p, 'Bracing');
+  select(p, 'Pattern', 'body.bracing', Object.entries(BRACING).map(([k, v]) => [k, v.label]), onB);
+  slider(p, 'Strength', 'body.braceS', 0, 1, .01, fmt.pct, onB);
+  h3(p, 'Soundhole');
+  const ht = el('select'); [['none', 'None'], ['round', 'Round'], ['rose', 'Rose (carved lattice)'], ['f', 'F-holes'], ['under', 'Underside ports']].forEach(([v, l]) => ht.append(el('option', { value: v }, l)));
+  ht.value = cfg.body.hole.type; ht.onchange = () => { cfg.body.hole.type = ht.value; onB(); };
+  p.append(el('div', { class: 'row sel' }, el('label', {}, 'Type'), ht));
+  holeSlider(p, 'Position', 'x', .05, .95, onB); holeSlider(p, 'Size', 'size', .05, 1, onB);
+  h3(p, 'Bridge & coupling');
+  slider(p, 'Bridge position', 'body.bridgeX', .3, .97, .005, fmt.pct, () => { draw(); renderInfo(); });
+  slider(p, 'Bridge coupling', 'nk.coupling', 0, 1, .01, fmt.pct, () => pushNk());
+  slider(p, 'Sympathetic coupling', 'nk.sympC', 0, 1, .01, fmt.pct, () => pushNk());
+  noteP(p, '✦ marks impossible materials. Glass and diamond ring for seconds, aerogel and jelly swallow the sound, and singing crystal hums along with everything.');
+}
+function holeSlider(p, label, key, min, max, onB) {
+  const out = el('output'), inp = el('input', { type: 'range', min, max, step: .01 });
+  const show = () => { inp.value = cfg.body.hole[key]; out.textContent = Math.round(cfg.body.hole[key] * 100) + '%'; };
+  inp.oninput = () => { cfg.body.hole[key] = +inp.value; show(); onB(); };
+  p.append(el('div', { class: 'row' }, el('label', {}, label), inp, out)); ctlReg['hole.' + key] = show; show();
+}
+function buildPickups() {
+  const p = $('p-pickups'); p.innerHTML = '';
+  const on = () => { pushPk(); draw(); };
+  h3(p, 'Pickups → the signal Luither\'s synth will receive');
+  slider(p, 'Microphone', 'pk.mic', 0, 1.5, .01, fmt.pct, on);
+  noteP(p, 'The mic hears the whole body and the air inside it, the way a room would.');
+  slider(p, 'Piezo (bridge)', 'pk.piezo', 0, 1.5, .01, fmt.pct, on);
+  noteP(p, 'The piezo sits under the bridge: direct, bright and knocky.');
+  slider(p, 'Magnetic', 'pk.mag', 0, 1.5, .01, fmt.pct, on);
+  slider(p, 'Magnetic position', 'pk.magPos', .02, .5, .005, v => Math.round(v * 100) + '% from bridge', on);
+  const mg = cfg.strings.filter(s => SMAT[s.mat]?.magnetic > 0).length;
+  noteP(p, `A magnetic pickup only hears ferrous strings: ${mg} of ${cfg.strings.length} here. Near the bridge = twangy; toward the neck = warm.`);
+  h3(p, 'Engine');
+  const q = el('select'); [['low', 'Low (light CPU)'], ['med', 'Medium'], ['high', 'High (most body detail)']].forEach(([v, l]) => q.append(el('option', { value: v }, l)));
+  q.value = quality; q.onchange = () => { quality = q.value; pushBody(); };
+  p.append(el('div', { class: 'row sel' }, el('label', {}, 'Body detail'), q));
+  slider(p, 'Output level', 'pk.master', 0, 3, .01, fmt.pct, on);
+}
+function buildAll() { buildStrings(); buildExciter(); buildNeck(); buildBody(); buildPickups(); }
+function renderInfo() {
+  computeBody();
+  const i = modesInfo.info, b = cfg.body;
+  const scale = scaleLen();
+  const st = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+  $('info').innerHTML = st(i.air ? i.air.toFixed(0) + ' Hz' : '—', b.hole.type === 'none' ? 'cavity mode' : 'air resonance') +
+    st(i.f11 ? i.f11.toFixed(0) + ' Hz' : '—', 'top plate mode') + st(i.back ? i.back.toFixed(0) + ' Hz' : '—', 'back plate mode') +
+    st((i.vol * 1000).toFixed(1) + ' L', 'air volume') + st((i.area * 10000).toFixed(0) + ' cm²', 'soundboard') + st((scale * 100).toFixed(1) + ' cm', 'scale length') +
+    st(i.n, 'body modes') + st(cfg.strings.filter(s => s.role !== 'symp').length, 'playing strings') + st(cfg.strings.filter(s => s.role === 'symp').length, 'sympathetic');
+}
+
+// ───────────────────────── drawing ─────────────────────────
+const cv = $('cv'), ctx = cv.getContext('2d'), dcv = $('dcv'), dctx = dcv.getContext('2d');
+let G = null, dragging = null, hover = null, editOutline = false, showBrace = true;
+const heat = document.createElement('canvas'); heat.width = 144; heat.height = 48; const hctx = heat.getContext('2d');
+function scaleLen() { const b = cfg.body; const nut = b.neckLen > .02 ? -b.neckLen : b.nutX * b.length; return b.bridgeX * b.length - nut; }
+function fit() {
+  const dpr = devicePixelRatio || 1;
+  for (const c of [cv, dcv, $('kbcv')]) { const r = c.getBoundingClientRect(); c.width = Math.max(10, r.width * dpr); c.height = Math.max(10, r.height * dpr); }
+  draw(); drawDepth(); drawKb();
+}
+function geom() {
+  const b = cfg.body, W = cv.width, H = cv.height;
+  const neck = b.neckLen > .02 ? b.neckLen : 0, head = neck ? .13 : 0;
+  const maxHW = Math.max(...b.hw);
+  const worldW = head + neck + b.length + .04, worldH = maxHW * 2 + .06;
+  const sc = Math.min(W * .9 / worldW, (H - 70 * devicePixelRatio) / worldH);
+  const ox = (W - worldW * sc) / 2 + (head + neck) * sc, oy = H / 2 + 14 * devicePixelRatio;
+  const X = x => ox + x * sc, Y = y => oy + y * sc;
+  const nutX = neck ? -neck : b.nutX * b.length, bridgeX = b.bridgeX * b.length;
+  const play = cfg.strings.map((s, i) => ({ s, i })).filter(o => o.s.role !== 'symp');
+  const symp = cfg.strings.map((s, i) => ({ s, i })).filter(o => o.s.role === 'symp');
+  const np = play.length;
+  const hwAt = x => { const t = Math.max(0, Math.min(1, x / b.length)) * (b.hw.length - 1), i = Math.min(b.hw.length - 2, Math.floor(t)); return b.hw[i] + (b.hw[i + 1] - b.hw[i]) * (t - i); };
+  let nutSp, brSp;
+  if (neck) { nutSp = Math.min(.009, .05 / Math.max(1, np)); brSp = Math.min(.016, .09 / Math.max(1, np)); }
+  else { const lim = Math.min(hwAt(nutX), hwAt(bridgeX)) * 1.6 / Math.max(1, np); nutSp = brSp = Math.min(.02, lim); }
+  const minNote = Math.min(...play.map(o => o.s.note), 999);
+  const lines = [];
+  play.forEach((o, k) => {
+    const off = k - (np - 1) / 2, y0 = off * nutSp, y1 = off * brSp;
+    let start = nutX;
+    if (!neck && o.s.role !== 'stopped') { // movable bridges (ji), koto style
+      const span = bridgeX - nutX; start = bridgeX - span * Math.max(.38, Math.pow(2, -(o.s.note - minNote) / 12)) * .95; }
+    lines.push({ ...o, x0: nutX, y0, x1: bridgeX, y1, start });
+  });
+  const sStart = nutX + (bridgeX - nutX) * (neck ? .3 : .15);
+  symp.forEach((o, k) => { const off = k - (symp.length - 1) / 2, sp = Math.min(.006, .04 / Math.max(1, symp.length)) * (neck ? 1 : 2.2);
+    lines.push({ ...o, x0: sStart, y0: off * sp * .7 + (neck ? 0 : 0), x1: bridgeX + .012, y1: off * sp, start: sStart, symp: true }); });
+  return { b, sc, X, Y, nutX, bridgeX, neck, head, lines, hwAt, nutSp, brSp, np };
+}
+function outlinePath(g, c, k = 1) {
+  const b = g.b, n = b.hw.length, pts = [];
+  for (let i = 0; i < n; i++) pts.push([b.length * i / (n - 1), b.hw[i] * k]);
+  c.beginPath(); c.moveTo(g.X(0), g.Y(0));
+  const sm = (arr, sign) => { for (let i = 0; i < arr.length; i++) { const p = arr[i], q = arr[i + 1]; if (!q) { c.lineTo(g.X(p[0]), g.Y(sign * p[1])); break; }
+    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2; c.quadraticCurveTo(g.X(p[0]), g.Y(sign * p[1]), g.X(mx), g.Y(sign * my)); } };
+  c.lineTo(g.X(0), g.Y(-pts[0][1] * .6)); sm(pts, -1); c.lineTo(g.X(b.length), g.Y(0));
+  const rev = pts.slice().reverse(); c.lineTo(g.X(b.length), g.Y(rev[0][1] * .6)); sm(rev, 1); c.lineTo(g.X(0), g.Y(pts[0][1] * .6)); c.closePath();
+}
+let tAnim = 0, lastT = performance.now();
+function draw() {
+  if (!cv.width) return;
+  const g = G = geom(), b = g.b, c = ctx, dpr = devicePixelRatio || 1;
+  c.clearRect(0, 0, cv.width, cv.height);
+  // backdrop: workbench
+  const bg = c.createRadialGradient(cv.width / 2, cv.height / 2, 50, cv.width / 2, cv.height / 2, cv.width * .7);
+  bg.addColorStop(0, '#2a1f15'); bg.addColorStop(1, '#140f0a'); c.fillStyle = bg; c.fillRect(0, 0, cv.width, cv.height);
+  if (backView) { drawBack(g); return; }
+  // neck + head
+  if (g.neck) {
+    const w0 = (g.np * g.nutSp) / 2 + .008, w1 = Math.max(w0 + .004, (g.np * g.brSp) / 2 * .6 + .01);
+    c.fillStyle = '#3b2616'; c.beginPath(); c.moveTo(g.X(-g.neck), g.Y(-w0)); c.lineTo(g.X(.02), g.Y(-w1)); c.lineTo(g.X(.02), g.Y(w1)); c.lineTo(g.X(-g.neck), g.Y(w0)); c.fill();
+    c.fillStyle = '#2c1c10'; c.fillRect(g.X(-g.neck - g.head), g.Y(-w0 - .01), g.head * g.sc, (w0 + .01) * 2 * g.sc);
+    // pegs
+    c.fillStyle = '#c9a35a'; g.lines.filter(l => !l.symp).forEach((l, k) => { const px = g.X(-g.neck - g.head * (.25 + .6 * (k / Math.max(1, g.np - 1)))); c.beginPath(); c.arc(px, g.Y(k % 2 ? w0 + .016 : -w0 - .016), 3.5 * dpr, 0, 7); c.fill(); });
+  }
+  // body
+  c.save(); outlinePath(g, c);
+  const tm = BMAT[b.top] || BMAT.Spruce; c.fillStyle = tm.color; c.fill();
+  c.clip();
+  // wood grain
+  c.globalAlpha = .13; c.strokeStyle = '#000'; c.lineWidth = 1 * dpr;
+  for (let y = -.4; y <= .4; y += .009) { c.beginPath(); for (let x = 0; x <= b.length; x += b.length / 30) c.lineTo(g.X(x), g.Y(y + Math.sin(x * 9 + y * 40) * .002)); c.stroke(); }
+  c.globalAlpha = 1;
+  // bracing (seen through the top)
+  if (showBrace && b.bracing !== 'none') {
+    c.strokeStyle = 'rgba(70,40,15,.35)'; c.lineWidth = Math.max(2, .008 * g.sc); c.setLineDash([6 * dpr, 5 * dpr]); c.beginPath();
+    const L = b.length, hx = b.hole.x * L, mh = Math.max(...b.hw);
+    if (b.bracing === 'x') { c.moveTo(g.X(hx + .06), g.Y(-mh)); c.lineTo(g.X(L * .92), g.Y(mh)); c.moveTo(g.X(hx + .06), g.Y(mh)); c.lineTo(g.X(L * .92), g.Y(-mh)); c.moveTo(g.X(hx - .07), g.Y(-mh)); c.lineTo(g.X(hx - .07), g.Y(mh)); }
+    if (b.bracing === 'ladder') for (let k = 1; k <= 4; k++) { c.moveTo(g.X(L * k / 5), g.Y(-mh)); c.lineTo(g.X(L * k / 5), g.Y(mh)); }
+    if (b.bracing === 'fan') for (let k = -3; k <= 3; k++) { c.moveTo(g.X(L * .45), g.Y(k * .01)); c.lineTo(g.X(L * .97), g.Y(k * .045)); }
+    if (b.bracing === 'bassbar') { c.moveTo(g.X(L * .15), g.Y(.035)); c.lineTo(g.X(L * .85), g.Y(.035)); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(g.X(b.bridgeX * L + .01), g.Y(-.03), .007 * g.sc, 0, 7); }
+    c.stroke(); c.setLineDash([]);
+  }
+  drawHeat(g, c, modesInfo.top, 0);
+  c.restore();
+  c.save(); outlinePath(g, c); c.strokeStyle = BMAT[b.back]?.color || '#6e3b28'; c.lineWidth = Math.max(3, .01 * g.sc); c.stroke(); c.restore();
+  // soundhole
+  const hx = g.X(b.hole.x * b.length), r = (.015 + b.hole.size * .045) * g.sc;
+  if (b.hole.type === 'round' || b.hole.type === 'rose') {
+    c.fillStyle = '#0d0805'; c.beginPath(); c.arc(hx, g.Y(0), r, 0, 7); c.fill();
+    c.strokeStyle = '#2a1a0d'; c.lineWidth = 3 * dpr; c.beginPath(); c.arc(hx, g.Y(0), r + 5 * dpr, 0, 7); c.stroke();
+    if (b.hole.type === 'rose') { c.strokeStyle = tm.color; c.lineWidth = 1.5 * dpr; for (let a = 0; a < 12; a++) { c.beginPath(); c.arc(hx + Math.cos(a / 12 * 6.283) * r * .5, g.Y(0) + Math.sin(a / 12 * 6.283) * r * .5, r * .5, 0, 7); c.stroke(); } }
+  } else if (b.hole.type === 'f') {
+    c.strokeStyle = '#0d0805'; c.lineWidth = Math.max(2, .006 * g.sc); c.lineCap = 'round'; const hh = Math.min(.04 + b.hole.size * .05, Math.max(...b.hw) * .55) * g.sc;
+    for (const sgn of [-1, 1]) { const cy = g.Y(sgn * Math.max(...b.hw) * .45); c.beginPath(); c.moveTo(hx - hh * .9, cy - sgn * hh * .25); c.bezierCurveTo(hx - hh * .2, cy + sgn * hh * .3, hx + hh * .2, cy - sgn * hh * .3, hx + hh * .9, cy + sgn * hh * .25); c.stroke();
+      c.fillStyle = '#0d0805'; c.beginPath(); c.arc(hx - hh * .9, cy - sgn * hh * .25, 2.5 * dpr, 0, 7); c.arc(hx + hh * .9, cy + sgn * hh * .25, 2.5 * dpr, 0, 7); c.fill(); }
+  } else if (b.hole.type === 'under') {
+    c.strokeStyle = 'rgba(0,0,0,.4)'; c.setLineDash([4 * dpr, 4 * dpr]); c.lineWidth = 1.5 * dpr; c.beginPath(); c.ellipse(hx, g.Y(0), r * 1.6, r * .8, 0, 0, 7); c.stroke(); c.setLineDash([]);
+  }
+  // bridge
+  const bw = (g.np * g.brSp) / 2 + .012;
+  c.fillStyle = '#20140b'; c.fillRect(g.X(g.bridgeX) - 4 * dpr, g.Y(-bw), 8 * dpr, bw * 2 * g.sc);
+  if (cfg.nk.jawari > 0) { c.fillStyle = '#e8dcc0'; c.fillRect(g.X(g.bridgeX) - 6 * dpr, g.Y(-bw * .7), 4 * dpr, bw * 1.4 * g.sc); }
+  // frets
+  const scale = g.bridgeX - g.nutX;
+  if (cfg.nk.frets && g.neck) {
+    const maxR = Math.max(12, ...cfg.strings.filter(s => s.role === 'stopped').map(s => s.range));
+    c.strokeStyle = 'rgba(220,210,190,.55)'; c.lineWidth = 1.5 * dpr;
+    for (let k = 1; k <= maxR; k++) { const x = g.nutX + scale * (1 - Math.pow(2, -k / 12)); if (x > g.bridgeX - .05) break; const w = .5 * (g.np * (g.nutSp + (g.brSp - g.nutSp) * (x - g.nutX) / scale)) + .006; c.beginPath(); c.moveTo(g.X(x), g.Y(-w)); c.lineTo(g.X(x), g.Y(w)); c.stroke(); }
+  }
+  // nut
+  c.fillStyle = '#efe6d0'; const nw = g.neck ? (g.np * g.nutSp) / 2 + .006 : bw; c.fillRect(g.X(g.nutX) - 2 * dpr, g.Y(-nw), 4 * dpr, nw * 2 * g.sc);
+  // strings
+  const slow = +$('slow').value, exag = +$('exag').value;
+  g.lines.forEach(l => {
+    const s = l.s, m = SMAT[s.mat] || SMAT.Steel, amp = viz.amp[l.i] || 0, held = viz.held[l.i];
+    const yAt = x => l.y0 + (l.y1 - l.y0) * (x - l.x0) / (l.x1 - l.x0);
+    let vs = l.start;
+    if (s.role === 'stopped' && held && viz.note[l.i] > s.note + .02) vs = g.bridgeX - scale * Math.pow(2, -(viz.note[l.i] - s.note) / 12);
+    const thick = (.6 + s.gauge * 2.2) * dpr * (l.symp ? .6 : 1);
+    if (l.symp) c.setLineDash([3 * dpr, 3 * dpr]);
+    if (!l.symp) { c.strokeStyle = 'rgba(25,15,8,.55)'; c.lineWidth = thick + 1.6 * dpr; c.beginPath(); c.moveTo(g.X(l.x0), g.Y(l.y0) + dpr); c.lineTo(g.X(l.x1), g.Y(l.y1) + dpr); c.stroke(); }
+    c.strokeStyle = m.color; c.globalAlpha = l.symp ? .55 : .95; c.lineWidth = thick;
+    c.beginPath(); c.moveTo(g.X(l.x0), g.Y(l.y0)); c.lineTo(g.X(vs), g.Y(yAt(vs))); c.stroke();
+    // vibrating segment: sum of a few standing waves, shaped by the exciter position
+    const A = Math.min(1, amp * 9 * exag) * 14 * dpr * (l.symp ? 1.5 : 1);
+    const segs = 48, beta = cfg.ex.pos, freqVis = (1.5 + (s.note - 30) / 25) * slow * 6;
+    c.beginPath();
+    for (let k = 0; k <= segs; k++) {
+      const u = k / segs, x = vs + (l.x1 - vs) * u; let y = 0;
+      if (A > .2) for (let h = 1; h <= 4; h++) y += Math.abs(Math.sin(h * Math.PI * (1 - beta))) / h * Math.sin(h * Math.PI * u) * Math.cos(tAnim * freqVis * h + h * 1.7 + l.i);
+      const px = g.X(x), py = g.Y(yAt(x)) + y * A;
+      k ? c.lineTo(px, py) : c.moveTo(px, py);
+    }
+    c.stroke(); c.setLineDash([]);
+    if (A > 2 && !l.symp) { c.globalAlpha = Math.min(.5, A / 40); c.lineWidth = thick + 4 * dpr; c.strokeStyle = ROLE[s.role].c; c.stroke(); }
+    c.globalAlpha = 1;
+    if (vs !== l.x0 && !l.symp) { c.fillStyle = s.role === 'stopped' ? '#f6d8b0' : '#d8c8a8'; c.beginPath(); s.role === 'stopped' ? c.arc(g.X(vs), g.Y(yAt(vs)), 3.2 * dpr, 0, 7) : c.rect(g.X(vs) - 3 * dpr, g.Y(yAt(vs)) - 2.5 * dpr, 6 * dpr, 5 * dpr); c.fill(); }
+    // role tick at nut end
+    if (!l.symp) { c.fillStyle = ROLE[s.role].c; c.beginPath(); c.arc(g.X(l.x0) - 9 * dpr, g.Y(l.y0), 2.4 * dpr, 0, 7); c.fill(); }
+  });
+  // exciter marker
+  const ex = cfg.ex, exX = g.bridgeX - scale * ex.pos, spread = (g.np * (g.nutSp + (g.brSp - g.nutSp) * (exX - g.nutX) / scale)) / 2 + .01;
+  c.save(); c.translate(g.X(exX), g.Y(0)); c.strokeStyle = c.fillStyle = '#f2c568'; c.lineWidth = 2 * dpr;
+  const hl = hover === 'ex' || dragging === 'ex'; c.globalAlpha = hl ? 1 : .85;
+  if (ex.type === 'bow') { c.fillStyle = 'rgba(242,197,104,.25)'; c.fillRect(-4 * dpr, -spread * g.sc - 14 * dpr, 8 * dpr, spread * 2 * g.sc + 28 * dpr); c.strokeRect(-4 * dpr, -spread * g.sc - 14 * dpr, 8 * dpr, spread * 2 * g.sc + 28 * dpr); }
+  else if (ex.type === 'pick') { c.beginPath(); c.moveTo(0, -spread * g.sc - 4 * dpr); c.lineTo(-8 * dpr, -spread * g.sc - 18 * dpr); c.lineTo(8 * dpr, -spread * g.sc - 18 * dpr); c.closePath(); c.fill(); c.globalAlpha = .3; c.fillRect(-1, -spread * g.sc, 2, spread * 2 * g.sc); }
+  else if (ex.type === 'finger') { c.beginPath(); c.ellipse(0, -spread * g.sc - 12 * dpr, 7 * dpr, 10 * dpr, 0, 0, 7); c.fill(); c.globalAlpha = .3; c.fillRect(-1, -spread * g.sc, 2, spread * 2 * g.sc); }
+  else if (ex.type === 'hammer') { c.fillRect(-6 * dpr, -spread * g.sc - 20 * dpr, 12 * dpr, 12 * dpr); c.fillRect(-1.5 * dpr, -spread * g.sc - 40 * dpr, 3 * dpr, 22 * dpr); c.globalAlpha = .3; c.fillRect(-1, -spread * g.sc, 2, spread * 2 * g.sc); }
+  else if (ex.type === 'ebow') { c.strokeRect(-9 * dpr, -spread * g.sc - 6 * dpr, 18 * dpr, spread * 2 * g.sc + 12 * dpr); c.globalAlpha = .2 + .2 * Math.sin(tAnim * 8); c.fillRect(-9 * dpr, -spread * g.sc - 6 * dpr, 18 * dpr, spread * 2 * g.sc + 12 * dpr); }
+  else if (ex.type === 'wind') { for (let k = 0; k < 3; k++) { c.beginPath(); for (let x = -30; x <= 30; x += 3) c.lineTo(x * dpr, (-spread * g.sc - 12 * dpr - k * 7 * dpr) + Math.sin(x / 6 + tAnim * 4 + k) * 3 * dpr); c.stroke(); } }
+  c.restore();
+  // magnetic pickup
+  if (cfg.pk.mag > .01) { const px = g.bridgeX - scale * cfg.pk.magPos, sp = (g.np * g.brSp) / 2 + .012;
+    c.fillStyle = 'rgba(20,20,22,.9)'; c.strokeStyle = hover === 'mag' ? '#f2c568' : '#666'; c.lineWidth = 1.5 * dpr; c.fillRect(g.X(px) - 6 * dpr, g.Y(-sp), 12 * dpr, sp * 2 * g.sc); c.strokeRect(g.X(px) - 6 * dpr, g.Y(-sp), 12 * dpr, sp * 2 * g.sc);
+    c.fillStyle = '#9aa'; for (let k = 0; k < g.np; k++) { const o = (k - (g.np - 1) / 2) * g.brSp; c.beginPath(); c.arc(g.X(px), g.Y(o), 2 * dpr, 0, 7); c.fill(); } }
+  // mic
+  if (cfg.pk.mic > .01) { const mx = g.X(b.hole.x * b.length), my = g.Y(Math.max(...b.hw)) + 26 * dpr; c.fillStyle = '#888'; c.fillRect(mx - 3 * dpr, my, 6 * dpr, 16 * dpr); c.beginPath(); c.arc(mx, my, 6 * dpr, 0, 7); c.fillStyle = '#bbb'; c.fill(); }
+  // outline handles
+  if (editOutline) { c.fillStyle = '#f2c568'; b.hw.forEach((h, i) => { c.beginPath(); c.arc(g.X(b.length * i / (b.hw.length - 1)), g.Y(-h), (hover === 'hw' + i ? 7 : 5) * dpr, 0, 7); c.fill(); }); }
+  // labels
+  c.fillStyle = 'rgba(239,228,210,.55)'; c.font = `${11 * dpr}px "IBM Plex Mono"`; c.textAlign = 'right';
+  const lblX = g.neck ? g.X(-g.neck - g.head) - 8 * dpr : g.X(l0x(g)) - 15 * dpr, every = Math.max(1, Math.ceil(12 * dpr / Math.max(1, g.nutSp * g.sc)));
+  g.lines.filter(l => !l.symp).forEach((l, k) => { if (k % every === 0) c.fillText(nn(l.s.note), lblX, g.Y(l.y0 * (g.neck ? 2.2 : 1)) + 4 * dpr); });
+  c.textAlign = 'left'; c.fillStyle = 'rgba(169,155,224,.8)';
+  const sy = g.lines.filter(l => l.symp); if (sy.length) c.fillText(`${sy.length} sympathetic`, g.X(sy[0].x0), g.Y(sy[0].y0) - 10 * dpr);
+}
+function drawHeat(g, c, list, off) {
+  const E = viz.modeE, b = g.b; if (!E.length || !list.length) return;
+  const img = hctx.createImageData(heat.width, heat.height), d = img.data;
+  let mx = 1e-9; for (let k = 0; k < list.length; k++) mx = Math.max(mx, E[k + off] || 0);
+  const glob = Math.min(1, Math.sqrt(mx) * 10);
+  for (let yy = 0; yy < heat.height; yy++) for (let xx = 0; xx < heat.width; xx++) {
+    const u = (xx + .5) / heat.width, v = (yy + .5) / heat.height; let s = 0;
+    for (let k = 0; k < list.length; k++) { const e = (E[k + off] || 0) / mx; if (e < .01) continue; s += Math.sqrt(e) * Math.abs(Math.sin(list[k].m * Math.PI * u) * Math.sin(list[k].n * Math.PI * v)); }
+    s = Math.min(1, s * .45) * glob; const o = (yy * heat.width + xx) * 4;
+    d[o] = 255; d[o + 1] = 90 + 80 * s; d[o + 2] = 20; d[o + 3] = 120 * s * s + 30 * s;
+  }
+  hctx.putImageData(img, 0, 0);
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; const mh = Math.max(...b.hw);
+  c.drawImage(heat, g.X(0), g.Y(-mh), b.length * g.sc, mh * 2 * g.sc);
+}
+// ── back view: a shaded relief of the back, lit from the upper left
+let backView = false, backCache = { key: '' };
+const hexRgb = h => { h = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+function depthAt(b, r) { // Catmull-Rom through the depth points, so shading has no facets
+  const D = b.depth, n = D.length - 1, t = Math.min(1, r) * n, i = Math.min(n - 1, Math.floor(t)), f = t - i;
+  const p0 = D[Math.max(0, i - 1)], p1 = D[i], p2 = D[i + 1], p3 = D[Math.min(n, i + 2)];
+  return Math.max(0, p1 + .5 * f * (p2 - p0 + f * (2 * p0 - 5 * p1 + 4 * p2 - p3 + f * (3 * (p1 - p2) + p3 - p0)))); }
+function bulge(b) { return Math.max(0, 1 - b.depth[b.depth.length - 1] / Math.max(1e-4, b.depth[0])); }
+function backImage(g) {
+  const b = g.b, mh = Math.max(...b.hw);
+  const key = JSON.stringify([b.length, b.hw, b.depth, b.back, b.backShape, Math.round(g.sc)]);
+  if (backCache.key === key) return backCache.cv;
+  const pxW = b.length * g.sc, k = Math.min(1, 600 / pxW), w = Math.max(8, Math.round(pxW * k)), h = Math.max(8, Math.round(2 * mh * g.sc * k));
+  const H = new Float32Array(w * h), Yn = new Float32Array(w * h), Rr = new Float32Array(w * h), bl = bulge(b);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const wx = (x + .5) / w * b.length, yy = ((y + .5) / h * 2 - 1) * mh, hw = Math.max(.004, g.hwAt(wx)), r = Math.abs(yy) / hw, i = y * w + x;
+    const taper = 1 - bl + bl * Math.sqrt(hw / mh); // curved backs get shallower toward the narrow ends
+    H[i] = depthAt(b, r) * taper * (r > 1 ? Math.max(0, 1 - (r - 1) * 6) : 1); Yn[i] = Math.max(-1, Math.min(1, yy / hw)); Rr[i] = r;
+  }
+  const oc = document.createElement('canvas'); oc.width = w; oc.height = h;
+  const ic = oc.getContext('2d'), img = ic.createImageData(w, h), d = img.data;
+  const base = hexRgb((BMAT[b.back] || BMAT.Rosewood).color), dx = b.length / w, dy = 2 * mh / h;
+  const L = [-.45, -.55, .7], ln = Math.hypot(...L); L.forEach((v, i) => L[i] = v / ln);
+  const Hh = [L[0], L[1], L[2] + 1], hn = Math.hypot(...Hh); Hh.forEach((v, i) => Hh[i] = v / hn);
+  const shape = b.backShape || 'custom', ribs = (BACKS[shape] || {}).ribs || 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, wx = (x + .5) / w * b.length, yy = ((y + .5) / h * 2 - 1) * mh;
+    const hx = (H[y * w + Math.min(w - 1, x + 1)] - H[y * w + Math.max(0, x - 1)]) / (2 * dx);
+    const hy = (H[Math.min(h - 1, y + 1) * w + x] - H[Math.max(0, y - 1) * w + x]) / (2 * dy);
+    let nx = -hx * .9, ny = -hy * .9, nz = 1; const nl = Math.hypot(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
+    const lam = Math.max(0, nx * L[0] + ny * L[1] + nz * L[2]), sp = Math.pow(Math.max(0, nx * Hh[0] + ny * Hh[1] + nz * Hh[2]), 40) * .3;
+    let m = (.42 + .7 * lam) * (1 + .06 * Math.sin(Math.abs(yy) * 220 + Math.sin(wx * 7) * 3) + .03 * Math.sin(wx * 90 + yy * 30));
+    if (ribs) { const st = (Math.asin(Yn[i]) / Math.PI + .5) * ribs, fr = st - Math.floor(st); if (fr < .05 || fr > .95) m *= .45; else if (Math.floor(st) % 2) m *= .72; }
+    else if (shape === 'gourd') { const r2 = Math.hypot(wx - b.length * .5, yy); m *= .9 + .07 * Math.sin(r2 * 60) + .05 * Math.sin(wx * 41 + yy * 29) * Math.sin(yy * 37 - wx * 13); }
+    else if (Math.abs(yy) < dy * .9) m *= .55; // book-matched centre seam
+    if (shape === 'arched' && Rr[i] > .88 && Rr[i] < .92) m *= .5; // purfling
+    d[i * 4] = Math.min(255, base[0] * m + sp * 255); d[i * 4 + 1] = Math.min(255, base[1] * m + sp * 255); d[i * 4 + 2] = Math.min(255, base[2] * m + sp * 255); d[i * 4 + 3] = 255;
+  }
+  ic.putImageData(img, 0, 0);
+  backCache = { key, cv: oc }; return oc;
+}
+function drawBack(g) {
+  const b = g.b, c = ctx, dpr = devicePixelRatio || 1, mh = Math.max(...b.hw);
+  c.save(); c.translate(cv.width, 0); c.scale(-1, 1); // seen from behind: mirror left/right
+  if (g.neck) {
+    const w0 = (g.np * g.nutSp) / 2 + .008, w1 = Math.max(w0 + .004, (g.np * g.brSp) / 2 * .6 + .01);
+    const gr = c.createLinearGradient(0, g.Y(-w1), 0, g.Y(w1)); gr.addColorStop(0, '#2a180c'); gr.addColorStop(.35, '#7a4f2c'); gr.addColorStop(.6, '#5b3a20'); gr.addColorStop(1, '#1e1209');
+    c.fillStyle = gr; c.beginPath(); c.moveTo(g.X(-g.neck), g.Y(-w0)); c.lineTo(g.X(.04), g.Y(-w1)); c.lineTo(g.X(.04), g.Y(w1)); c.lineTo(g.X(-g.neck), g.Y(w0)); c.fill();
+    // heel where the neck meets the body
+    c.fillStyle = '#4a2e18'; c.beginPath(); c.ellipse(g.X(.01), g.Y(0), .03 * g.sc, w1 * g.sc, 0, 0, 7); c.fill();
+    const hg = c.createLinearGradient(0, g.Y(-w0 - .01), 0, g.Y(w0 + .01)); hg.addColorStop(0, '#24160b'); hg.addColorStop(.5, '#5a391f'); hg.addColorStop(1, '#1b1008');
+    c.fillStyle = hg; c.fillRect(g.X(-g.neck - g.head), g.Y(-w0 - .01), g.head * g.sc, (w0 + .01) * 2 * g.sc);
+    c.fillStyle = '#c9a35a'; g.lines.filter(l => !l.symp).forEach((l, k) => { const px = g.X(-g.neck - g.head * (.25 + .6 * (k / Math.max(1, g.np - 1)))), sg = k % 2 ? 1 : -1;
+      c.fillRect(px - 2.5 * dpr, g.Y(sg * (w0 + .01)) - (sg < 0 ? 12 * dpr : 0), 5 * dpr, 12 * dpr); c.beginPath(); c.ellipse(px, g.Y(sg * (w0 + .01)) + sg * 14 * dpr, 6 * dpr, 4 * dpr, 0, 0, 7); c.fill(); });
+  }
+  c.save(); outlinePath(g, c); c.clip();
+  c.imageSmoothingEnabled = true; c.drawImage(backImage(g), g.X(0), g.Y(-mh), b.length * g.sc, 2 * mh * g.sc);
+  if (b.hole.type === 'under') { const hx = g.X(b.hole.x * b.length), r = (.015 + b.hole.size * .045) * g.sc;
+    for (const px of [hx, g.X(b.length * .14)]) { c.fillStyle = '#0d0805'; c.beginPath(); c.ellipse(px, g.Y(0), r * 1.6, r * .8, 0, 0, 7); c.fill(); } }
+  const n0 = modesInfo.top.length; c.globalAlpha = .45; drawHeat(g, c, modesInfo.back || [], n0); c.globalAlpha = 1;
+  c.restore();
+  c.save(); outlinePath(g, c); const sc = hexRgb((BMAT[b.back] || BMAT.Rosewood).color).map(v => v * .55 | 0);
+  c.strokeStyle = `rgb(${sc})`; c.lineWidth = Math.max(3, .012 * g.sc); c.stroke(); c.restore();
+  // end pin / button
+  c.fillStyle = '#d8cdb8'; c.beginPath(); c.arc(g.X(b.length) + 2 * dpr, g.Y(0), 4 * dpr, 0, 7); c.fill();
+  c.restore();
+  c.fillStyle = 'rgba(239,228,210,.6)'; c.font = `${12 * dpr}px "IBM Plex Sans"`; c.textAlign = 'right';
+  c.fillText(`BACK  ·  ${(BACKS[b.backShape] || BACKS.custom).label}  ·  ${b.back}`, cv.width - 14 * dpr, cv.height - 14 * dpr); c.textAlign = 'left';
+}
+function l0x(g) { return Math.min(g.nutX, 0); }
+function drawDepth() {
+  const c = dctx, W = dcv.width, H = dcv.height, dpr = devicePixelRatio || 1, b = cfg.body;
+  c.clearRect(0, 0, W, H); c.fillStyle = '#16100b'; c.fillRect(0, 0, W, H);
+  const maxD = .25, cx = W / 2, top = 26 * dpr, sx = (W * .42), sy = (H - top - 16 * dpr) / maxD;
+  const n = b.depth.length, pts = [];
+  for (let i = 0; i < n; i++) pts.push([i / (n - 1), b.depth[i]]);
+  c.beginPath(); c.moveTo(cx - sx, top);
+  for (let i = n - 1; i >= 0; i--) c.lineTo(cx - sx * pts[i][0], top + pts[i][1] * sy);
+  for (let i = 0; i < n; i++) c.lineTo(cx + sx * pts[i][0], top + pts[i][1] * sy);
+  c.lineTo(cx + sx, top); c.closePath();
+  c.fillStyle = (BMAT[b.back]?.color || '#6e3b28') + 'cc'; c.fill();
+  c.strokeStyle = BMAT[b.top]?.color || '#e6cf98'; c.lineWidth = 4 * dpr; c.beginPath(); c.moveTo(cx - sx, top); c.lineTo(cx + sx, top); c.stroke();
+  c.fillStyle = '#f2c568'; pts.forEach((p, i) => { c.beginPath(); c.arc(cx + sx * p[0], top + p[1] * sy, (hoverD === i ? 7 : 5) * dpr, 0, 7); c.fill(); });
+  c.fillStyle = '#a8957b'; c.font = `${11 * dpr}px "IBM Plex Sans"`; c.fillText('CROSS-SECTION · drag points to set depth', 10 * dpr, 16 * dpr);
+  c.textAlign = 'right'; c.fillText(`${(b.depth[0] * 100).toFixed(1)} cm deep`, W - 10 * dpr, 16 * dpr); c.textAlign = 'left';
+}
+let hoverD = -1, dragD = -1;
+function frame(now) {
+  tAnim += (now - lastT) / 1000; lastT = now;
+  if (face === 'synth') synthFrame(); else draw();
+  const lvl = Math.max(0, ...viz.amp.map(a => a || 0)); $('meter').firstChild.style.width = Math.min(100, lvl * 900) + '%';
+  requestAnimationFrame(frame);
+}
+
+// ───────────────────────── canvas interaction ─────────────────────────
+function evPos(e, c) { const r = c.getBoundingClientRect(), d = devicePixelRatio || 1; return [(e.clientX - r.left) * d, (e.clientY - r.top) * d]; }
+function hitTest(x, y) {
+  const g = G; if (!g || backView) return null; const d = devicePixelRatio || 1, scale = g.bridgeX - g.nutX, b = g.b;
+  if (editOutline) for (let i = 0; i < b.hw.length; i++) if (Math.hypot(x - g.X(b.length * i / (b.hw.length - 1)), y - g.Y(-b.hw[i])) < 10 * d) return 'hw' + i;
+  const exX = g.X(g.bridgeX - scale * cfg.ex.pos); const sp = (g.np * g.brSp / 2 + .03) * g.sc + 40 * d;
+  if (Math.abs(x - exX) < 10 * d && Math.abs(y - g.Y(0)) < sp) return 'ex';
+  if (cfg.pk.mag > .01 && Math.abs(x - g.X(g.bridgeX - scale * cfg.pk.magPos)) < 9 * d && Math.abs(y - g.Y(0)) < sp) return 'mag';
+  if (Math.abs(x - g.X(g.bridgeX)) < 8 * d && Math.abs(y - g.Y(0)) < sp) return 'bridge';
+  if (b.hole.type !== 'none' && Math.abs(x - g.X(b.hole.x * b.length)) < 22 * d && Math.abs(y - g.Y(0)) < (b.hole.type === 'f' ? Math.max(...b.hw) * g.sc : 30 * d)) return 'hole';
+  return null;
+}
+cv.addEventListener('pointerdown', e => { const [x, y] = evPos(e, cv); dragging = hitTest(x, y); if (dragging) cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => {
+  const [x, y] = evPos(e, cv), g = G; if (!g) return;
+  if (!dragging) { hover = hitTest(x, y); cv.style.cursor = hover ? (hover.startsWith('hw') ? 'ns-resize' : 'ew-resize') : 'default'; return; }
+  const wx = (x - g.X(0)) / g.sc, wy = (y - g.Y(0)) / g.sc, b = cfg.body, scale = g.bridgeX - g.nutX;
+  if (dragging === 'ex') { cfg.ex.pos = Math.max(.02, Math.min(.5, (g.bridgeX - wx) / scale)); pushEx(); syncCtl('ex.pos'); }
+  else if (dragging === 'mag') { cfg.pk.magPos = Math.max(.02, Math.min(.5, (g.bridgeX - wx) / scale)); pushPk(); syncCtl('pk.magPos'); }
+  else if (dragging === 'bridge') { b.bridgeX = Math.max(.3, Math.min(.97, wx / b.length)); syncCtl('body.bridgeX'); renderInfo(); }
+  else if (dragging === 'hole') { b.hole.x = Math.max(.05, Math.min(.95, wx / b.length)); syncCtl('hole.x'); pushBody(); }
+  else if (dragging.startsWith('hw')) { const i = +dragging.slice(2); b.hw[i] = Math.max(.01, Math.min(.6, -wy)); pushBody(); }
+});
+cv.addEventListener('pointerup', () => { dragging = null; });
+dcv.addEventListener('pointerdown', e => { const i = depthHit(...evPos(e, dcv)); if (i >= 0) { dragD = i; dcv.setPointerCapture(e.pointerId); } });
+dcv.addEventListener('pointermove', e => {
+  const [x, y] = evPos(e, dcv), d = devicePixelRatio || 1, top = 26 * d, sy = (dcv.height - top - 16 * d) / .25;
+  if (dragD < 0) { const h = depthHit(x, y); if (h !== hoverD) { hoverD = h; drawDepth(); } dcv.style.cursor = h >= 0 ? 'ns-resize' : 'default'; return; }
+  cfg.body.depth[dragD] = Math.max(.005, Math.min(.25, (y - top) / sy)); syncCtl('body.depthMax'); if (cfg.body.backShape !== 'custom') { cfg.body.backShape = 'custom'; syncCtl('body.backShape'); } pushBody(); drawDepth();
+});
+dcv.addEventListener('pointerup', () => { dragD = -1; });
+function depthHit(x, y) { const d = devicePixelRatio || 1, W = dcv.width, cx = W / 2, sx = W * .42, top = 26 * d, sy = (dcv.height - top - 16 * d) / .25;
+  for (let i = 0; i < cfg.body.depth.length; i++) { const p = i / (cfg.body.depth.length - 1); for (const sg of [1, -1]) if (Math.hypot(x - (cx + sg * sx * p), y - (top + cfg.body.depth[i] * sy)) < 11 * d) return i; } return -1; }
+
+// ───────────────────────── keyboard ─────────────────────────
+let baseOct = 36;
+const kbcv = $('kbcv'), kctx = kbcv.getContext('2d');
+const KB_KEYS = 'awsedftgyhujkolp;';
+function kbLayout() { const W = kbcv.width, H = kbcv.height, octs = 3, nW = octs * 7 + 1, w = W / nW, keys = [];
+  for (let n = 0; n <= octs * 12; n++) { const pc = n % 12, wi = [0, 2, 4, 5, 7, 9, 11].indexOf(pc); if (wi >= 0) keys.push({ n: baseOct + n, x: (Math.floor(n / 12) * 7 + wi) * w, w, h: H, black: false }); }
+  for (let n = 0; n < octs * 12; n++) { const pc = n % 12; if ([1, 3, 6, 8, 10].includes(pc)) { const wi = [0, 2, 4, 5, 7, 9, 11].indexOf(pc - 1); keys.push({ n: baseOct + n, x: (Math.floor(n / 12) * 7 + wi + 1) * w - w * .3, w: w * .6, h: H * .6, black: true }); } }
+  return keys; }
+function drawKb() {
+  const c = kctx, d = devicePixelRatio || 1; if (!kbcv.width) return; c.clearRect(0, 0, kbcv.width, kbcv.height);
+  const keys = kbLayout();
+  keys.forEach(k => { const on = heldKeys.has(k.n), out = purity.on && !inScale(k.n);
+    c.fillStyle = k.black ? (on ? '#d9a441' : out ? '#0b0806' : '#1a130d') : (on ? '#f2c568' : out ? '#8f8573' : '#ebe1cf'); c.fillRect(k.x + 1, 0, k.w - 2, k.h - 2);
+    if (purity.on && !out && (((k.n - purity.root) % 12) + 12) % 12 === 0) { c.fillStyle = '#d9a441'; c.beginPath(); c.arc(k.x + k.w / 2, k.h - (k.black ? 10 : 22) * d, 3.5 * d, 0, 7); c.fill(); }
+    if (!k.black) { c.fillStyle = 'rgba(120,100,70,.18)'; c.fillRect(k.x + 1, 0, k.w - 2, k.h * .15); }
+    if (!k.black && k.n % 12 === 0) { c.fillStyle = '#8a7558'; c.font = `${10 * d}px "IBM Plex Mono"`; c.fillText(nn(k.n), k.x + 4 * d, k.h - 8 * d); } });
+  $('octLbl').textContent = nn(baseOct) + '–' + nn(baseOct + 36);
+}
+let ptrNote = new Map();
+kbcv.addEventListener('pointerdown', e => { if (!node) return; kbcv.setPointerCapture(e.pointerId); const n = kbHit(e); if (n != null) { ptrNote.set(e.pointerId, n); const [, y] = evPos(e, kbcv); noteOn(n, Math.max(.01, Math.min(1, y / kbcv.height))); } });
+kbcv.addEventListener('pointermove', e => { if (!ptrNote.has(e.pointerId)) return; const n = kbHit(e); const o = ptrNote.get(e.pointerId); if (n != null && n !== o) { noteOff(o); noteOn(n, .7); ptrNote.set(e.pointerId, n); } });
+const kbUp = e => { if (ptrNote.has(e.pointerId)) { noteOff(ptrNote.get(e.pointerId)); ptrNote.delete(e.pointerId); } };
+kbcv.addEventListener('pointerup', kbUp); kbcv.addEventListener('pointercancel', kbUp);
+function kbHit(e) { const [x, y] = evPos(e, kbcv); const keys = kbLayout(); const bk = keys.filter(k => k.black).find(k => x >= k.x && x < k.x + k.w && y < k.h); if (bk) return bk.n; const wk = keys.filter(k => !k.black).find(k => x >= k.x && x < k.x + k.w); return wk ? wk.n : null; }
+const typing = () => ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName) && document.activeElement.type !== 'range' && document.activeElement.type !== 'checkbox';
+const qwHeld = new Map();
+window.addEventListener('keydown', e => {
+  if (typing() || e.repeat || e.metaKey || e.ctrlKey || !node) return;
+  const k = e.key.toLowerCase();
+  if (k === 'z') { baseOct = Math.max(12, baseOct - 12); drawKb(); return; }
+  if (k === 'x') { baseOct = Math.min(84, baseOct + 12); drawKb(); return; }
+  if (k === ' ') { setSus(true); e.preventDefault(); return; }
+  const i = KB_KEYS.indexOf(k); if (i >= 0) { const n = baseOct + 12 + i; qwHeld.set(k, n); noteOn(n, e.shiftKey ? .04 : .78); e.preventDefault(); }
+});
+window.addEventListener('keyup', e => {
+  const k = e.key.toLowerCase(); if (k === ' ') { setSus(false); return; }
+  if (qwHeld.has(k)) { noteOff(qwHeld.get(k)); qwHeld.delete(k); }
+});
+
+// ───────────────────────── presets / JSON ─────────────────────────
+function userPresets() { try { return JSON.parse(localStorage.getItem('luither.user') || '{}'); } catch (e) { return {}; } }
+function fillPresets(sel) {
+  const p = $('preset'); p.innerHTML = '';
+  const g1 = el('optgroup', { label: 'Factory' }); Object.keys(PRESETS).forEach(k => g1.append(el('option', { value: 'f:' + k }, k))); p.append(g1);
+  const up = userPresets(); if (Object.keys(up).length) { const g2 = el('optgroup', { label: 'My instruments' }); Object.keys(up).forEach(k => g2.append(el('option', { value: 'u:' + k }, k))); p.append(g2); }
+  if (sel) p.value = sel;
+}
+function loadCfg(c) {
+  const d = PRESETS['Acoustic guitar']();
+  const prevSynth = cfg.synth;
+  if (c.body && !c.body.backShape) c = { ...c, body: { ...c.body, backShape: 'custom' } };
+  cfg = { ...d, ...c, ex: { ...exDefault(), ...c.ex }, nk: { ...nkDefault(), ...c.nk }, body: { ...d.body, ...c.body, hole: { ...d.body.hole, ...(c.body?.hole || {}) } }, pk: { ...d.pk, ...c.pk } };
+  cfg.strings = (c.strings || d.strings).slice(0, 24);
+  cfg.synth = c.synth ? { ...synthDefault(), ...c.synth, p: { ...synthDefault().p, ...c.synth.p }, o: { ...SOPT(), ...c.synth.o } } : (prevSynth || synthDefault());
+  if (face === 'synth') buildSynth();
+  if (node) node.port.postMessage({ t: 'panic' });
+  pushAll(); buildAll(); renderInfo(); drawDepth(); draw();
+}
+$('preset').onchange = () => { const v = $('preset').value; if (v.startsWith('f:')) loadCfg(PRESETS[v.slice(2)]()); else loadCfg(JSON.parse(JSON.stringify(userPresets()[v.slice(2)]))); };
+function modal(html, wire) { $('modalCard').innerHTML = html; $('modal').style.display = 'flex'; wire(); }
+const closeModal = () => $('modal').style.display = 'none';
+$('modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
+$('saveBtn').onclick = () => modal(`<h3>Save instrument</h3><input id="mName" placeholder="Name, e.g. Glass cello"><div class="note">Saved in this browser only.</div><div class="btns"><button class="hbtn" id="mCancel">Cancel</button><button class="hbtn" id="mOk">Save</button></div>`, () => {
+  $('mName').focus(); $('mCancel').onclick = closeModal;
+  $('mOk').onclick = () => { const n = $('mName').value.trim(); if (!n) return; const up = userPresets(); up[n] = cfg; try { localStorage.setItem('luither.user', JSON.stringify(up)); } catch (e) {} fillPresets('u:' + n); closeModal(); };
+});
+$('jsonBtn').onclick = () => modal(`<h3>Instrument JSON</h3><div class="note">Copy this to keep or share an instrument, or paste one in and press Load.</div><textarea id="mTxt"></textarea><div class="btns"><span id="mMsg" class="note" style="flex:1"></span><button class="hbtn" id="mCopy">Copy</button><button class="hbtn" id="mLoad">Load</button><button class="hbtn" id="mClose">Close</button></div>`, () => {
+  $('mTxt').value = JSON.stringify(cfg, null, 1); $('mClose').onclick = closeModal;
+  $('mCopy').onclick = () => navigator.clipboard.writeText($('mTxt').value).then(() => $('mMsg').textContent = 'Copied.', () => { $('mTxt').select(); $('mMsg').textContent = 'Press Ctrl+C to copy.'; });
+  $('mLoad').onclick = () => { try { loadCfg(JSON.parse($('mTxt').value)); closeModal(); } catch (e) { $('mMsg').textContent = 'That isn\'t valid JSON.'; } };
+});
+
+// ───────────────────────── synth face: parameters, sources, presets ─────────────────────────
+// id: [label, min, max, default, log?, unit]
+const SP = {
+  src_lvl: ['Pickup', 0, 2, 1, 0, 'x'],
+  osc_lvl: ['Osc level', 0, 1, 0, 0, '%'], osc_shape: ['Shape', 0, 1, .66, 0, 'shape'], osc_semi: ['Pitch', -24, 24, 0, 0, 'st'], osc_fine: ['Fine', -100, 100, 0, 0, '¢'],
+  f1_cut: ['Cutoff', 20, 20000, 2000, 1, 'Hz'], f1_res: ['Reso', 0, 1, .2, 0, '%'], f1_drive: ['Drive', 0, 1, 0, 0, '%'], f1_vowel: ['Vowel', 0, 1, 0, 0, 'vowel'], f1_mix: ['Mix', 0, 1, 1, 0, '%'],
+  f2_cut: ['Cutoff', 20, 20000, 6000, 1, 'Hz'], f2_res: ['Reso', 0, 1, .2, 0, '%'], f2_drive: ['Drive', 0, 1, 0, 0, '%'], f2_vowel: ['Vowel', 0, 1, 0, 0, 'vowel'], f2_mix: ['Mix', 0, 1, 1, 0, '%'],
+  mfx_time: ['Time', .2, 30, 3, 1, 'ms'], mfx_depth: ['Depth', 0, 1, .3, 0, '%'], mfx_rate: ['Rate', .02, 12, .5, 1, 'Hz'], mfx_fb: ['Feedback', -.95, .95, 0, 0, '%'],
+  mfx_mix: ['Mix', 0, 1, .5, 0, '%'], mfx_spread: ['Stereo', 0, 1, .5, 0, '%'],
+  ps_semi: ['Shift', -24, 24, 12, 0, 'st'], ps_fine: ['Fine', -100, 100, 0, 0, '¢'], ps_mix: ['Mix', 0, 1, .3, 0, '%'], ps_fb: ['Feedback', 0, .9, 0, 0, '%'],
+  gate_bpm: ['Tempo', 40, 240, 120, 0, 'bpm'], gate_depth: ['Depth', 0, 1, 1, 0, '%'], gate_smooth: ['Smooth', 1, 60, 5, 1, 'ms'],
+  amp_lvl: ['Level', 0, 2, 1, 0, 'x'], amp_pan: ['Pan', -1, 1, 0, 0, 'pan'],
+  lfo1_rate: ['Rate', .02, 20, 1, 1, 'Hz'], lfo2_rate: ['Rate', .02, 20, .25, 1, 'Hz'],
+  env1_a: ['Attack', .001, 4, .005, 1, 's'], env1_d: ['Decay', .005, 4, .4, 1, 's'], env1_s: ['Sustain', 0, 1, .5, 0, '%'], env1_r: ['Release', .005, 6, .5, 1, 's'],
+  env2_a: ['Attack', .001, 4, .3, 1, 's'], env2_d: ['Decay', .005, 4, .8, 1, 's'], env2_s: ['Sustain', 0, 1, .7, 0, '%'], env2_r: ['Release', .005, 6, 1, 1, 's'],
+  fol_atk: ['Attack', .001, .2, .005, 1, 's'], fol_rel: ['Release', .01, 1, .15, 1, 's'], fol_gain: ['Sensitivity', 0, 1, .5, 0, '%'],
+  // physical parameters live in the builder; the synth face shows and modulates them
+  ph_pos: ['Pluck/bow position', .02, .5, .15, 0, '%'], ph_pressure: ['Bow pressure', 0, 1, .5, 0, '%'], ph_speed: ['Bow speed', 0, 1, .5, 0, '%'],
+  ph_ebow: ['E-bow strength', 0, 1, .6, 0, '%'], ph_wind: ['Wind speed', 0, 1, .5, 0, '%'], ph_jawari: ['Jawari', 0, 1, 0, 0, '%'], ph_buzz: ['Fret buzz', 0, 1, 0, 0, '%'],
+};
+const SPHYS = { ph_pos: ['ex', 'pos'], ph_pressure: ['ex', 'pressure'], ph_speed: ['ex', 'speed'], ph_ebow: ['ex', 'ebow'], ph_wind: ['ex', 'wind'], ph_jawari: ['nk', 'jawari'], ph_buzz: ['nk', 'buzz'] };
+const SRC = {
+  lfo1: ['LFO 1', '#7fc4b8', 1], lfo2: ['LFO 2', '#5fa8e0', 1], env1: ['Env 1', '#e9b65a'], env2: ['Env 2', '#e0805a'],
+  fol: ['Follower', '#c58ce0'], vel: ['Velocity', '#9fd49a'], note: ['Note', '#d8d070'], mw: ['Mod wheel', '#f08a8a'],
+  rnd: ['Random', '#b0b0b0'], energy: ['String energy', '#ff9e5e'], gate: ['Gate', '#80d0c0'],
+};
+const SOPT = () => ({ osc_mode: 'layer', f1_on: false, f1_type: 'lp', f2_on: false, f2_type: 'hp', f_route: 'serial', mfx_on: false, ps_on: false,
+  gate_on: false, gate_div: 16, gate_steps: [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1], lfo1_shape: 'sine', lfo1_retrig: false, lfo2_shape: 'smooth', lfo2_retrig: false });
+function synthDefault() {
+  const p = {}; for (const k in SP) if (!SPHYS[k]) p[k] = SP[k][3];
+  return { preset: 'Init (clean)', p, o: SOPT(), mods: [] };
+}
+const SM = (s, d, a) => ({ s, d, a });
+const SPRESETS = {
+  'Init (clean)': {},
+  'Auto-wah': { p: { f1_cut: 300, f1_res: .78, fol_gain: .5, fol_atk: .004, fol_rel: .14 }, o: { f1_on: true, f1_type: 'bp' }, mods: [SM('fol', 'f1_cut', .38)] },
+  'Envelope filter (quack)': { p: { f1_cut: 220, f1_res: .72, env1_a: .002, env1_d: .28, env1_s: 0, env1_r: .2 }, o: { f1_on: true, f1_type: 'lp' }, mods: [SM('env1', 'f1_cut', .6), SM('vel', 'f1_cut', .15)] },
+  'Electric vibrato': { p: { mfx_time: 3, mfx_depth: .13, mfx_rate: 5.8, mfx_fb: 0, mfx_mix: 1, mfx_spread: .1 }, o: { mfx_on: true } },
+  'Throb (uni-vibe)': { p: { mfx_time: 3, mfx_depth: .1, mfx_rate: 4.2, mfx_fb: 0, mfx_mix: 1, f1_cut: 900, f1_res: .45, f1_mix: .55, lfo1_rate: 4.2 }, o: { mfx_on: true, f1_on: true, f1_type: 'notch' }, mods: [SM('lfo1', 'f1_cut', .18), SM('lfo1', 'amp_lvl', .06)] },
+  'Flanger': { p: { amp_lvl: 1.2, mfx_time: 1.2, mfx_depth: .85, mfx_rate: .18, mfx_fb: .78, mfx_mix: .5, mfx_spread: .25 }, o: { mfx_on: true } },
+  'Jet flanger': { p: { mfx_time: .9, mfx_depth: .9, mfx_rate: .09, mfx_fb: -.88, mfx_mix: .5, mfx_spread: .3 }, o: { mfx_on: true } },
+  'Chorus': { p: { amp_lvl: 1.3, mfx_time: 16, mfx_depth: .22, mfx_rate: .7, mfx_fb: 0, mfx_mix: .45, mfx_spread: 1 }, o: { mfx_on: true } },
+  'Tremolo': { p: { lfo1_rate: 6, amp_lvl: 1 }, o: { lfo1_shape: 'sine' }, mods: [SM('lfo1', 'amp_lvl', .22)] },
+  'Harmonic tremolo': { p: { amp_lvl: 1.9, lfo1_rate: 5, f1_cut: 700, f1_res: 0, f2_cut: 700, f2_res: 0 }, o: { f1_on: true, f1_type: 'lp', f2_on: true, f2_type: 'hp', f_route: 'parallel', lfo1_shape: 'sine' }, mods: [SM('lfo1', 'f1_mix', .5), SM('lfo1', 'f2_mix', -.5)] },
+  'Trance gate': { p: { gate_bpm: 120, gate_depth: 1, gate_smooth: 4 }, o: { gate_on: true, gate_div: 16, gate_steps: [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1] } },
+  'Talk box': { p: { f1_cut: 950, f1_vowel: .5, lfo1_rate: .45 }, o: { f1_on: true, f1_type: 'formant', lfo1_shape: 'tri' }, mods: [SM('lfo1', 'f1_vowel', .5), SM('mw', 'f1_vowel', .4)] },
+  'Octave shimmer': { p: { ps_semi: 12, ps_mix: .38, ps_fb: .45, mfx_time: 20, mfx_depth: .2, mfx_rate: .4, mfx_mix: .35, mfx_spread: 1 }, o: { ps_on: true, mfx_on: true } },
+  'Sub-octave synth': { p: { osc_lvl: .5, osc_shape: .66, osc_semi: -12, f1_cut: 700, f1_res: .35, env1_a: .002, env1_d: .5, env1_s: .2 }, o: { osc_mode: 'layer', f1_on: true, f1_type: 'lp' }, mods: [SM('env1', 'f1_cut', .35)] },
+  'Ring-mod bells': { p: { amp_lvl: 1.6, osc_lvl: .75, osc_shape: 0, osc_semi: 19 }, o: { osc_mode: 'ring' } },
+  'Saw morph': { p: { amp_lvl: 1.55, osc_lvl: .7, osc_shape: .66, f1_cut: 2500, f1_res: .3 }, o: { osc_mode: 'morph', f1_on: true, f1_type: 'lp' }, mods: [SM('fol', 'f1_cut', .25), SM('lfo2', 'osc_shape', .15)] },
+  'Bow swell': { p: { env1_a: 1.1, env1_d: .5, env1_s: 1, env1_r: .7, amp_lvl: 0 }, mods: [SM('env1', 'amp_lvl', .5)] },
+  'Wandering bow': { p: { amp_lvl: .8, lfo1_rate: .3, lfo2_rate: .12 }, o: { lfo1_shape: 'sine', lfo2_shape: 'smooth' }, mods: [SM('lfo2', 'ph_pos', .3), SM('lfo1', 'ph_pressure', .25)] },
+  'Breathing jawari': { p: { lfo1_rate: .2 }, o: { lfo1_shape: 'tri' }, mods: [SM('lfo1', 'ph_jawari', .45), SM('fol', 'ph_jawari', .2)] },
+};
+function synthPreset(name) {
+  const d = synthDefault(), pr = SPRESETS[name] || {};
+  Object.assign(d.p, pr.p || {}); Object.assign(d.o, pr.o || {}); d.mods = (pr.mods || []).map(m => ({ ...m })); d.preset = name;
+  return d;
+}
+function synthDefs() { const d = {}; for (const k in SP) d[k] = { min: SP[k][1], max: SP[k][2], log: !!SP[k][4] }; return d; }
+
+// ───────────────────────── synth face UI ─────────────────────────
+let face = 'builder';
+const MODNAME = { src: 'Pickup', osc: 'Osc', f1: 'Filter 1', f2: 'Filter 2', mfx: 'Mod FX', ps: 'Pitch', gate: 'Gate', amp: 'Amp', lfo1: 'LFO 1', lfo2: 'LFO 2', env1: 'Env 1', env2: 'Env 2', fol: 'Follower', ph: 'Physical' };
+const sN = (id, v) => { const d = SP[id]; const n = d[4] ? Math.log(v / d[1]) / Math.log(d[2] / d[1]) : (v - d[1]) / (d[2] - d[1]); return Math.max(0, Math.min(1, n)); };
+const sV = (id, n) => { const d = SP[id]; n = Math.max(0, Math.min(1, n)); return d[4] ? d[1] * Math.pow(d[2] / d[1], n) : d[1] + (d[2] - d[1]) * n; };
+function sGet(id) { const ph = SPHYS[id]; return ph ? cfg[ph[0]][ph[1]] : cfg.synth.p[id]; }
+function sSet(id, v) {
+  const ph = SPHYS[id];
+  if (ph) { cfg[ph[0]][ph[1]] = v; ph[0] === 'ex' ? pushEx() : pushNk(); syncCtl(ph[0] + '.' + ph[1]); }
+  else { cfg.synth.p[id] = v; send('synth', { p: { [id]: v } }); }
+}
+function sFmt(id, v) {
+  const u = SP[id][5];
+  if (u === 'Hz') return v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 1 : 2) + 'k' : v >= 100 ? v.toFixed(0) : v.toFixed(v < 1 ? 2 : 1);
+  if (u === '%') return Math.round(v * 100) + '%';
+  if (u === 'st') return (v > 0 ? '+' : '') + v.toFixed(0);
+  if (u === '¢') return (v > 0 ? '+' : '') + v.toFixed(0) + '¢';
+  if (u === 's') return v < 1 ? Math.round(v * 1000) + 'ms' : v.toFixed(2) + 's';
+  if (u === 'ms') return v.toFixed(v < 10 ? 1 : 0) + 'ms';
+  if (u === 'x') return '×' + v.toFixed(2);
+  if (u === 'bpm') return v.toFixed(0);
+  if (u === 'pan') return Math.abs(v) < .02 ? 'C' : (v < 0 ? 'L' : 'R') + Math.round(Math.abs(v) * 100);
+  if (u === 'vowel') return 'AEIOU'[Math.min(4, Math.round(v * 4))];
+  if (u === 'shape') return ['Sine', 'Tri', 'Saw', 'Square'][Math.min(3, Math.round(v * 3))];
+  return v.toFixed(2);
+}
+function pushSynth() { send('synth', { p: cfg.synth.p, o: cfg.synth.o, mods: cfg.synth.mods }); }
+function pushMods() { send('synth', { mods: cfg.synth.mods }); }
+function setOpt(k, v, rebuild) { cfg.synth.o[k] = v; send('synth', { o: { [k]: v } }); if (rebuild) buildSynth(); else drawSynthStatic(); }
+
+// ── knobs (value arc + one coloured arc per modulation + live dot) ──
+const knobs = {};
+const A0 = -135, A1 = 135;
+function arcD(r, a0, a1) {
+  const p = a => [24 + r * Math.sin(a * Math.PI / 180), 24 - r * Math.cos(a * Math.PI / 180)];
+  const [x0, y0] = p(a0), [x1, y1] = p(a1); return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} ${a1 > a0 ? 1 : 0} ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+function knob(id, small) {
+  const wrap = el('div', { class: 'knob' + (small ? ' sm' : ''), 'data-id': id, title: SP[id][0] + ' — drag up/down, double-click to reset. Drop a source here to modulate.' });
+  wrap.innerHTML = `<svg viewBox="0 0 48 48"><path class="trk" d="${arcD(17, A0, A1)}"/><g class="mods"></g><path class="val"/><circle class="cap" cx="24" cy="24" r="12"/><line class="ptr" x1="24" y1="24" x2="24" y2="14"/><circle class="live" r="2.6" cx="-9" cy="-9"/></svg><div class="kv"></div><div class="kl">${SP[id][0]}</div>`;
+  knobs[id] = wrap;
+  let y0, n0, drag = false;
+  wrap.addEventListener('pointerdown', e => { if (e.button) return; drag = true; y0 = e.clientY; n0 = sN(id, sGet(id)); wrap.setPointerCapture(e.pointerId); e.preventDefault(); });
+  wrap.addEventListener('pointermove', e => { if (!drag) return; const n = n0 + (y0 - e.clientY) / (e.shiftKey ? 900 : 170); sSet(id, sV(id, n)); renderKnob(id); });
+  wrap.addEventListener('pointerup', () => { drag = false; });
+  wrap.addEventListener('dblclick', () => { sSet(id, SPHYS[id] ? SP[id][3] : synthDefault().p[id]); renderKnob(id); });
+  renderKnob(id); return wrap;
+}
+function renderKnob(id) {
+  const w = knobs[id]; if (!w) return;
+  const v = sGet(id), n = sN(id, v), ang = A0 + (A1 - A0) * n, svg = w.firstChild;
+  const bip = SP[id][1] < 0 && SP[id][2] > 0, zero = bip ? A0 + (A1 - A0) * sN(id, 0) : A0;
+  svg.querySelector('.val').setAttribute('d', Math.abs(ang - zero) < .5 ? '' : arcD(17, Math.min(zero, ang), Math.max(zero, ang)));
+  const r = ang * Math.PI / 180; const ptr = svg.querySelector('.ptr'); ptr.setAttribute('x2', 24 + 10 * Math.sin(r)); ptr.setAttribute('y2', 24 - 10 * Math.cos(r));
+  const g = svg.querySelector('.mods'); g.innerHTML = '';
+  cfg.synth.mods.filter(m => m.d === id).forEach((m, k) => {
+    const bi = SRC[m.s]?.[2], lo = bi ? n - Math.abs(m.a) : Math.min(n, n + m.a), hi = bi ? n + Math.abs(m.a) : Math.max(n, n + m.a);
+    const a0 = A0 + (A1 - A0) * Math.max(0, lo), a1 = A0 + (A1 - A0) * Math.min(1, hi);
+    if (a1 - a0 > .5) { const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', arcD(21.5 - k * 2.2, a0, a1)); p.setAttribute('class', 'marc'); p.style.stroke = SRC[m.s][1]; g.append(p); }
+  });
+  w.classList.toggle('modded', cfg.synth.mods.some(m => m.d === id));
+  w.querySelector('.kv').textContent = sFmt(id, v);
+}
+function renderAllKnobs() { for (const id in knobs) renderKnob(id); }
+
+// ── drag a source chip onto a knob ──
+function chip(src, extra) {
+  const c = el('div', { class: 'chip', 'data-src': src, title: 'Drag onto any knob to modulate it' }, el('span', { class: 'grip' }, '⠿'), SRC[src][0]);
+  c.style.setProperty('--c', SRC[src][1]);
+  if (extra) c.append(extra);
+  c.addEventListener('pointerdown', e => startDrag(e, src));
+  return c;
+}
+let dragGhost = null, dragSrc = null, dropOn = null;
+function startDrag(e, src) {
+  e.preventDefault(); dragSrc = src;
+  dragGhost = el('div', { class: 'chip ghost' }, '⠿ ' + SRC[src][0]); dragGhost.style.setProperty('--c', SRC[src][1]); document.body.append(dragGhost);
+  document.body.classList.add('dragging');
+  const mv = ev => { dragGhost.style.left = ev.clientX + 10 + 'px'; dragGhost.style.top = ev.clientY + 10 + 'px';
+    const k = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.knob'); if (dropOn !== k) { dropOn?.classList.remove('over'); dropOn = k; k?.classList.add('over'); } };
+  const up = () => { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up);
+    dragGhost.remove(); document.body.classList.remove('dragging'); dropOn?.classList.remove('over');
+    if (dropOn) addMod(dragSrc, dropOn.dataset.id); dropOn = null; };
+  mv(e); document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+}
+function addMod(s, d) {
+  if (!cfg.synth.mods.some(m => m.s === s && m.d === d)) cfg.synth.mods.push({ s, d, a: SRC[s][2] ? .25 : .35 });
+  pushMods(); renderKnob(d); buildModList(d);
+}
+function dstName(id) { return (MODNAME[id.split('_')[0]] || '') + ' ' + SP[id][0]; }
+function buildModList(flash) {
+  const box = $('modList'); if (!box) return; box.innerHTML = '';
+  if (!cfg.synth.mods.length) { box.append(el('div', { class: 'note' }, 'No modulation yet. Drag a coloured source chip (⠿) onto any knob, including the physical ones.')); return; }
+  cfg.synth.mods.forEach((m, i) => {
+    const amt = el('input', { type: 'range', min: -1, max: 1, step: .005 }); amt.value = m.a;
+    const val = el('span', { class: 'mv' }, (m.a > 0 ? '+' : '') + Math.round(m.a * 100) + '%');
+    amt.oninput = () => { m.a = +amt.value; val.textContent = (m.a > 0 ? '+' : '') + Math.round(m.a * 100) + '%'; pushMods(); renderKnob(m.d); };
+    amt.ondblclick = () => { m.a = 0; amt.value = 0; amt.oninput(); };
+    const row = el('div', { class: 'mrow' + (flash === m.d ? ' flash' : '') },
+      el('span', { class: 'dot', style: `background:${SRC[m.s][1]}` }), el('span', { class: 'mn' }, `${SRC[m.s][0]} → ${dstName(m.d)}`),
+      el('button', { class: 'x', title: 'Remove', onclick: () => { cfg.synth.mods.splice(i, 1); pushMods(); renderKnob(m.d); buildModList(); } }, '×'), amt, val);
+    box.append(row);
+  });
+}
+
+// ── cards ──
+function card(title, onKey, extraHead) {
+  const c = el('div', { class: 'card' + (onKey && !cfg.synth.o[onKey] ? ' off' : '') });
+  const h = el('div', { class: 'ch' }, el('span', { class: 'ct' }, title));
+  if (extraHead) h.append(extraHead);
+  if (onKey) { const sw = el('button', { class: 'sw' + (cfg.synth.o[onKey] ? ' on' : ''), title: 'On / off' }); sw.onclick = () => { setOpt(onKey, !cfg.synth.o[onKey], true); }; h.append(sw); }
+  c.append(h); return c;
+}
+const krow = (...ks) => el('div', { class: 'krow' }, ...ks);
+function seg(opts, cur, on) { const s = el('div', { class: 'seg' }); opts.forEach(([v, l]) => s.append(el('button', { class: v === cur ? 'on' : '', onclick: () => on(v) }, l))); return s; }
+function sel(opts, cur, on) { const s = el('select', { class: 'ssel' }); opts.forEach(([v, l]) => s.append(el('option', { value: v }, l))); s.value = cur; s.onchange = () => on(s.value); return s; }
+function mini(id, h = 46) { return el('canvas', { class: 'mini', id, height: h }); }
+
+function buildSynth() {
+  for (const k in knobs) delete knobs[k];
+  const host = $('synth'); host.innerHTML = ''; const root = el('div', { id: 'synthIn' }); host.append(root);
+  const o = cfg.synth.o;
+  // top bar
+  const bar = el('div', { class: 'sbar' }, el('span', { class: 'ct' }, 'Synth patch'),
+    sel(Object.keys(SPRESETS).map(k => [k, k]), cfg.synth.preset || '', v => { cfg.synth = synthPreset(v); pushSynth(); buildSynth(); }),
+    el('span', { class: 'note', style: 'margin:0 0 0 8px' }, 'Patches only change this face. Your instrument stays as built. Saving an instrument saves its patch too.'));
+  root.append(bar);
+  const L = el('div', { class: 'srcrow' }), C = el('div', { class: 'schain' }), R = el('div', { class: 'scol' });
+  root.append(el('div', { class: 'sgrid' }, el('div', { class: 'scol' }, L, C), R));
+  // sources
+  for (const i of [1, 2]) {
+    const k = 'lfo' + i, c = card('', null, chip(k));
+    c.querySelector('.ct').remove();
+    c.append(mini('cv_' + k, 36), krow(el('div', { class: 'kcol' },
+      sel([['sine', 'Sine'], ['tri', 'Triangle'], ['saw', 'Saw up'], ['ramp', 'Saw down'], ['square', 'Square'], ['sh', 'Sample & hold'], ['smooth', 'Smooth random']], o[k + '_shape'], v => setOpt(k + '_shape', v)),
+      el('label', { class: 'chk' }, Object.assign(el('input', { type: 'checkbox' }), { checked: !!o[k + '_retrig'], onchange: e => setOpt(k + '_retrig', e.target.checked) }), 'Restart on note')), knob(k + '_rate', 1)));
+    L.append(c);
+  }
+  for (const i of [1, 2]) { const k = 'env' + i, c = card('', null, chip(k)); c.querySelector('.ct').remove(); c.append(mini('cv_' + k, 36), krow(knob(k + '_a', 1), knob(k + '_d', 1), knob(k + '_s', 1), knob(k + '_r', 1))); L.append(c); }
+  { const c = card('', null, chip('fol')); c.querySelector('.ct').remove(); c.append(el('div', { class: 'meter' }, el('i', { id: 'm_fol' })), krow(knob('fol_atk', 1), knob('fol_rel', 1), knob('fol_gain', 1)));
+    c.append(el('div', { class: 'note' }, 'How loud the instrument is playing. Drives an auto-wah.')); L.append(c); }
+  { const c = card('Performance'); const g = el('div', { class: 'chips' });
+    ['vel', 'note', 'mw', 'rnd', 'energy', 'gate'].forEach(s => g.append(chip(s, el('i', { class: 'cbar', id: 'cb_' + s }))));
+    c.append(g, el('div', { class: 'note' }, 'Set per note. String energy = how hard the strings are vibrating.')); L.append(c); }
+  // chain
+  { const c = card('Pickup → Oscillator'); c.append(seg([['layer', 'Layer'], ['morph', 'Morph'], ['ring', 'Ring']], o.osc_mode, v => setOpt('osc_mode', v, true)), mini('cv_osc', 40),
+      krow(knob('src_lvl', 1), knob('osc_lvl', 1), knob('osc_shape', 1), knob('osc_semi', 1), knob('osc_fine', 1)),
+      el('div', { class: 'note' }, 'Pickup = the instrument you built. ' + { layer: 'Adds a synth voice that follows each string\'s pitch and loudness.', morph: 'Crossfades from the string into a synth voice that keeps the string\'s dynamics.', ring: 'Multiplies each string by its own oscillator: metallic, bell-like.' }[o.osc_mode]));
+    C.append(c); }
+  for (const f of [1, 2]) {
+    const k = 'f' + f, extra = f === 2 ? sel([['serial', 'After filter 1'], ['parallel', 'Beside filter 1']], o.f_route, v => setOpt('f_route', v)) : null;
+    const c = card('Filter ' + f, k + '_on', extra);
+    c.append(sel([['lp', 'Low-pass'], ['bp', 'Band-pass (wah)'], ['hp', 'High-pass'], ['notch', 'Notch'], ['peak', 'Peak'], ['formant', 'Formant (vowels)']], o[k + '_type'], v => setOpt(k + '_type', v, true)),
+      mini('cv_' + k, 40), krow(knob(k + '_cut', 1), knob(k + '_res', 1), ...(o[k + '_type'] === 'formant' ? [knob(k + '_vowel', 1)] : [knob(k + '_drive', 1)]), knob(k + '_mix', 1)));
+    C.append(c);
+  }
+  { const c = card('Mod FX', 'mfx_on'); const q = (t, ms, dp, rt, fb, mx, sp) => { Object.assign(cfg.synth.p, { mfx_time: ms, mfx_depth: dp, mfx_rate: rt, mfx_fb: fb, mfx_mix: mx, mfx_spread: sp }); cfg.synth.o.mfx_on = true; pushSynth(); buildSynth(); };
+    c.append(el('div', { class: 'seg' }, el('button', { onclick: () => q('c', 16, .22, .7, 0, .45, 1) }, 'Chorus'), el('button', { onclick: () => q('f', 1.2, .85, .18, .78, .5, .25) }, 'Flanger'), el('button', { onclick: () => q('v', 3, .13, 5.8, 0, 1, .1) }, 'Vibrato')),
+      krow(knob('mfx_time', 1), knob('mfx_depth', 1), knob('mfx_rate', 1), knob('mfx_fb', 1), knob('mfx_mix', 1), knob('mfx_spread', 1)));
+    C.append(c); }
+  { const c = card('Pitch shifter', 'ps_on'); c.append(krow(knob('ps_semi', 1), knob('ps_fine', 1), knob('ps_mix', 1), knob('ps_fb', 1)), el('div', { class: 'note' }, 'Mix up to 50% adds the shifted copy; above, it replaces the original.')); C.append(c); }
+  { const c = card('Gate', 'gate_on'); const steps = el('div', { class: 'steps', id: 'gsteps' });
+    o.gate_steps.forEach((v, i) => steps.append(el('button', { class: v ? 'on' : '', onclick: e => { o.gate_steps[i] = o.gate_steps[i] ? 0 : 1; e.target.classList.toggle('on'); setOpt('gate_steps', o.gate_steps.slice()); } })));
+    c.append(steps, krow(el('div', { class: 'kcol', style: 'min-width:64px' }, sel([[4, '1/4'], [8, '1/8'], [16, '1/16'], [32, '1/32']], o.gate_div, v => setOpt('gate_div', +v))), knob('gate_bpm', 1), knob('gate_depth', 1), knob('gate_smooth', 1)));
+    C.append(c); }
+  { const c = card('Amp'); c.append(krow(knob('amp_lvl', 1), knob('amp_pan', 1))); C.append(c); }
+  // physical + matrix
+  { const c = card('Physical'); const t = cfg.ex.type, rel = { ph_pressure: t === 'bow', ph_speed: t === 'bow', ph_ebow: t === 'ebow', ph_wind: t === 'wind' };
+    const ks = Object.keys(SPHYS).map(id => { const k = knob(id, 1); if (rel[id] === false) k.classList.add('dim'); return k; });
+    c.append(el('div', { class: 'krow wrap' }, ...ks), el('div', { class: 'note' }, 'These are the builder\'s own controls. Modulate them to move the bow, the pick, or the bridge buzz while you play. Dimmed ones don\'t affect the current exciter.'));
+    R.append(c); }
+  { const c = card('Modulation'); c.append(el('div', { id: 'modList' })); R.append(c); }
+  buildModList();
+  requestAnimationFrame(() => { fitSynth(); sizeMinis(); drawSynthStatic(); });
+}
+// zoom the whole face out just enough that every module fits on screen without scrolling
+function fitSynth() {
+  const host = $('synth'), inner = $('synthIn'); if (!host || !inner || face !== 'synth') return;
+  const fits = z => { inner.style.zoom = z; return inner.getBoundingClientRect().height <= host.clientHeight - 4 && inner.scrollWidth * z <= host.clientWidth + 2; };
+  if (fits(1)) return;
+  let lo = .5, hi = 1; for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (fits(m)) lo = m; else hi = m; }
+  inner.style.zoom = lo;
+}
+window.addEventListener('resize', () => { if (face === 'synth') { fitSynth(); sizeMinis(); drawSynthStatic(); } });
+function sizeMinis() { document.querySelectorAll('#synth canvas.mini').forEach(c => { const d = devicePixelRatio || 1; c.width = c.clientWidth * d; c.height = c.clientHeight * d; }); }
+
+// static drawings: oscillator shape, filter responses
+function drawSynthStatic() {
+  const o = cfg.synth.o, p = cfg.synth.p;
+  const cvO = $('cv_osc'); if (cvO) { const c = cvO.getContext('2d'), W = cvO.width, H = cvO.height; c.clearRect(0, 0, W, H); c.strokeStyle = '#f2c568'; c.lineWidth = 2 * devicePixelRatio; c.beginPath();
+    for (let x = 0; x <= W; x++) { const ph = (x / W * 2) % 1, y = oscWaveUI(ph, p.osc_shape); x ? c.lineTo(x, H / 2 - y * H * .38) : c.moveTo(x, H / 2 - y * H * .38); } c.stroke(); }
+  for (const f of [1, 2]) { const cv = $('cv_f' + f); if (!cv) continue; const c = cv.getContext('2d'), W = cv.width, H = cv.height, k = 'f' + f; c.clearRect(0, 0, W, H);
+    const cut = p[k + '_cut'], kk = 2 - 1.96 * p[k + '_res'], type = o[k + '_type'];
+    c.strokeStyle = 'rgba(255,255,255,.06)'; [100, 1000, 10000].forEach(fr => { const x = Math.log(fr / 20) / Math.log(1000) * W; c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); });
+    c.strokeStyle = o[k + '_on'] ? '#7fc4b8' : '#5a4b3a'; c.lineWidth = 2 * devicePixelRatio; c.beginPath();
+    for (let x = 0; x <= W; x += 2) { const fr = 20 * Math.pow(1000, x / W); let mag;
+      if (type === 'formant') { const vw = p[k + '_vowel'] * 4, i0 = Math.min(3, Math.floor(vw)), t = vw - i0, sc = Math.max(.5, Math.min(2, cut / 1000)); mag = 0;
+        [1.6, 1.1, .7].forEach((g, j) => { const F = (VOWELS_UI[i0][j] + (VOWELS_UI[i0 + 1][j] - VOWELS_UI[i0][j]) * t) * sc, w = fr / F; mag += g * .5 / Math.sqrt(((1 - w * w) / (.12 * w)) ** 2 + 1); }); }
+      else { const w = fr / cut, re = 1 - w * w, im = kk * w, den = Math.sqrt(re * re + im * im);
+        mag = type === 'lp' ? 1 / den : type === 'hp' ? w * w / den : type === 'bp' ? (im / den) * (1 + 3 / (kk + .3)) * .8 : type === 'notch' ? Math.abs(re) / den : (1 + w * w) / den; }
+      const db = 20 * Math.log10(Math.max(1e-4, mag)), y = H * .55 - db / 30 * H * .5; x ? c.lineTo(x, Math.max(1, Math.min(H - 1, y))) : c.moveTo(x, Math.max(1, Math.min(H - 1, y))); }
+    c.stroke(); }
+}
+const VOWELS_UI = [[730, 1090, 2440], [530, 1840, 2480], [270, 2290, 3010], [570, 840, 2410], [300, 870, 2240]];
+function oscWaveUI(ph, m) { const s = Math.sin(2 * Math.PI * ph), tri = ph < .5 ? 4 * ph - 1 : 3 - 4 * ph, saw = 2 * ph - 1, sq = ph < .5 ? .8 : -.8;
+  if (m < 1 / 3) return s + (tri - s) * m * 3; if (m < 2 / 3) return tri + (saw - tri) * (m - 1 / 3) * 3; return saw + (sq - saw) * Math.min(1, (m - 2 / 3) * 3); }
+
+// live: LFO phase, envelopes, meters, gate step, modulated knob dots
+function synthFrame() {
+  const sv = viz.syn; if (!sv) return;
+  const d = devicePixelRatio || 1;
+  for (const i of [1, 2]) { const cv = $('cv_lfo' + i); if (!cv) continue; const c = cv.getContext('2d'), W = cv.width, H = cv.height, sh = cfg.synth.o['lfo' + i + '_shape'];
+    c.clearRect(0, 0, W, H); c.strokeStyle = SRC['lfo' + i][1]; c.lineWidth = 2 * d; c.beginPath();
+    const f = ph => sh === 'tri' ? (ph < .5 ? 4 * ph - 1 : 3 - 4 * ph) : sh === 'saw' ? 2 * ph - 1 : sh === 'ramp' ? 1 - 2 * ph : sh === 'square' ? (ph < .5 ? 1 : -1) : sh === 'sh' || sh === 'smooth' ? Math.sin(ph * 37.1) * Math.cos(ph * 11.3) : Math.sin(2 * Math.PI * ph);
+    for (let x = 0; x <= W; x += 2) { const y = H / 2 - f(x / W) * H * .38; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
+    const v = sv.src['lfo' + i]; c.fillStyle = '#fff'; c.beginPath(); c.arc(sv.lfoPh[i - 1] * W, H / 2 - v * H * .38, 4 * d, 0, 7); c.fill(); }
+  for (const i of [1, 2]) { const cv = $('cv_env' + i); if (!cv) continue; const c = cv.getContext('2d'), W = cv.width, H = cv.height, p = cfg.synth.p, k = 'env' + i;
+    const a = p[k + '_a'], dd = p[k + '_d'], s = p[k + '_s'], r = p[k + '_r'], tot = a + dd + .4 + r, X = t => t / tot * W, Y = v => H - 4 * d - v * (H - 8 * d);
+    c.clearRect(0, 0, W, H); c.strokeStyle = SRC[k][1]; c.lineWidth = 2 * d; c.beginPath(); c.moveTo(0, Y(0)); c.lineTo(X(a), Y(1));
+    for (let t = 0; t <= 1; t += .1) c.lineTo(X(a + dd * t), Y(s + (1 - s) * Math.exp(-4 * t))); c.lineTo(X(a + dd + .4), Y(s));
+    for (let t = 0; t <= 1; t += .1) c.lineTo(X(a + dd + .4 + r * t), Y(s * Math.exp(-4.6 * t))); c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.85)'; c.fillRect(0, Y(sv.src[k]) - d, W * .06, 2 * d); }
+  const m = $('m_fol'); if (m) m.style.width = Math.round(sv.src.fol * 100) + '%';
+  for (const s of ['vel', 'note', 'mw', 'rnd', 'energy', 'gate']) { const b = $('cb_' + s); if (b) b.style.width = Math.round((sv.src[s] || 0) * 100) + '%'; }
+  const gs = $('gsteps'); if (gs) [...gs.children].forEach((b, i) => b.classList.toggle('cur', i === sv.step && cfg.synth.o.gate_on));
+  for (const id in knobs) { const w = knobs[id], dot = w.querySelector('.live'); const n = sv.mv[id];
+    if (n == null) { dot.setAttribute('cx', -9); continue; } const a = (A0 + (A1 - A0) * n) * Math.PI / 180; dot.setAttribute('cx', 24 + 17 * Math.sin(a)); dot.setAttribute('cy', 24 - 17 * Math.cos(a)); }
+}
+function setFace(f) {
+  face = f;
+  document.querySelectorAll('.faces button').forEach(b => b.classList.toggle('on', b.dataset.face === f));
+  document.querySelector('main').classList.toggle('synthOn', f === 'synth');
+  if (f === 'synth') buildSynth(); else requestAnimationFrame(fit);
+}
+
+// ───────────────────────── wiring ─────────────────────────
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'p-' + b.dataset.t));
+});
+$('brTog').onclick = () => { showBrace = !showBrace; $('brTog').classList.toggle('on', showBrace); };
+$('backTog').onclick = () => { backView = !backView; $('backTog').classList.toggle('on', backView); $('hint').style.visibility = backView ? 'hidden' : ''; };
+$('editTog').onclick = () => { editOutline = !editOutline; $('editTog').classList.toggle('on', editOutline); };
+$('vol').oninput = pushPk;
+$('purBtn').onclick = () => setPurity({ on: !purity.on });
+$('panic').onclick = () => { node && node.port.postMessage({ t: 'panic' }); heldKeys.clear(); keyMap.clear(); refs.clear(); setSus(false); drawKb(); };
+$('octDn').onclick = () => { baseOct = Math.max(12, baseOct - 12); drawKb(); };
+$('octUp').onclick = () => { baseOct = Math.min(84, baseOct + 12); drawKb(); };
+$('startBtn').onclick = async () => {
+  $('startBtn').textContent = 'Starting…';
+  try { await startAudio(); $('overlay').style.display = 'none'; }
+  catch (e) { $('startBtn').textContent = 'Audio failed: ' + e.message; }
+};
+window.addEventListener('resize', fit);
+cfg.synth = synthDefault();
+document.querySelectorAll('.faces button[data-face]').forEach(b => b.onclick = () => setFace(b.dataset.face));
+fillPresets('f:Acoustic guitar');
+buildAll(); setPurity({}); renderInfo();
+requestAnimationFrame(() => { fit(); requestAnimationFrame(frame); });
+</script>
+</body>
+</html>
