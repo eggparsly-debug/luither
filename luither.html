@@ -2099,7 +2099,7 @@ function buildBody() {
   drow.children[1].oninput = e => { const D = Math.max(...cfg.body.depth), k = +e.target.value / D; cfg.body.depth = cfg.body.depth.map(v => v * k); dShow(); onB(); drawDepth(); };
   p.append(drow); dShow(); ctlReg['body.depthMax'] = dShow;
   noteP(p, 'Curved backs are stiffer than flat ones and ring higher; ribbed staves are a touch more damped. Use ⟲ Back view to see it.');
-  noteP(p, 'Turn on ✎ Edit outline and drag the points anywhere: horns, cutaways and points are all possible. Double-click a point to add one after it; shift-click to delete. Template outlines are a starting point.');
+  noteP(p, 'Turn on ✎ Edit outline and drag the points anywhere: horns, cutaways and points are all possible. Double-click a point to add one after it; right-click a point to delete it. Hold Shift while dragging, adding or deleting to touch one side only (asymmetric). Template outlines are a starting point.');
   noteP(p, 'Drag the points in the cross-section below the instrument to set depth: flat sides like a guitar, or a bulging bowl like a lute or gourd.');
   h3(p, 'Materials');
   const mats = Object.keys(BMAT).map(k => [k, k]);
@@ -2434,17 +2434,20 @@ function hitTest(x, y) {
   if (b.hole.type !== 'none' && Math.abs(x - g.X(b.hole.x * b.length)) < 22 * d && Math.abs(y - g.Y(0)) < (b.hole.type === 'f' ? g.P.mh * g.sc : 30 * d)) return 'hole';
   return null;
 }
-// outline editing: drag points (mirrored partner follows when "Mirror edits" is on); double-click a point to add one after it; shift-click to delete
+// outline editing: drag points (mirrored partner follows when "Mirror edits" is on); double-click a point to add one after it; right-click to delete; Shift = this side only (asymmetric)
 let mirrorEdit = true, partner = -1;
 function findPartner(o, i) { const [x, y] = o[i]; if (Math.abs(y) < .003) return i; let best = -1, bd = .006; o.forEach(([x2, y2], j) => { if (j !== i) { const dd = Math.hypot(x2 - x, y2 + y); if (dd < bd) { bd = dd; best = j; } } }); return best; }
 function outlineChanged() { backCache.key = ''; pushBody(); drawDepth(); }
-cv.addEventListener('pointerdown', e => { const [x, y] = evPos(e, cv); dragging = hitTest(x, y); if (!dragging) return;
+cv.addEventListener('pointerdown', e => { if (e.button === 2) return; const [x, y] = evPos(e, cv); dragging = hitTest(x, y); if (!dragging) return;
   if (dragging.startsWith('op')) { const o = cfg.body.outline, i = +dragging.slice(2);
-    if (e.shiftKey) { if (o.length > 4) { const j = mirrorEdit ? findPartner(o, i) : -1; [i, j].filter(k => k >= 0).sort((a, b2) => b2 - a).filter((k, n, arr) => arr.indexOf(k) === n).forEach(k => o.length > 4 && o.splice(k, 1)); outlineChanged(); } dragging = null; return; }
-    partner = mirrorEdit ? findPartner(o, i) : -1; }
+    partner = mirrorEdit && !e.shiftKey ? findPartner(o, i) : -1; }
   cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('contextmenu', e => { if (!editOutline) return; const [x, y] = evPos(e, cv), h = hitTest(x, y); if (!h || !h.startsWith('op')) return;
+  e.preventDefault(); const o = cfg.body.outline, i = +h.slice(2); if (o.length <= 4) return;
+  const j = mirrorEdit && !e.shiftKey ? findPartner(o, i) : -1;
+  [...new Set([i, j].filter(k => k >= 0))].sort((a, b2) => b2 - a).forEach(k => o.length > 4 && o.splice(k, 1)); hover = null; outlineChanged(); draw(); });
 cv.addEventListener('dblclick', e => { if (!editOutline) return; const [x, y] = evPos(e, cv), h = hitTest(x, y); if (!h || !h.startsWith('op')) return;
-  const o = cfg.body.outline, i = +h.slice(2), n = o.length, j = mirrorEdit ? findPartner(o, i) : -1, mid = (a, b2) => [(a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2];
+  const o = cfg.body.outline, i = +h.slice(2), n = o.length, j = mirrorEdit && !e.shiftKey ? findPartner(o, i) : -1, mid = (a, b2) => [(a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2];
   const ins = [[i + 1, mid(o[i], o[(i + 1) % n])]]; if (j >= 0 && j !== i) ins.push([j, mid(o[(j - 1 + n) % n], o[j])]);
   ins.sort((a, b2) => b2[0] - a[0]).forEach(([k, p]) => o.splice(k, 0, p)); outlineChanged(); });
 cv.addEventListener('pointermove', e => {
