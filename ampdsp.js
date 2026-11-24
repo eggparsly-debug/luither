@@ -10,10 +10,10 @@ class OS2 {
   up(x) { this.a = this.u[1].run(this.u[0].run(x * 2)); this.b = this.u[1].run(this.u[0].run(0)); }
   down(a, b) { const y = this.d[1].run(this.d[0].run(a)); this.d[1].run(this.d[0].run(b)); return y; }
 }
-class DL { // delay line with fractional read
-  constructor(n) { this.b = new Float32Array(n); this.m = n; this.w = 0; }
-  put(x) { this.b[this.w] = fz(x); this.w = (this.w + 1) % this.m; }
-  get(d) { let rp = this.w - 1 - d; while (rp < 0) rp += this.m; const i = Math.floor(rp), f = rp - i, a = this.b[i % this.m], c = this.b[(i + 1) % this.m]; return a + (c - a) * f; }
+class DL { // delay line with fractional read (power-of-two buffer: wrap with a mask, no division)
+  constructor(n) { let m = 1; while (m < n + 2) m <<= 1; this.b = new Float32Array(m); this.k = m - 1; this.w = 0; }
+  put(x) { this.b[this.w] = (x > 1e-15 || x < -1e-15) ? x : 0; this.w = (this.w + 1) & this.k; }
+  get(d) { const rp = this.w - 1 - d, i = Math.floor(rp), f = rp - i, k = this.k, a = this.b[i & k]; return a + (this.b[(i + 1) & k] - a) * f; }
 }
 // fast curves for the hot path: rational tanh, and a cubic clipper with a hard knee at ±1.5
 const tanhF = x => x < -3 ? -1 : x > 3 ? 1 : x * (27 + x * x) / (27 + 9 * x * x);
@@ -103,15 +103,21 @@ class Phaser extends Pedal {
 class Rotary extends Pedal { // horn and drum spin at their own speeds and inertia
   init() { this.hp = 0; this.dp = 0; this.hs = .8; this.ds = .66; this.x = new Biq(); this.xh = new Biq(); this.dh = new DL(2048); this.dd = new DL(2048); }
   update() { const fs = this.fs; this.x.set('lp', 800, .7, 0, fs); this.xh.set('hp', 800, .7, 0, fs); }
-  block(n) { const fast = this.o.fast, dt = n / this.fs;
+  block(n) { const fast = this.o.fast, dt = n / this.fs, sp = Math.PI * (this.p.spread ?? .6);
     this.hs += ((fast ? 6.8 : .8) - this.hs) * Math.min(1, dt / .7); this.ds += ((fast ? 5.9 : .66) - this.ds) * Math.min(1, dt / 3);
-    this.hp = (this.hp + this.hs * dt) % 1; this.dp = (this.dp + this.ds * dt) % 1; this.v.hp = this.hp; this.v.dp = this.dp; this.v.fast = fast; }
+    const h0 = 2 * Math.PI * this.hp, d0 = 2 * Math.PI * this.dp;
+    this.hp = (this.hp + this.hs * dt) % 1; this.dp = (this.dp + this.ds * dt) % 1; this.v.hp = this.hp; this.v.dp = this.dp; this.v.fast = fast;
+    let h1 = 2 * Math.PI * this.hp, d1 = 2 * Math.PI * this.dp; if (h1 < h0) h1 += 2 * Math.PI; if (d1 < d0) d1 += 2 * Math.PI;
+    // [sin, cos] for left and right mic at block start, and per-sample step (angles change little within 128 samples)
+    const tr = (a0, a1) => [Math.sin(a0), Math.cos(a0), (Math.sin(a1) - Math.sin(a0)) / n, (Math.cos(a1) - Math.cos(a0)) / n];
+    this.HL = tr(h0, h1); this.HR = tr(h0 + sp, h1 + sp); this.DLr = tr(d0, d1); this.DRr = tr(d0 + sp, d1 + sp); this.j = 0; }
   run(l, r) { const p = this.p, fs = this.fs; let x = (l + r) * .5; if (p.drive > .01) x = Math.tanh(x * (1 + p.drive * 6)) / (1 + p.drive * 2);
     const lo = this.x.run(x), hi = this.xh.run(x);
-    const hA = 2 * Math.PI * this.hp, dA = 2 * Math.PI * this.dp, sp = p.spread;
+    if (!this.HL) this.block(128);
+    const j = this.j++, HL = this.HL, HR = this.HR, DL_ = this.DLr, DR = this.DRr;
     this.dh.put(hi); this.dd.put(lo);
-    const hl = this.dh.get(fs * (.0012 + .00035 * Math.sin(hA))) * (1 - .45 * Math.cos(hA)), hr = this.dh.get(fs * (.0012 + .00035 * Math.sin(hA + Math.PI * sp))) * (1 - .45 * Math.cos(hA + Math.PI * sp));
-    const dl = this.dd.get(fs * (.002 + .0002 * Math.sin(dA))) * (1 - .3 * Math.cos(dA)), dr = this.dd.get(fs * (.002 + .0002 * Math.sin(dA + Math.PI * sp))) * (1 - .3 * Math.cos(dA + Math.PI * sp));
+    const hl = this.dh.get(fs * (.0012 + .00035 * (HL[0] + HL[2] * j))) * (1 - .45 * (HL[1] + HL[3] * j)), hr = this.dh.get(fs * (.0012 + .00035 * (HR[0] + HR[2] * j))) * (1 - .45 * (HR[1] + HR[3] * j));
+    const dl = this.dd.get(fs * (.002 + .0002 * (DL_[0] + DL_[2] * j))) * (1 - .3 * (DL_[1] + DL_[3] * j)), dr = this.dd.get(fs * (.002 + .0002 * (DR[0] + DR[2] * j))) * (1 - .3 * (DR[1] + DR[3] * j));
     const bal = p.balance; this.l = (hl * bal + dl * (1 - bal)) * 1.4; this.r = (hr * bal + dr * (1 - bal)) * 1.4; }
 }
 class Gate extends Pedal {
@@ -136,8 +142,8 @@ class DelayPedal extends Pedal { // tape/analog style: darkening repeats, wow, o
   run(l, r) { this.t += (this.tt - this.t) * .0005; const p = this.p, w = 1 + Math.sin(2 * Math.PI * this.wph) * p.wow * .004 + Math.sin(2 * Math.PI * this.wph * 3.7) * p.wow * .0015;
     const yl = this.d[0].get(this.t * w), yr = this.d[1].get(this.t * w * (this.o.pp ? 1 : 1.0007));
     const fl = this.hp[0].run(this.lp[0].run(yl)) * p.fb, fr = this.hp[1].run(this.lp[1].run(yr)) * p.fb;
-    if (this.o.pp) { this.d[0].put(Math.tanh((l + r) * .5 + fr)); this.d[1].put(Math.tanh(fl)); }
-    else { this.d[0].put(Math.tanh(l + fl)); this.d[1].put(Math.tanh(r + fr)); }
+    if (this.o.pp) { this.d[0].put(tanhF((l + r) * .5 + fr)); this.d[1].put(tanhF(fl)); }
+    else { this.d[0].put(tanhF(l + fl)); this.d[1].put(tanhF(r + fr)); }
     this.l = l + (yl - 0) * p.mix; this.r = r + yr * p.mix; }
 }
 class Spring extends Pedal { // two springs per side: dispersive all-passes inside a feedback delay give the "drip"
@@ -204,12 +210,12 @@ class Cab {
   run(l, r) { this.l = this.r = this.one((l + r) * .5, 0); }
 }
 class AmpRack {
-  constructor(fs) { this.fs = fs; this.tempo = 120; this.inst = new Map(); this.pre = []; this.post = []; this.head = new AmpHead(fs); this.cab = new Cab(fs); this.on = false; this.cabOn = true; this.out = 1; this.xf = 1 - Math.exp(-1 / (.01 * fs)); }
+  constructor(fs) { this.fs = fs; this.tempo = 120; this.inst = new Map(); this.pre = []; this.post = []; this.head = new AmpHead(fs); this.cab = new Cab(fs); this.on = false; this.cabOn = true; this.out = 1; this.trim = 1; this.xf = 1 - Math.exp(-1 / (.01 * fs)); }
   set(a) {
     const mk = d => { let p = this.inst.get(d.uid); if (!p || p.type !== d.type) { p = new (PEDAL_CLASSES[d.type])(this.fs, this); p.type = d.type; this.inst.set(d.uid, p); } p.on = d.on; p.setP(d.p, d.o); return p; };
     this.pre = (a.pre || []).filter(d => PEDAL_CLASSES[d.type]).map(mk); this.post = (a.post || []).filter(d => PEDAL_CLASSES[d.type]).map(mk);
     const keep = new Set([...this.pre, ...this.post]); for (const [u, p] of this.inst) if (!keep.has(p)) this.inst.delete(u);
-    this.on = !!a.on; this.cabOn = a.cab && a.cab.on !== false; if (a.head) this.head.set(a.head); if (a.cab) this.cab.set(a.cab); this.out = dbToLin(a.out || 0);
+    this.on = !!a.on; this.cabOn = a.cab && a.cab.on !== false; if (a.head) this.head.set(a.head); if (a.cab) this.cab.set(a.cab); this.out = dbToLin(a.out || 0); this.trim = dbToLin(a.trim || 0); // trim = the amp preset's level match, only while the amp is on
   }
   block(n) { for (const p of this.pre) p.block(n); for (const p of this.post) p.block(n); if (this.on) this.head.block(); }
   chain(list, l, r) {
@@ -219,7 +225,7 @@ class AmpRack {
   }
   run(l, r) {
     this.chain(this.pre, l, r); l = this.l; r = this.r;
-    if (this.on) { this.head.run(l, r); l = this.head.l; r = this.head.r; if (this.cabOn) { this.cab.run(l, r); l = this.cab.l; r = this.cab.r; } }
+    if (this.on) { this.head.run(l, r); l = this.head.l * this.trim; r = this.head.r * this.trim; if (this.cabOn) { this.cab.run(l, r); l = this.cab.l; r = this.cab.r; } }
     this.chain(this.post, l, r); this.l = this.l * this.out; this.r = this.r * this.out;
   }
   viz() { const pd = {}; for (const [u, p] of this.inst) { pd[u] = { ...p.v, mix: p.mix }; if (p.v.gr !== undefined) p.v.gr = 0; } return { pd, head: this.head.v }; }

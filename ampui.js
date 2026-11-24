@@ -24,21 +24,43 @@ function ampEdited() { if (cfg.amp.preset !== 'Custom') { cfg.amp.preset = 'Cust
 
 // ── pedal ──
 let dragUid = null;
+// drag a pedal by its ⠿ grip: drop it between pedals on either board
+function startPedalDrag(e, uid, card) {
+  e.preventDefault(); dragUid = uid; card.classList.add('dragging');
+  const ghost = el('div', { class: 'chip ghost', style: '--c:' + PEDALS[[...cfg.amp.pre, ...cfg.amp.post].find(p => p.uid === uid).type].color + ';color:#fff' }, '⠿ ' + card.querySelector('.pn').textContent); document.body.append(ghost);
+  let target = null;
+  const mv = ev => { ghost.style.left = ev.clientX + 10 + 'px'; ghost.style.top = ev.clientY + 10 + 'px';
+    const b = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.board'); document.querySelectorAll('.board').forEach(x => x.classList.toggle('over', x === b)); target = b ? { b, x: ev.clientX } : null; };
+  const up = () => { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); ghost.remove(); card.classList.remove('dragging');
+    document.querySelectorAll('.board').forEach(x => x.classList.remove('over'));
+    if (target) { const which = target.b.dataset.b; let item;
+      for (const k of ['pre', 'post']) { const i = cfg.amp[k].findIndex(p => p.uid === uid); if (i >= 0) item = cfg.amp[k].splice(i, 1)[0]; }
+      const after = [...target.b.querySelectorAll('.pedal')].filter(p => p.dataset.uid !== uid).find(p => { const r = p.getBoundingClientRect(); return target.x < r.left + r.width / 2; });
+      const idx = after ? cfg.amp[which].findIndex(p => p.uid === after.dataset.uid) : -1;
+      if (idx >= 0) cfg.amp[which].splice(idx, 0, item); else cfg.amp[which].push(item);
+      pushAmp(); buildAmp(); }
+    dragUid = null; };
+  mv(e); document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+}
 function pedalEl(d, board) {
   const def = PEDALS[d.type];
-  const c = el('div', { class: 'pedal' + (d.on ? '' : ' bypassed'), 'data-uid': d.uid, draggable: 'true' });
+  const c = el('div', { class: 'pedal' + (d.on ? '' : ' bypassed'), 'data-uid': d.uid });
   c.style.setProperty('--pc', def.color);
   const led = el('span', { class: 'led' + (d.on ? ' on' : '') });
-  const head = el('div', { class: 'ph' }, el('span', { class: 'grip', title: 'Drag to reorder or move to the other board' }, '⠿'), el('span', { class: 'pn' }, def.name),
+  const sw = el('button', { class: 'foot', title: 'Footswitch: on / bypass' }, led);
+  sw.onclick = () => { d.on = !d.on; led.classList.toggle('on', d.on); c.classList.toggle('bypassed', !d.on); pushAmpSoon(); };
+  const head = el('div', { class: 'ph' }, el('span', { class: 'grip', title: 'Drag to reorder or move to the other board' }, '⠿'), el('span', { class: 'pn' }, def.name), sw,
     el('button', { class: 'x', title: 'Remove pedal', onclick: () => { removePedal(d.uid); } }, '×'));
-  c.append(head, el('canvas', { class: 'pscreen', id: 'ps_' + d.uid, height: 40 }));
+  const nk = def.eq ? 0 : def.params.length;
+  c.style.width = (def.eq ? 214 : Math.max(150, nk * 45 + 20)) + 'px';
+  c.append(head, el('canvas', { class: 'pscreen', id: 'ps_' + d.uid, height: 34 }));
   const ks = el('div', { class: 'pk' + (def.eq ? ' eq' : '') });
   for (const q of def.params) {
     const [k, label, min, max, dflt, log, unit] = q;
     if (def.eq && k !== 'level') { // graphic EQ: vertical sliders read better than knobs
-      const s = el('input', { type: 'range', min, max, step: .5, orient: 'vertical', class: 'vsl', title: label + ' Hz' }); s.value = d.p[k];
+      const s = el('input', { type: 'range', min, max, step: .5, class: 'vsl', title: label + ' Hz — double-click to reset' }); s.value = d.p[k];
       s.oninput = () => { d.p[k] = +s.value; pushAmpSoon(); }; s.ondblclick = () => { s.value = 0; s.oninput(); };
-      ks.append(el('div', { class: 'vcol' }, s, el('span', {}, label))); continue;
+      ks.append(el('div', { class: 'vcol' }, el('div', { class: 'vwrap' }, s), el('span', {}, label))); continue;
     }
     ks.append(gknob({ label, min, max, log, def: dflt, step: unit === 'bit' || unit === '×' ? 1 : 0, fmt: ufmt(unit), get: () => d.p[k], set: v => { d.p[k] = v; pushAmpSoon(); } }));
   }
@@ -52,11 +74,7 @@ function pedalEl(d, board) {
     else { const s = el('select', { class: 'ssel' }); spec[1].forEach(([v, l]) => s.append(el('option', { value: v }, l))); s.value = d.o[k]; s.onchange = () => { d.o[k] = s.value; pushAmpSoon(); }; opts.append(s); }
   }
   if (opts.children.length) c.append(opts);
-  const sw = el('button', { class: 'foot', title: 'Footswitch: on / bypass' }, led);
-  sw.onclick = () => { d.on = !d.on; led.classList.toggle('on', d.on); c.classList.toggle('bypassed', !d.on); pushAmpSoon(); };
-  c.append(sw);
-  c.addEventListener('dragstart', e => { dragUid = d.uid; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', d.uid); c.classList.add('dragging'); });
-  c.addEventListener('dragend', () => { c.classList.remove('dragging'); dragUid = null; document.querySelectorAll('.board').forEach(b => b.classList.remove('over')); });
+  head.querySelector('.grip').addEventListener('pointerdown', e => startPedalDrag(e, d.uid, c));
   return c;
 }
 function removePedal(uid) { for (const b of ['pre', 'post']) cfg.amp[b] = cfg.amp[b].filter(p => p.uid !== uid); pushAmp(); buildAmp(); }
@@ -68,15 +86,6 @@ function boardEl(which, title, note) {
   const wrap = el('div', { class: 'bcard' }, el('div', { class: 'ch' }, el('span', { class: 'ct' }, title), el('span', { class: 'note', style: 'margin:0;flex:1' }, note), add), b);
   if (!list.length) b.append(el('div', { class: 'note bempty' }, 'Empty. Add a pedal, or drag one here from the other board.'));
   list.forEach(d => b.append(pedalEl(d, which)));
-  b.addEventListener('dragover', e => { if (!dragUid) return; e.preventDefault(); b.classList.add('over'); });
-  b.addEventListener('dragleave', () => b.classList.remove('over'));
-  b.addEventListener('drop', e => { e.preventDefault(); b.classList.remove('over'); if (!dragUid) return;
-    let item; for (const k of ['pre', 'post']) { const i = cfg.amp[k].findIndex(p => p.uid === dragUid); if (i >= 0) item = cfg.amp[k].splice(i, 1)[0]; }
-    if (!item) return;
-    const after = [...b.querySelectorAll('.pedal:not(.dragging)')].find(p => { const r = p.getBoundingClientRect(); return e.clientX < r.left + r.width / 2; });
-    const idx = after ? cfg.amp[which].findIndex(p => p.uid === after.dataset.uid) : -1;
-    if (idx >= 0) cfg.amp[which].splice(idx, 0, item); else cfg.amp[which].push(item);
-    pushAmp(); buildAmp(); });
   return wrap;
 }
 
@@ -101,15 +110,14 @@ function buildAmp() {
   stk.onchange = () => { h.stack = stk.value; ampEdited(); };
   const br = el('button', { class: 'tog' + (h.bright ? ' on' : '') }, 'Bright'); br.onclick = () => { h.bright = !h.bright; br.classList.toggle('on', h.bright); ampEdited(); };
   const head = el('div', { class: 'card ahead' + (a.on ? '' : ' off') }, el('div', { class: 'ch' }, el('span', { class: 'ct' }, 'Amp head'), stk, br),
-    el('canvas', { class: 'mini', id: 'cv_head', height: 70 }),
-    el('div', { class: 'krow' }, ...['gain', 'bass', 'mid', 'treble', 'presence', 'master'].map(k => hk(k))),
-    el('div', { class: 'krow adv' }, ...['stages', 'character', 'bias', 'tight', 'sag', 'pdrive', 'resonance'].map(k => hk(k))));
+    el('canvas', { class: 'mini', id: 'cv_head', height: 48 }),
+    el('div', { class: 'krow hk' }, ...['gain', 'bass', 'mid', 'treble', 'presence', 'master'].map(k => hk(k)), el('span', { class: 'ksep' }), ...['stages', 'character', 'bias', 'tight', 'sag', 'pdrive', 'resonance'].map(k => hk(k))));
   // cab
   const sel3 = (obj, key, opts) => { const s = el('select', { class: 'ssel', style: 'margin:0' }); Object.entries(opts).forEach(([k, v]) => s.append(el('option', { value: k }, v.label))); s.value = obj[key]; s.onchange = () => { obj[key] = s.value; ampEdited(); }; return s; };
   const cabOn = el('button', { class: 'sw' + (cb.on !== false ? ' on' : ''), title: 'Cabinet on/off (off = direct out of the head)' }); cabOn.onclick = () => { cb.on = cb.on === false; cabOn.classList.toggle('on', cb.on !== false); ampEdited(); };
   const cab = el('div', { class: 'card acab' + (a.on ? '' : ' off') }, el('div', { class: 'ch' }, el('span', { class: 'ct' }, 'Cabinet & mic'), cabOn),
     el('div', { class: 'two' }, sel3(cb, 'cab', CABS), sel3(cb, 'speaker', SPEAKERS)), el('div', { class: 'two' }, sel3(cb, 'mic', MICS), el('span', { class: 'note', style: 'margin:0' }, 'Drag the mic ↔ centre/edge, ↕ distance')),
-    el('div', { class: 'cabview' }, el('canvas', { id: 'cv_spk', height: 120 }), el('canvas', { id: 'cv_cab', height: 120 })));
+    el('div', { class: 'cabview' }, el('canvas', { id: 'cv_spk', height: 100 }), el('canvas', { id: 'cv_cab', height: 100 })));
   G.append(el('div', { class: 'arow' }, head, cab));
   G.append(boardEl('post', 'Effects loop', 'After the cabinet: modulation, delay, reverb.'));
   requestAnimationFrame(() => { document.querySelectorAll('#amp canvas').forEach(c => { const d = devicePixelRatio || 1; c.width = c.clientWidth * d; c.height = c.clientHeight * d; }); wireMic(); });
@@ -133,7 +141,7 @@ function curveTF(c, W, H, fn, col, dotX) { c.strokeStyle = col; c.lineWidth = 2 
   if (dotX != null) { const u = Math.max(-1, Math.min(1, dotX)); c.fillStyle = '#fff'; c.beginPath(); c.arc((u + 1) / 2 * W, H / 2 - fn(u) * H * .42, 3.5 * (devicePixelRatio || 1), 0, 7); c.fill(); } }
 const tnh = x => Math.tanh(x), hcl = x => x <= -1.5 ? -1 : x >= 1.5 ? 1 : x - x * x * x / 6.75;
 function ampFrame() {
-  const av = viz.amp || { pd: {}, head: {} }, fs = actx ? actx.sampleRate : 48000, d = devicePixelRatio || 1, t = performance.now() / 1000;
+  const av = viz.rig || { pd: {}, head: {} }, fs = actx ? actx.sampleRate : 48000, d = devicePixelRatio || 1, t = performance.now() / 1000;
   for (const b of ['pre', 'post']) for (const p of cfg.amp[b]) {
     const cv = $('ps_' + p.uid); if (!cv) continue; const c = cv.getContext('2d'), W = cv.width, H = cv.height, v = av.pd[p.uid] || {}, q = p.p, col = '#9fe0c8';
     c.clearRect(0, 0, W, H); c.fillStyle = '#0c0a08'; c.fillRect(0, 0, W, H);

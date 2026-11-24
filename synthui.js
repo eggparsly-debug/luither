@@ -237,5 +237,6 @@ function setFace(f) {
   face = f;
   document.querySelectorAll('.faces button').forEach(b => b.classList.toggle('on', b.dataset.face === f));
   document.querySelector('main').classList.toggle('synthOn', f === 'synth');
-  if (f === 'synth') buildSynth(); else requestAnimationFrame(fit);
+  document.querySelector('main').classList.toggle('ampOn', f === 'amp');
+  if (f === 'synth') buildSynth(); else if (f === 'amp') buildAmp(); else requestAnimationFrame(fit);
 }

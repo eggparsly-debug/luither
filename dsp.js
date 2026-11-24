@@ -421,7 +421,7 @@ class LuitherProc extends AudioWorkletProcessor {
     if (++this.blk >= 6) {
       this.blk = 0;
       this.port.postMessage({ t: 'viz', amp: S.map(s => s.rms), note: S.map(s => s.harm ? s.touch : s.note + 12 * Math.log2(s.freq / s.target)), harm: S.map(s => !!s.harm),
-        held: S.map(s => s.held || s.cont > 0.02), syn: syn.viz(), amp: rack.viz(), lim: this.limMin, modeE: M.map(m => { const e = m.e; m.e = 0; return e; }) });
+        held: S.map(s => s.held || s.cont > 0.02), syn: syn.viz(), rig: rack.viz(), lim: this.limMin, modeE: M.map(m => { const e = m.e; m.e = 0; return e; }) });
       this.limMin = 1;
     }
     return true;

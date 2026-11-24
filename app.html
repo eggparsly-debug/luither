@@ -92,7 +92,41 @@ footer{border-top:1px solid var(--line);background:#120d09;display:flex;align-it
 #modal textarea{width:100%;height:260px;background:#0e0a07;color:var(--ink);border:1px solid var(--line);border-radius:6px;font:11px "IBM Plex Mono",monospace;padding:8px}
 #modal .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 #modal input:not([type=checkbox]){background:#0e0a07;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
-main.synthOn #stage, main.synthOn aside{display:none}
+main.synthOn #stage, main.synthOn aside, main.ampOn #stage, main.ampOn aside{display:none}
+#amp{display:none;grid-column:1/-1;overflow:auto;padding:6px 12px;min-height:0}
+main.ampOn #amp{display:block}
+#amp .sbar{margin-bottom:4px}
+.agrid{display:flex;flex-direction:column;gap:6px}
+.bcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px}
+.bcard .addp{width:170px;margin:0}
+.board{display:flex;gap:8px;overflow-x:auto;min-height:44px;padding:2px 2px 3px;border-radius:8px;transition:background .15s}
+.board.over{background:#2c2116;outline:1px dashed var(--brass)}
+.bempty{align-self:center;margin:0 auto;padding:10px}
+.pedal{flex:0 0 auto;background:linear-gradient(160deg,var(--pc),color-mix(in srgb,var(--pc) 55%,#000));border-radius:10px;padding:6px 7px 6px;border:1px solid rgba(0,0,0,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.15);display:flex;flex-direction:column;gap:4px;cursor:default}
+.pedal.dragging{opacity:.4}
+.pedal.bypassed .pscreen,.pedal.bypassed .pk{opacity:.45}
+.pedal .ph{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.35);border-radius:6px;padding:2px 6px}
+.pedal .grip{cursor:grab;opacity:.8}.pedal .pn{flex:1;font:700 12px Fraunces,serif;letter-spacing:.5px;color:#fff;text-shadow:0 1px 1px #000}
+.pedal .x{background:none;border:0;color:rgba(255,255,255,.6);cursor:pointer;font-size:14px}
+.pscreen{width:100%;height:34px;border-radius:5px;background:#0c0a08;border:1px solid rgba(0,0,0,.6)}
+.pedal .pk{display:flex;flex-wrap:nowrap;justify-content:center;gap:0 2px;background:rgba(0,0,0,.28);border-radius:6px;padding:2px}
+.pedal .knob.sm{width:44px}.pedal .knob.sm svg{width:32px;height:32px}.pedal .knob .kv{font-size:10px}.pedal .knob .kl{font-size:9.5px;color:#e8e0d0}
+.pedal .pk.eq{gap:0}.vcol{display:flex;flex-direction:column;align-items:center;width:21px;font-size:9px;color:#e8e0d0}
+.vwrap{width:20px;height:62px;position:relative}
+.vsl{position:absolute;width:58px;left:-19px;top:28px;transform:rotate(-90deg)}
+.popts{display:flex;gap:4px;align-items:center;flex-wrap:wrap}.popts .ssel{width:auto;flex:1;margin:0;font-size:11px;padding:2px}
+.popts .tog{background:rgba(0,0,0,.35)}
+.foot{width:26px;height:16px;border-radius:8px;flex:0 0 auto;background:radial-gradient(#d8d8d8,#777);border:1px solid #222;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.led{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3a1010;box-shadow:inset 0 0 2px #000}
+.led.on{background:#ff4030;box-shadow:0 0 6px #ff4030}
+.power{display:flex;gap:6px;align-items:center;background:#120d09;border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:600}
+.arow{display:grid;grid-template-columns:3fr 2fr;gap:8px}
+.ahead{background:linear-gradient(#2b2119,#1d1611);border-color:#4a3826}
+.ahead .ch .ssel{width:auto}.ahead .mini{height:48px}.ahead .knob.sm svg{width:32px;height:32px}
+.ahead .krow.hk{justify-content:space-between;flex-wrap:nowrap}.ahead .krow .knob.sm{width:auto;flex:1;min-width:0}.ksep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+.cabview{display:grid;grid-template-columns:100px 1fr;gap:6px}.cabview canvas{width:100%;height:100px;border-radius:6px;background:#0c0a08}
+#cv_spk{cursor:crosshair}
+@media (max-width:1100px){.arow{grid-template-columns:1fr}}
 #synth{display:none;grid-column:1/-1;overflow:auto;padding:8px 12px;min-height:0}
 
 main.synthOn #synth{display:block}
@@ -155,7 +189,7 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
   <div class="faces">
     <button class="on" data-face="builder">Builder</button>
     <button data-face="synth">Synth</button>
-    <button disabled title="Stage 3">Amp &amp; Pedals</button>
+    <button data-face="amp">Amp &amp; Pedals</button>
   </div>
   <select id="preset"></select>
   <button class="hbtn" id="saveBtn">Save</button>
@@ -185,6 +219,7 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
     </div>
   </section>
   <section id="synth"></section>
+  <section id="amp"></section>
   <aside>
     <div class="tabs">
       <button data-t="strings" class="on">Strings</button><button data-t="exciter">Exciter</button><button data-t="neck">Neck &amp; Play</button><button data-t="body">Body</button><button data-t="pickups">Pickups</button>
@@ -297,7 +332,7 @@ function pushEx() { send('ex', cfg.ex); }
 function pushNk() { const nk = { ...cfg.nk }; if (nk.thrAuto) nk.thr = autoThr(); send('nk', nk); }
 function pushBody() { const m = computeBody(); send('modes', m.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan }))); renderInfo(); }
 function pushPk() { send('pk', { ...cfg.pk, master: cfg.pk.master * +$('vol').value }); }
-function pushAll() { pushStrings(); pushEx(); pushNk(); pushBody(); pushPk(); if (cfg.synth) pushSynth(); }
+function pushAll() { pushStrings(); pushEx(); pushNk(); pushBody(); pushPk(); if (cfg.synth) pushSynth(); if (cfg.amp) pushAmp(); }
 async function startAudio() {
   actx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
   const src = $('dsp').textContent;
@@ -918,7 +953,7 @@ function drawDepth() {
 let hoverD = -1, dragD = -1;
 function frame(now) {
   tAnim += (now - lastT) / 1000; lastT = now;
-  if (face === 'synth') synthFrame(); else draw();
+  if (face === 'synth') synthFrame(); else if (face === 'amp') ampFrame(); else draw();
   const lvl = Math.max(0, ...viz.amp.map(a => a || 0)); $('meter').firstChild.style.width = Math.min(100, lvl * 900) + '%';
   requestAnimationFrame(frame);
 }
@@ -1006,12 +1041,17 @@ function fillPresets(sel) {
 }
 function loadCfg(c) {
   const d = PRESETS['Acoustic guitar']();
-  const prevSynth = cfg.synth;
+  const prevSynth = cfg.synth, prevAmp = cfg.amp;
   if (c.body && !c.body.backShape) c = { ...c, body: { ...c.body, backShape: 'custom' } };
   cfg = { ...d, ...c, ex: { ...exDefault(), ...c.ex }, nk: { ...nkDefault(), ...c.nk }, body: { ...d.body, ...c.body, hole: { ...d.body.hole, ...(c.body?.hole || {}) } }, pk: { ...d.pk, ...c.pk } };
   cfg.strings = (c.strings || d.strings).slice(0, 24);
   cfg.synth = c.synth ? { ...synthDefault(), ...c.synth, p: { ...synthDefault().p, ...c.synth.p }, o: { ...SOPT(), ...c.synth.o } } : (prevSynth || synthDefault());
+  // amp: a saved instrument brings its own rig; factory presets keep your pedals, and electric ones switch on a matching amp
+  if (c.amp) cfg.amp = { ...ampDefault(), ...c.amp, head: { ...ampDefault().head, ...c.amp.head }, cab: { ...ampDefault().cab, ...c.amp.cab } };
+  else if (c.ampPreset) { cfg.amp = ampPreset(c.ampPreset, prevAmp || ampDefault()); cfg.amp.on = true; }
+  else cfg.amp = { ...(prevAmp || ampDefault()), on: false };
   if (face === 'synth') buildSynth();
+  if (face === 'amp') buildAmp();
   if (node) node.port.postMessage({ t: 'panic' });
   pushAll(); buildAll(); renderInfo(); drawDepth(); draw();
 }
@@ -1031,6 +1071,9 @@ $('jsonBtn').onclick = () => modal(`<h3>Instrument JSON</h3><div class="note">Co
 
 /*__SYNTHDEFS__*/
 /*__SYNTHUI__*/
+/*__BIQUAD__*/
+/*__AMPDEFS__*/
+/*__AMPUI__*/
 // ───────────────────────── wiring ─────────────────────────
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
@@ -1050,7 +1093,7 @@ $('startBtn').onclick = async () => {
   catch (e) { $('startBtn').textContent = 'Audio failed: ' + e.message; }
 };
 window.addEventListener('resize', fit);
-cfg.synth = synthDefault();
+cfg.synth = synthDefault(); cfg.amp = ampDefault();
 document.querySelectorAll('.faces button[data-face]').forEach(b => b.onclick = () => setFace(b.dataset.face));
 fillPresets('f:Acoustic guitar');
 buildAll(); setPurity({}); renderInfo();

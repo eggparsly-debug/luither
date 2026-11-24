@@ -92,7 +92,41 @@ footer{border-top:1px solid var(--line);background:#120d09;display:flex;align-it
 #modal textarea{width:100%;height:260px;background:#0e0a07;color:var(--ink);border:1px solid var(--line);border-radius:6px;font:11px "IBM Plex Mono",monospace;padding:8px}
 #modal .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 #modal input:not([type=checkbox]){background:#0e0a07;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
-main.synthOn #stage, main.synthOn aside{display:none}
+main.synthOn #stage, main.synthOn aside, main.ampOn #stage, main.ampOn aside{display:none}
+#amp{display:none;grid-column:1/-1;overflow:auto;padding:6px 12px;min-height:0}
+main.ampOn #amp{display:block}
+#amp .sbar{margin-bottom:4px}
+.agrid{display:flex;flex-direction:column;gap:6px}
+.bcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px 8px}
+.bcard .addp{width:170px;margin:0}
+.board{display:flex;gap:8px;overflow-x:auto;min-height:44px;padding:2px 2px 3px;border-radius:8px;transition:background .15s}
+.board.over{background:#2c2116;outline:1px dashed var(--brass)}
+.bempty{align-self:center;margin:0 auto;padding:10px}
+.pedal{flex:0 0 auto;background:linear-gradient(160deg,var(--pc),color-mix(in srgb,var(--pc) 55%,#000));border-radius:10px;padding:6px 7px 6px;border:1px solid rgba(0,0,0,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.15);display:flex;flex-direction:column;gap:4px;cursor:default}
+.pedal.dragging{opacity:.4}
+.pedal.bypassed .pscreen,.pedal.bypassed .pk{opacity:.45}
+.pedal .ph{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.35);border-radius:6px;padding:2px 6px}
+.pedal .grip{cursor:grab;opacity:.8}.pedal .pn{flex:1;font:700 12px Fraunces,serif;letter-spacing:.5px;color:#fff;text-shadow:0 1px 1px #000}
+.pedal .x{background:none;border:0;color:rgba(255,255,255,.6);cursor:pointer;font-size:14px}
+.pscreen{width:100%;height:34px;border-radius:5px;background:#0c0a08;border:1px solid rgba(0,0,0,.6)}
+.pedal .pk{display:flex;flex-wrap:nowrap;justify-content:center;gap:0 2px;background:rgba(0,0,0,.28);border-radius:6px;padding:2px}
+.pedal .knob.sm{width:44px}.pedal .knob.sm svg{width:32px;height:32px}.pedal .knob .kv{font-size:10px}.pedal .knob .kl{font-size:9.5px;color:#e8e0d0}
+.pedal .pk.eq{gap:0}.vcol{display:flex;flex-direction:column;align-items:center;width:21px;font-size:9px;color:#e8e0d0}
+.vwrap{width:20px;height:62px;position:relative}
+.vsl{position:absolute;width:58px;left:-19px;top:28px;transform:rotate(-90deg)}
+.popts{display:flex;gap:4px;align-items:center;flex-wrap:wrap}.popts .ssel{width:auto;flex:1;margin:0;font-size:11px;padding:2px}
+.popts .tog{background:rgba(0,0,0,.35)}
+.foot{width:26px;height:16px;border-radius:8px;flex:0 0 auto;background:radial-gradient(#d8d8d8,#777);border:1px solid #222;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.led{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3a1010;box-shadow:inset 0 0 2px #000}
+.led.on{background:#ff4030;box-shadow:0 0 6px #ff4030}
+.power{display:flex;gap:6px;align-items:center;background:#120d09;border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:600}
+.arow{display:grid;grid-template-columns:3fr 2fr;gap:8px}
+.ahead{background:linear-gradient(#2b2119,#1d1611);border-color:#4a3826}
+.ahead .ch .ssel{width:auto}.ahead .mini{height:48px}.ahead .knob.sm svg{width:32px;height:32px}
+.ahead .krow.hk{justify-content:space-between;flex-wrap:nowrap}.ahead .krow .knob.sm{width:auto;flex:1;min-width:0}.ksep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+.cabview{display:grid;grid-template-columns:100px 1fr;gap:6px}.cabview canvas{width:100%;height:100px;border-radius:6px;background:#0c0a08}
+#cv_spk{cursor:crosshair}
+@media (max-width:1100px){.arow{grid-template-columns:1fr}}
 #synth{display:none;grid-column:1/-1;overflow:auto;padding:8px 12px;min-height:0}
 
 main.synthOn #synth{display:block}
@@ -155,7 +189,7 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
   <div class="faces">
     <button class="on" data-face="builder">Builder</button>
     <button data-face="synth">Synth</button>
-    <button disabled title="Stage 3">Amp &amp; Pedals</button>
+    <button data-face="amp">Amp &amp; Pedals</button>
   </div>
   <select id="preset"></select>
   <button class="hbtn" id="saveBtn">Save</button>
@@ -185,6 +219,7 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
     </div>
   </section>
   <section id="synth"></section>
+  <section id="amp"></section>
   <aside>
     <div class="tabs">
       <button data-t="strings" class="on">Strings</button><button data-t="exciter">Exciter</button><button data-t="neck">Neck &amp; Play</button><button data-t="body">Body</button><button data-t="pickups">Pickups</button>
@@ -209,7 +244,85 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
 <button id="startBtn">Start audio</button></div></div>
 <div id="modal"><div class="card" id="modalCard"></div></div>
 
-<script id="dsp" type="text/plain">/* Luither — synth face DSP: modulation sources, oscillator mix, filters, mod FX, pitch shifter, gate, amp. */
+<script id="dsp" type="text/plain">// ───────────────────────── shared filter maths (used by the audio engine and by the on-screen curves) ─────────────────────────
+// RBJ cookbook biquads → [b0, b1, b2, a1, a2] (a0 normalised to 1)
+function bqCoefs(type, f, q, gdb, fs) {
+  f = Math.max(10, Math.min(f, fs * 0.45)); q = Math.max(0.05, q || 0.707);
+  const w = 2 * Math.PI * f / fs, cw = Math.cos(w), sw = Math.sin(w), al = sw / (2 * q), A = Math.pow(10, (gdb || 0) / 40);
+  let b0, b1, b2, a0, a1, a2;
+  switch (type) {
+    case 'lp': b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = b0; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'hp': b0 = (1 + cw) / 2; b1 = -(1 + cw); b2 = b0; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'bp': b0 = al; b1 = 0; b2 = -al; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'notch': b0 = 1; b1 = -2 * cw; b2 = 1; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'ap': b0 = 1 - al; b1 = -2 * cw; b2 = 1 + al; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'peak': b0 = 1 + al * A; b1 = -2 * cw; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * cw; a2 = 1 - al / A; break;
+    case 'ls': { const s = 2 * Math.sqrt(A) * al; b0 = A * ((A + 1) - (A - 1) * cw + s); b1 = 2 * A * ((A - 1) - (A + 1) * cw); b2 = A * ((A + 1) - (A - 1) * cw - s);
+      a0 = (A + 1) + (A - 1) * cw + s; a1 = -2 * ((A - 1) + (A + 1) * cw); a2 = (A + 1) + (A - 1) * cw - s; break; }
+    case 'hs': { const s = 2 * Math.sqrt(A) * al; b0 = A * ((A + 1) + (A - 1) * cw + s); b1 = -2 * A * ((A - 1) + (A + 1) * cw); b2 = A * ((A + 1) + (A - 1) * cw - s);
+      a0 = (A + 1) - (A - 1) * cw + s; a1 = 2 * ((A - 1) - (A + 1) * cw); a2 = (A + 1) - (A - 1) * cw - s; break; }
+    default: return [1, 0, 0, 0, 0];
+  }
+  return [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
+}
+function bqMag(c, f, fs) { // |H(e^jw)|
+  const w = 2 * Math.PI * f / fs, c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+  const nr = c[0] + c[1] * c1 + c[2] * c2, ni = -(c[1] * s1 + c[2] * s2), dr = 1 + c[3] * c1 + c[4] * c2, di = -(c[3] * s1 + c[4] * s2);
+  return Math.sqrt((nr * nr + ni * ni) / (dr * dr + di * di));
+}
+// Amp tone stacks: each type has its own voicing (where the mid knob sits and its built-in scoop)
+const STACKS = {
+  fender:   { label: 'American (scooped)', bf: 110, mf: 420, mq: .6, base: -7, tf: 2600, bw: 2.4, mw: 1.4, tw: 2.6 },
+  marshall: { label: 'British (mid-forward)', bf: 120, mf: 650, mq: .7, base: -2.5, tf: 3000, bw: 2.2, mw: 1.6, tw: 2.4 },
+  vox:      { label: 'Top boost (chimey)', bf: 130, mf: 1000, mq: .8, base: -4, tf: 3400, bw: 1.8, mw: 1.3, tw: 3 },
+  modern:   { label: 'Modern high-gain', bf: 90, mf: 750, mq: .9, base: -3, tf: 2800, bw: 2, mw: 2, tw: 2.2 },
+  flat:     { label: 'Flat / bass', bf: 80, mf: 800, mq: .7, base: 0, tf: 3000, bw: 2.4, mw: 1.6, tw: 2.4 },
+};
+function toneStackDesign(h) { // knobs 0..10, 5 = flat-ish
+  const s = STACKS[h.stack] || STACKS.marshall, out = [];
+  out.push(['ls', s.bf, .7, (h.bass - 5) * s.bw]);
+  out.push(['peak', s.mf, s.mq, s.base * (1 - h.mid / 10 * .6) + (h.mid - 5) * s.mw]);
+  out.push(['hs', s.tf, .7, (h.treble - 5) * s.tw]);
+  out.push(['hs', 3800, .6, (h.presence - 5) * 1.4]);
+  out.push(['peak', 100, 1.1, h.resonance * 6]);
+  if (h.bright) out.push(['hs', 2200, .7, 6 * (1 - Math.min(1, h.gain / 10) * .7)]);
+  return out;
+}
+// Cabinet: speakers, box and microphone as a chain of filters
+const CABS = {
+  '1x12 open': { label: '1×12 open back', hp: 85, bump: [95, 1.2, 1], dip: [180, 1.2, -2] },
+  '2x12 open': { label: '2×12 open back', hp: 75, bump: [100, 1.1, 2.5], dip: [200, 1.4, -1.5] },
+  '2x12 closed': { label: '2×12 closed', hp: 70, bump: [105, 1.3, 4], dip: [300, 1, -1] },
+  '4x12': { label: '4×12 closed', hp: 65, bump: [95, 1.5, 5.5], dip: [400, .9, -1.5] },
+  '1x15 bass': { label: '1×15 bass', hp: 38, bump: [60, 1.2, 4], dip: [500, .8, -2] },
+  '8x10 bass': { label: '8×10 bass', hp: 42, bump: [75, 1.1, 5], dip: [900, 1, -1] },
+};
+const SPEAKERS = {
+  v30:      { label: 'Vintage 30 (aggressive mids)', pk: [2400, 1.3, 4.5], pk2: [1200, 1, 1.5], lp: 5200 },
+  green:    { label: 'Greenback (warm, woody)', pk: [1500, 1.1, 3], pk2: [3000, 2, -2], lp: 4500 },
+  alnico:   { label: 'Alnico blue (chimey)', pk: [3000, 1.4, 4], pk2: [700, 1, -1.5], lp: 6500 },
+  jensen:   { label: 'American 12" (clean, scooped)', pk: [2200, 1.2, 2], pk2: [500, .8, -2.5], lp: 5500 },
+  bass:     { label: 'Bass driver', pk: [800, 1, 2], pk2: [2200, 1, -3], lp: 3200 },
+  fullrange:{ label: 'Full-range (for acoustic)', pk: [3000, 1, 0], pk2: [800, 1, 0], lp: 14000 },
+};
+const MICS = {
+  dyn57: { label: 'Dynamic 57', fx: [['hp', 90, .7, 0], ['peak', 5500, 1.5, 5]] },
+  ribbon: { label: 'Ribbon (dark, smooth)', fx: [['hs', 4000, .7, -6], ['ls', 160, .7, 2.5]] },
+  cond: { label: 'Condenser (open, detailed)', fx: [['hs', 9000, .7, 2.5], ['peak', 2500, .9, 1]] },
+};
+function cabDesign(c) {
+  const box = CABS[c.cab] || CABS['4x12'], spk = SPEAKERS[c.speaker] || SPEAKERS.v30, mic = MICS[c.mic] || MICS.dyn57, out = [];
+  out.push(['hp', box.hp, .8, 0], ['peak', ...box.bump], ['peak', ...box.dip]);
+  out.push(['peak', ...spk.pk], ['peak', ...spk.pk2]);
+  const lp = spk.lp * (1 - c.pos * .45); // mic toward the edge of the cone = darker
+  out.push(['lp', lp, .8, 0], ['lp', lp * 1.15, .6, 0]);
+  out.push(['peak', 3500, .8, (0.5 - c.pos) * 6]); // centre = presence, edge = softer
+  for (const f of mic.fx) out.push(f);
+  out.push(['ls', 200, .7, (0.5 - c.dist) * 5]); // close = proximity bass, far = thinner
+  return out;
+}
+
+/* Luither — synth face DSP: modulation sources, oscillator mix, filters, mod FX, pitch shifter, gate, amp. */
 const TWO_PI = Math.PI * 2;
 const VOWELS = [[730, 1090, 2440], [530, 1840, 2480], [270, 2290, 3010], [570, 840, 2410], [300, 870, 2240]]; // a e i o u
 const PHYS = { ph_pos: ['ex', 'pos'], ph_pressure: ['ex', 'pressure'], ph_speed: ['ex', 'speed'], ph_ebow: ['ex', 'ebow'], ph_wind: ['ex', 'wind'], ph_jawari: ['nk', 'jawari'], ph_buzz: ['nk', 'buzz'] };
@@ -444,6 +557,239 @@ class Synth {
     const mv = {}; for (const id of this.modTargets) mv[id] = this.eff['n_' + id];
     return { src: this.src, lfoPh: [this.lfo[0].ph, this.lfo[1].ph], step: this.gateStep, mv };
   }
+}
+
+/* Luither — amp face DSP: pedals, amp head, cabinet. Runs after the synth face. */
+class Biq {
+  constructor() { this.z1 = 0; this.z2 = 0; this.c = [1, 0, 0, 0, 0]; }
+  set(t, f, q, g, fs) { this.c = bqCoefs(t, f, q, g, fs); return this; }
+  run(x) { const c = this.c, y = c[0] * x + this.z1; let z = c[1] * x - c[3] * y + this.z2; this.z1 = (z > 1e-15 || z < -1e-15) ? z : 0; z = c[2] * x - c[4] * y; this.z2 = (z > 1e-15 || z < -1e-15) ? z : 0; return y; }
+}
+// 2× oversampling around a nonlinearity, so heavy clipping doesn't fold harsh aliasing back into the audio band
+class OS2 {
+  constructor(fs) { const f2 = fs * 2; this.u = [new Biq().set('lp', fs * .45, .54, 0, f2), new Biq().set('lp', fs * .45, 1.31, 0, f2)]; this.d = [new Biq().set('lp', fs * .45, .54, 0, f2), new Biq().set('lp', fs * .45, 1.31, 0, f2)]; }
+  up(x) { this.a = this.u[1].run(this.u[0].run(x * 2)); this.b = this.u[1].run(this.u[0].run(0)); }
+  down(a, b) { const y = this.d[1].run(this.d[0].run(a)); this.d[1].run(this.d[0].run(b)); return y; }
+}
+class DL { // delay line with fractional read (power-of-two buffer: wrap with a mask, no division)
+  constructor(n) { let m = 1; while (m < n + 2) m <<= 1; this.b = new Float32Array(m); this.k = m - 1; this.w = 0; }
+  put(x) { this.b[this.w] = (x > 1e-15 || x < -1e-15) ? x : 0; this.w = (this.w + 1) & this.k; }
+  get(d) { const rp = this.w - 1 - d, i = Math.floor(rp), f = rp - i, k = this.k, a = this.b[i & k]; return a + (this.b[(i + 1) & k] - a) * f; }
+}
+// fast curves for the hot path: rational tanh, and a cubic clipper with a hard knee at ±1.5
+const tanhF = x => x < -3 ? -1 : x > 3 ? 1 : x * (27 + x * x) / (27 + 9 * x * x);
+const softClip = tanhF;
+const hardClip = x => x <= -1.5 ? -1 : x >= 1.5 ? 1 : x - x * x * x / 6.75;
+const dbToLin = d => Math.pow(10, d / 20);
+
+class Pedal {
+  constructor(fs, rack) { this.fs = fs; this.rack = rack; this.p = {}; this.o = {}; this.v = {}; this.mix = 0; this.on = true; this.init(); }
+  init() {} setP(p, o) { Object.assign(this.p, p || {}); Object.assign(this.o, o || {}); this.update(); } update() {} block() {}
+  run(l, r) { this.l = l; this.r = r; }
+}
+class Comp extends Pedal {
+  init() { this.env = 0; this.gr = 0; }
+  update() { const p = this.p; this.at = 1 - Math.exp(-1 / ((p.attack || 5) * .001 * this.fs)); this.rt = 1 - Math.exp(-1 / ((p.release || 120) * .001 * this.fs)); this.mk = dbToLin(p.makeup || 0); }
+  run(l, r) {
+    const p = this.p, a = Math.max(Math.abs(l), Math.abs(r));
+    this.env += (a - this.env) * (a > this.env ? this.at : this.rt);
+    const db = 20 * Math.log10(this.env + 1e-9), over = db - p.thresh, knee = 6;
+    let gr = over <= -knee / 2 ? 0 : over >= knee / 2 ? over * (1 - 1 / p.ratio) : (over + knee / 2) ** 2 / (2 * knee) * (1 - 1 / p.ratio);
+    this.gr = gr; const g = dbToLin(-gr) * this.mk, b = p.blend ?? 1;
+    this.l = l * (1 - b) + l * g * b; this.r = r * (1 - b) + r * g * b;
+    if (gr > this.v.gr || !(this.v.gr > 0)) this.v.gr = gr;
+  }
+}
+class Boost extends Pedal {
+  init() { this.f = [[new Biq(), new Biq()], [new Biq(), new Biq()]]; }
+  update() { const t = this.p.tone || 0, fs = this.fs; for (const c of this.f) { c[0].set('ls', 250, .7, -t * 6, fs); c[1].set('hs', 2500, .7, t * 6, fs); } this.g = dbToLin(this.p.gain || 0); }
+  run(l, r) { const g = this.g; this.l = softClip(this.f[0][1].run(this.f[0][0].run(l)) * g * .9) / .9; this.r = softClip(this.f[1][1].run(this.f[1][0].run(r)) * g * .9) / .9; }
+}
+class Drive extends Pedal { // shared base for overdrive / distortion / fuzz / octave
+  init() { this.os = [new OS2(this.fs), new OS2(this.fs)]; this.ch = [0, 1].map(() => this.makeCh()); this.pk = 0; }
+  makeCh() { return {}; }
+  run(l, r) { this.l = this.one(l, 0); this.r = this.one(r, 1); const a = Math.max(Math.abs(l), Math.abs(r)); if (a > this.pk) this.pk = a; }
+  block() { this.v.in = this.pk; this.v.drive = this.curveGain; this.pk *= .9; }
+}
+class Overdrive extends Drive { // mid-hump screamer: clip a high-passed copy, add it back to the clean signal
+  makeCh() { return { hp: new Biq(), tone: new Biq(), out: new Biq() }; }
+  update() { const p = this.p, fs = this.fs; this.g = 1 + p.drive * 60; this.curveGain = this.g; this.lvl = dbToLin(p.level || 0) * .3; // near unity loudness at default settings
+    for (const c of this.ch) { c.hp.set('hp', 720, .7, 0, fs); c.tone.set('lp', 700 * Math.pow(10, p.tone * 1.05), .7, 0, fs); c.out.set('hp', 40, .7, 0, fs); } }
+  one(x, k) { const c = this.ch[k], g = this.g, h = c.hp.run(x);
+    const os = this.os[k]; os.up(h); const y = os.down(tanhF(os.a * g), tanhF(os.b * g)) * .55 + x * .5;
+    return c.out.run(c.tone.run(y)) * this.lvl; }
+}
+class Distortion extends Drive { // op-amp gain into hard diodes; the filter knob darkens
+  makeCh() { return { op: new Biq(), filt: new Biq(), pre: new Biq() }; }
+  update() { const p = this.p, fs = this.fs; this.g = 1 + p.dist * 300; this.curveGain = this.g; this.lvl = dbToLin(p.level || 0) * .08;
+    for (const c of this.ch) { c.pre.set('hp', 60, .7, 0, fs); c.op.set('lp', Math.max(900, 90000 / this.g), .7, 0, fs); c.filt.set('lp', 15000 * Math.pow(600 / 15000, p.filter), .7, 0, fs); } }
+  one(x, k) { const c = this.ch[k], g = this.g, os = this.os[k]; os.up(c.op.run(c.pre.run(x))); const y = os.down(hardClip(os.a * g), hardClip(os.b * g)); return c.filt.run(y) * this.lvl; }
+}
+class Fuzz extends Drive { // two cascaded asymmetric stages, scooped tone blend
+  makeCh() { return { hp: new Biq(), lp: new Biq(), hp2: new Biq(), dc: new Biq() }; }
+  update() { const p = this.p, fs = this.fs; this.g1 = 1 + p.sustain * 50; this.curveGain = this.g1 * 8; this.lvl = dbToLin(p.level || 0) * .15;
+    for (const c of this.ch) { c.hp.set('hp', 90, .7, 0, fs); c.lp.set('lp', 500, .6, 0, fs); c.hp2.set('hp', 1200, .6, 0, fs); c.dc.set('hp', 25, .7, 0, fs); } }
+  nl(v) { v = tanhF(v * this.g1 + .15) - .149; return tanhF(v * 8 + .1) - .0997; }
+  one(x, k) { const c = this.ch[k], tn = this.p.tone;
+    const os = this.os[k]; os.up(c.hp.run(x)); let y = os.down(this.nl(os.a), this.nl(os.b));
+    y = c.dc.run(y); return (c.lp.run(y) * (1 - tn) * 1.6 + c.hp2.run(y) * tn * 1.3) * this.lvl; }
+}
+class OctaveFuzz extends Drive { // full-wave rectification adds the octave up
+  makeCh() { return { hp: new Biq(), dc: new Biq(), lp: new Biq() }; }
+  update() { const p = this.p, fs = this.fs; this.g = 1 + p.fuzz * 40; this.curveGain = this.g; this.lvl = dbToLin(p.level || 0) * .2;
+    for (const c of this.ch) { c.hp.set('hp', 150, .7, 0, fs); c.dc.set('hp', 40, .7, 0, fs); c.lp.set('lp', 5000, .7, 0, fs); } }
+  nl(v, oc) { const f = tanhF(v); return f * (1 - oc) + (Math.abs(f) * 2 - .6) * oc; }
+  one(x, k) { const c = this.ch[k], g = this.g, oc = this.p.octave, h = c.hp.run(x);
+    const os = this.os[k]; os.up(h); const y = os.down(this.nl(os.a * g, oc), this.nl(os.b * g, oc));
+    return c.lp.run(c.dc.run(y)) * this.lvl; }
+}
+class Crusher extends Pedal {
+  init() { this.cnt = 0; this.hl = 0; this.hr = 0; }
+  run(l, r) { const p = this.p, step = Math.pow(2, (p.bits || 8) - 1);
+    if (++this.cnt >= (p.down || 1)) { this.cnt = 0; this.hl = Math.round(l * step) / step; this.hr = Math.round(r * step) / step; }
+    const m = p.mix ?? 1; this.l = l * (1 - m) + this.hl * m; this.r = r * (1 - m) + this.hr * m; }
+}
+class Phaser extends Pedal {
+  init() { this.ph = 0; this.st = [new Float64Array(24), new Float64Array(24)]; this.fb = [0, 0]; }
+  block(n) { const p = this.p, rate = this.o.sync && this.o.sync !== 'free' ? this.rack.tempo / 60 / divBeats(this.o.sync) : p.rate;
+    this.ph = (this.ph + rate * n / this.fs) % 1; this.v.ph = this.ph;
+    const sweep = k => { const lfo = (Math.sin(2 * Math.PI * (this.ph + k * .25)) + 1) / 2; return p.center * Math.pow(2, (lfo - .5) * p.depth * 5); };
+    this.fq = [sweep(0), sweep(1)]; this.v.f = this.fq[0];
+    this.a = this.fq.map(f => { const t = Math.tan(Math.PI * Math.min(f, this.fs * .45) / this.fs); return (t - 1) / (t + 1); }); }
+  one(x, k) { const n = +this.o.stages || 6, s = this.st[k], a = this.a ? this.a[k] : 0; let y = x + this.fb[k] * this.p.fb;
+    for (let i = 0; i < n; i++) { const o = a * y + s[i]; s[i] = fz(y - a * o); y = o; }
+    this.fb[k] = y; const m = this.p.mix; return (x * (1 - m * .5) + y * m * .5) * (1 + m * .3); } // equal blend at 100% = deepest notches
+  run(l, r) { this.l = this.one(l, 0); this.r = this.one(r, 1); }
+}
+class Rotary extends Pedal { // horn and drum spin at their own speeds and inertia
+  init() { this.hp = 0; this.dp = 0; this.hs = .8; this.ds = .66; this.x = new Biq(); this.xh = new Biq(); this.dh = new DL(2048); this.dd = new DL(2048); }
+  update() { const fs = this.fs; this.x.set('lp', 800, .7, 0, fs); this.xh.set('hp', 800, .7, 0, fs); }
+  block(n) { const fast = this.o.fast, dt = n / this.fs, sp = Math.PI * (this.p.spread ?? .6);
+    this.hs += ((fast ? 6.8 : .8) - this.hs) * Math.min(1, dt / .7); this.ds += ((fast ? 5.9 : .66) - this.ds) * Math.min(1, dt / 3);
+    const h0 = 2 * Math.PI * this.hp, d0 = 2 * Math.PI * this.dp;
+    this.hp = (this.hp + this.hs * dt) % 1; this.dp = (this.dp + this.ds * dt) % 1; this.v.hp = this.hp; this.v.dp = this.dp; this.v.fast = fast;
+    let h1 = 2 * Math.PI * this.hp, d1 = 2 * Math.PI * this.dp; if (h1 < h0) h1 += 2 * Math.PI; if (d1 < d0) d1 += 2 * Math.PI;
+    // [sin, cos] for left and right mic at block start, and per-sample step (angles change little within 128 samples)
+    const tr = (a0, a1) => [Math.sin(a0), Math.cos(a0), (Math.sin(a1) - Math.sin(a0)) / n, (Math.cos(a1) - Math.cos(a0)) / n];
+    this.HL = tr(h0, h1); this.HR = tr(h0 + sp, h1 + sp); this.DLr = tr(d0, d1); this.DRr = tr(d0 + sp, d1 + sp); this.j = 0; }
+  run(l, r) { const p = this.p, fs = this.fs; let x = (l + r) * .5; if (p.drive > .01) x = Math.tanh(x * (1 + p.drive * 6)) / (1 + p.drive * 2);
+    const lo = this.x.run(x), hi = this.xh.run(x);
+    if (!this.HL) this.block(128);
+    const j = this.j++, HL = this.HL, HR = this.HR, DL_ = this.DLr, DR = this.DRr;
+    this.dh.put(hi); this.dd.put(lo);
+    const hl = this.dh.get(fs * (.0012 + .00035 * (HL[0] + HL[2] * j))) * (1 - .45 * (HL[1] + HL[3] * j)), hr = this.dh.get(fs * (.0012 + .00035 * (HR[0] + HR[2] * j))) * (1 - .45 * (HR[1] + HR[3] * j));
+    const dl = this.dd.get(fs * (.002 + .0002 * (DL_[0] + DL_[2] * j))) * (1 - .3 * (DL_[1] + DL_[3] * j)), dr = this.dd.get(fs * (.002 + .0002 * (DR[0] + DR[2] * j))) * (1 - .3 * (DR[1] + DR[3] * j));
+    const bal = p.balance; this.l = (hl * bal + dl * (1 - bal)) * 1.4; this.r = (hr * bal + dr * (1 - bal)) * 1.4; }
+}
+class Gate extends Pedal {
+  init() { this.env = 0; this.g = 1; }
+  update() { this.rt = 1 - Math.exp(-1 / ((this.p.release || 80) * .001 * this.fs)); this.at = 1 - Math.exp(-1 / (.0005 * this.fs)); }
+  run(l, r) { const a = Math.max(Math.abs(l), Math.abs(r)); this.env += (a - this.env) * (a > this.env ? .2 : .002);
+    const th = dbToLin(this.p.thresh), open = this.env > th || (this.g > .5 && this.env > th * .5);
+    const tgt = open ? 1 : dbToLin(-this.p.range); this.g += (tgt - this.g) * (tgt > this.g ? this.at : this.rt);
+    this.l = l * this.g; this.r = r * this.g; this.v.open = this.g; }
+}
+const GEQ_F = [100, 200, 400, 800, 1600, 3200, 6400];
+class GEQ extends Pedal {
+  init() { this.b = [0, 1].map(() => GEQ_F.map(() => new Biq())); }
+  update() { const p = this.p; for (const ch of this.b) ch.forEach((q, i) => q.set('peak', GEQ_F[i], 1.1, p['b' + i] || 0, this.fs)); this.lv = dbToLin(p.level || 0); }
+  run(l, r) { for (const q of this.b[0]) l = q.run(l); for (const q of this.b[1]) r = q.run(r); this.l = l * this.lv; this.r = r * this.lv; }
+}
+class DelayPedal extends Pedal { // tape/analog style: darkening repeats, wow, optional ping-pong
+  init() { const n = Math.ceil(this.fs * 2.2); this.d = [new DL(n), new DL(n)]; this.t = this.fs * .35; this.lp = [new Biq(), new Biq()]; this.hp = [new Biq(), new Biq()]; this.wph = 0; }
+  update() { for (let k = 0; k < 2; k++) { this.lp[k].set('lp', this.p.tone, .7, 0, this.fs); this.hp[k].set('hp', 90, .7, 0, this.fs); } }
+  block(n) { const p = this.p, sy = this.o.sync; const sec = sy && sy !== 'free' ? divBeats(sy) * 60 / this.rack.tempo : p.time / 1000;
+    this.tt = Math.min(2.1, Math.max(.01, sec)) * this.fs; this.wph += n / this.fs * .9; this.v.time = sec; this.v.fb = p.fb; }
+  run(l, r) { this.t += (this.tt - this.t) * .0005; const p = this.p, w = 1 + Math.sin(2 * Math.PI * this.wph) * p.wow * .004 + Math.sin(2 * Math.PI * this.wph * 3.7) * p.wow * .0015;
+    const yl = this.d[0].get(this.t * w), yr = this.d[1].get(this.t * w * (this.o.pp ? 1 : 1.0007));
+    const fl = this.hp[0].run(this.lp[0].run(yl)) * p.fb, fr = this.hp[1].run(this.lp[1].run(yr)) * p.fb;
+    if (this.o.pp) { this.d[0].put(tanhF((l + r) * .5 + fr)); this.d[1].put(tanhF(fl)); }
+    else { this.d[0].put(tanhF(l + fl)); this.d[1].put(tanhF(r + fr)); }
+    this.l = l + (yl - 0) * p.mix; this.r = r + yr * p.mix; }
+}
+class Spring extends Pedal { // two springs per side: dispersive all-passes inside a feedback delay give the "drip"
+  init() { const fs = this.fs; this.s = [0, 1].map(k => [0, 1].map(j => ({ d: new DL(Math.ceil(fs * .08)), ap: new Float64Array(12), lp: new Biq(), len: fs * (j ? .0413 : .0337) * (k ? 1.07 : 1) })));
+    this.hp = [new Biq(), new Biq()]; }
+  update() { for (const ch of this.s) for (const sp of ch) sp.lp.set('lp', this.p.tone, .7, 0, this.fs); for (const h of this.hp) h.set('hp', 180, .7, 0, this.fs); }
+  one(x, k) { const p = this.p, a = .62, fb = .55 + p.decay * .42; let out = 0; const inp = this.hp[k].run(x) * .5;
+    for (const sp of this.s[k]) { let y = sp.d.get(sp.len);
+      for (let i = 0; i < 12; i++) { const o = a * y + sp.ap[i]; sp.ap[i] = fz(y - a * o); y = o; }
+      y = sp.lp.run(y); sp.d.put(inp + y * fb); out += y; }
+    return x + out * p.mix * .8; }
+  run(l, r) { this.l = this.one(l, 0); this.r = this.one(r, 1); }
+}
+const FV_C = [1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617], FV_A = [556, 441, 341, 225];
+class Hall extends Pedal { // Freeverb-style hall with pre-delay
+  init() { const k = this.fs / 44100; this.c = [0, 1].map(ch => FV_C.map(n => ({ b: new Float32Array(Math.round((n + ch * 23) * k * 1.3)), i: 0, f: 0 })));
+    this.a = [0, 1].map(ch => FV_A.map(n => ({ b: new Float32Array(Math.round((n + ch * 23) * k)), i: 0 }))); this.pd = new DL(Math.ceil(this.fs * .25)); this.fl = 0; }
+  update() { for (const ch of this.c) for (const c of ch) { c.n = Math.max(8, Math.round(c.b.length * (.55 + (this.p.size ?? .7) * .45))); if (c.i >= c.n) c.i = 0; } }
+  run(l, r) { const p = this.p, fb = .7 + p.size * .28, damp = p.damp * .6, ud = 1 - damp;
+    this.pd.put((l + r) * .5); const x = this.pd.get(p.pre * .001 * this.fs) * .1; const o = this.o2 || (this.o2 = [0, 0]);
+    for (let ch = 0; ch < 2; ch++) { let s = 0; const cs = this.c[ch];
+      for (let j = 0; j < 8; j++) { const c = cs[j], y = c.b[c.i]; c.f = y * ud + c.f * damp; c.b[c.i] = x + c.f * fb; if (++c.i >= c.n) c.i = 0; s += y; }
+      const as = this.a[ch]; for (let j = 0; j < 4; j++) { const a = as[j], y = a.b[a.i]; a.b[a.i] = s + y * .5; if (++a.i >= a.b.length) a.i = 0; s = y - s; }
+      o[ch] = fz(s); }
+    const w = p.width, wl = o[0] * (.5 + w / 2) + o[1] * (.5 - w / 2), wr = o[1] * (.5 + w / 2) + o[0] * (.5 - w / 2);
+    this.l = l * (1 - p.mix * .5) + wl * p.mix * .8; this.r = r * (1 - p.mix * .5) + wr * p.mix * .8;
+    if (++this.fl >= 4096) { this.fl = 0; for (const ch of this.c) for (const c of ch) if (Math.abs(c.f) < 1e-15) c.f = 0; } }
+}
+const PEDAL_CLASSES = { comp: Comp, boost: Boost, od: Overdrive, dist: Distortion, fuzz: Fuzz, octave: OctaveFuzz, crush: Crusher, phaser: Phaser, rotary: Rotary, gate: Gate, geq: GEQ, delay: DelayPedal, spring: Spring, hall: Hall };
+
+class AmpHead {
+  constructor(fs) { this.fs = fs; this.os = [new OS2(fs), new OS2(fs)]; this.h = {};
+    this.inHP = [new Biq(), new Biq()]; this.stage = [0, 1].map(() => [0, 1, 2, 3].map(() => ({ hp: new Biq(), lp: new Biq() })));
+    this.tone = [[], []]; this.sag = 0; this.pkIn = 0; this.pkOut = 0; this.v = {}; }
+  set(h) {
+    this.h = h; const fs = this.fs, f2 = fs * 2;
+    for (let k = 0; k < 2; k++) { this.inHP[k].set('hp', h.tight, .7, 0, fs); for (const s of this.stage[k]) { s.hp.set('hp', 25 + h.tight * .3, .7, 0, f2); s.lp.set('lp', 9000 - h.gain * 300, .7, 0, f2); }
+      const d = toneStackDesign(h), old = this.tone[k]; this.tone[k] = d.map((f, i) => (old[i] || new Biq()).set(f[0], f[1], f[2], f[3], fs)); }
+    this.G = .3 * Math.pow(10, h.gain / 10 * 3.2); this.n = Math.max(1, Math.min(4, Math.round(h.stages))); this.gs = Math.pow(this.G, 1 / this.n) * (this.n > 1 ? 1.6 : 1);
+    this.comp = 1 / Math.min(1, this.G * .6); this.bias = h.bias * .35; this.ch = h.character; this.b0 = (1 - this.ch) * tanhF(this.bias) + this.ch * hardClip(this.bias * 1.2);
+    this.sagA = 1 - Math.exp(-1 / (.02 * fs)); this.sagR = 1 - Math.exp(-1 / (.25 * fs)); this.mv = Math.pow(h.master / 10, 1.5) * 1.8;
+  }
+  clip(v) { v += this.bias; return (1 - this.ch) * tanhF(v) + this.ch * hardClip(v * 1.2) - this.b0; }
+  pre(v) { const st = this.stage[0], n = this.n, gs = this.gs; for (let i = 0; i < n; i++) { v = this.clip(st[i].hp.run(v) * gs); v = st[i].lp.run(v); } return v; }
+  one(x, k) {
+    const h = this.h;
+    x = this.inHP[k].run(x);
+    const os = this.os[k]; os.up(x); let y = os.down(this.pre(os.a), this.pre(os.b)) // both 2× samples, in order, through the same stages * this.comp;
+    for (const t of this.tone[k]) y = t.run(y);
+    const sg = 1 - h.sag * .55 * Math.min(1, this.sag * 1.5); // power-supply sag: loud playing squashes the output
+    const pd = 1 + h.pdrive * 5; y = tanhF(y * sg * pd * .8) / (.8 * (1 + h.pdrive * 1.2));
+    return y * this.mv;
+  }
+  run(l, r) { const x = (l + r) * .5, a = x < 0 ? -x : x; if (a > this.pkIn) this.pkIn = a; // a guitar amp is mono
+    const y = this.one(x, 0); this.l = this.r = y; const o = y < 0 ? -y : y;
+    this.sag += (o - this.sag) * (o > this.sag ? this.sagA : this.sagR); if (o > this.pkOut) this.pkOut = o; }
+  block() { this.v = { in: this.pkIn, out: this.pkOut, sag: this.sag }; this.pkIn *= .9; this.pkOut *= .9; }
+}
+class Cab {
+  constructor(fs) { this.fs = fs; this.f = [[], []]; this.room = [new DL(Math.ceil(fs * .02)), new DL(Math.ceil(fs * .02))]; this.rlp = [new Biq(), new Biq()]; this.c = {}; }
+  set(c) { this.c = c; const d = cabDesign(c); for (let k = 0; k < 2; k++) { const old = this.f[k]; this.f[k] = d.map((f, i) => (old[i] || new Biq()).set(f[0], f[1], f[2], f[3], this.fs)); this.rlp[k].set('lp', 3000, .7, 0, this.fs); }
+    this.rd = [this.fs * (.0035 + c.dist * .009), this.fs * (.0047 + c.dist * .011)]; this.rm = c.dist * .45; }
+  one(x, k) { for (const f of this.f[k]) x = f.run(x); this.room[k].put(x); return x + this.rlp[k].run(this.room[k].get(this.rd[k])) * this.rm; }
+  run(l, r) { this.l = this.r = this.one((l + r) * .5, 0); }
+}
+class AmpRack {
+  constructor(fs) { this.fs = fs; this.tempo = 120; this.inst = new Map(); this.pre = []; this.post = []; this.head = new AmpHead(fs); this.cab = new Cab(fs); this.on = false; this.cabOn = true; this.out = 1; this.trim = 1; this.xf = 1 - Math.exp(-1 / (.01 * fs)); }
+  set(a) {
+    const mk = d => { let p = this.inst.get(d.uid); if (!p || p.type !== d.type) { p = new (PEDAL_CLASSES[d.type])(this.fs, this); p.type = d.type; this.inst.set(d.uid, p); } p.on = d.on; p.setP(d.p, d.o); return p; };
+    this.pre = (a.pre || []).filter(d => PEDAL_CLASSES[d.type]).map(mk); this.post = (a.post || []).filter(d => PEDAL_CLASSES[d.type]).map(mk);
+    const keep = new Set([...this.pre, ...this.post]); for (const [u, p] of this.inst) if (!keep.has(p)) this.inst.delete(u);
+    this.on = !!a.on; this.cabOn = a.cab && a.cab.on !== false; if (a.head) this.head.set(a.head); if (a.cab) this.cab.set(a.cab); this.out = dbToLin(a.out || 0); this.trim = dbToLin(a.trim || 0); // trim = the amp preset's level match, only while the amp is on
+  }
+  block(n) { for (const p of this.pre) p.block(n); for (const p of this.post) p.block(n); if (this.on) this.head.block(); }
+  chain(list, l, r) {
+    for (const p of list) { const tgt = p.on ? 1 : 0; p.mix += (tgt - p.mix) * this.xf; if (p.mix < 1e-4 && !p.on) { p.mix = 0; continue; }
+      p.run(l, r); const m = p.mix; l = l + (p.l - l) * m; r = r + (p.r - r) * m; }
+    this.l = l; this.r = r;
+  }
+  run(l, r) {
+    this.chain(this.pre, l, r); l = this.l; r = this.r;
+    if (this.on) { this.head.run(l, r); l = this.head.l * this.trim; r = this.head.r * this.trim; if (this.cabOn) { this.cab.run(l, r); l = this.cab.l; r = this.cab.r; } }
+    this.chain(this.post, l, r); this.l = this.l * this.out; this.r = this.r * this.out;
+  }
+  viz() { const pd = {}; for (const [u, p] of this.inst) { pd[u] = { ...p.v, mix: p.mix }; if (p.v.gr !== undefined) p.v.gr = 0; } return { pd, head: this.head.v }; }
 }
 
 /* Luither — string engine (AudioWorklet). Waveguide strings + modal body. */
@@ -688,7 +1034,7 @@ class LuitherProc extends AudioWorkletProcessor {
     this.held = []; this.map = new Map(); this.sus = false; this.bendSemis = 0; this.bendMul = 1; this.clock = 0;
     this.sympFeed = 0; this.dc = [0, 0, 0, 0, 0, 0, 0, 0]; this.lim = 1; this.limMin = 1; this.dcA = 1 - 2 * Math.PI * 5 / sampleRate; this.dcB = 1 - 2 * Math.PI * 3 / sampleRate; this.frame = 0; this.lastOn = -1e9; this.bin1 = 0; this.bin2 = 0; this.pa = 0; this.pb = 0;
     { const g = Math.tan(Math.PI * Math.min(4500, sampleRate * .45) / sampleRate), k = 1 / 1.6; this.pa1 = 1 / (1 + g * (g + k)); this.pa2 = g * this.pa1; this.pa3 = g * this.pa2; } this.limRel = 1 - Math.exp(-1 / (0.12 * sampleRate)); this.blk = 0; this.seed = 22222; this.gustV = 0; this.gustT = 0;
-    this.exBase = { ...this.ex }; this.nkBase = { ...this.nk }; this.syn = new Synth(this);
+    this.exBase = { ...this.ex }; this.nkBase = { ...this.nk }; this.syn = new Synth(this); this.rack = new AmpRack(sampleRate);
     this.derive();
     this.port.onmessage = e => this.msg(e.data);
   }
@@ -710,6 +1056,7 @@ class LuitherProc extends AudioWorkletProcessor {
       case 'sdefs': this.syn.setDefs(d.v); break;
       case 'synth': this.syn.set(d.v); break;
       case 'mw': this.syn.src.mw = d.v; break;
+      case 'amp': this.rack.set(d.v); break;
       case 'pk': Object.assign(this.pk, d.v); break;
       case 'strings': this.setStrings(d.v); break;
       case 'modes': this.setModes(d.v); break;
@@ -815,6 +1162,7 @@ class LuitherProc extends AudioWorkletProcessor {
     for (let k = 0; k < nS; k++) S[k].block(n);
     for (let k = 0; k < nM; k++) { const m = M[k]; if (m.y1 < 1e-15 && m.y1 > -1e-15 && m.y2 < 1e-15 && m.y2 > -1e-15) m.y1 = m.y2 = 0; }
     const syn = this.syn; syn.block(n); this.frame += n;
+    const rack = this.rack; rack.tempo = syn.p.tempo || 120; rack.block(n);
     const oscOn = syn.oscOn, oscShape = syn.oscShape, oscMul = syn.oscMul / this.fs;
     this.bendMul = Math.pow(2, this.bendSemis / 12);
     if ((this.gustT -= n) <= 0) { this.gustT = 2000 + Math.random() * 6000; this.gustTarget = Math.random() * 2 - 0.6; }
@@ -855,8 +1203,9 @@ class LuitherProc extends AudioWorkletProcessor {
       let yr = r - dc[2] + this.dcA * dc[3]; dc[2] = r; dc[3] = yr;
       syn.run(yl * mast, yr * mast, oscSum * mast * OSC_G, ringSum * mast * RING_G, i, n);
       // output: DC blocker after the synth, then a clean peak limiter at -1 dBFS (no colouring below it)
-      let ol = syn.l - dc[4] + this.dcB * dc[5]; dc[4] = syn.l; dc[5] = ol;
-      let or = syn.r - dc[6] + this.dcB * dc[7]; dc[6] = syn.r; dc[7] = or;
+      rack.run(syn.l, syn.r);
+      let ol = rack.l - dc[4] + this.dcB * dc[5]; dc[4] = rack.l; dc[5] = ol;
+      let or = rack.r - dc[6] + this.dcB * dc[7]; dc[6] = rack.r; dc[7] = or;
       const pk = Math.max(ol < 0 ? -ol : ol, or < 0 ? -or : or);
       if (pk * this.lim > 0.891) this.lim = 0.891 / pk; else this.lim += (1 - this.lim) * this.limRel;
       ol *= this.lim; or *= this.lim;
@@ -866,7 +1215,7 @@ class LuitherProc extends AudioWorkletProcessor {
     if (++this.blk >= 6) {
       this.blk = 0;
       this.port.postMessage({ t: 'viz', amp: S.map(s => s.rms), note: S.map(s => s.harm ? s.touch : s.note + 12 * Math.log2(s.freq / s.target)), harm: S.map(s => !!s.harm),
-        held: S.map(s => s.held || s.cont > 0.02), syn: syn.viz(), lim: this.limMin, modeE: M.map(m => { const e = m.e; m.e = 0; return e; }) });
+        held: S.map(s => s.held || s.cont > 0.02), syn: syn.viz(), rig: rack.viz(), lim: this.limMin, modeE: M.map(m => { const e = m.e; m.e = 0; return e; }) });
       this.limMin = 1;
     }
     return true;
@@ -991,7 +1340,7 @@ const PRESETS = {
 BMAT['Snakeskin'] = { E: .35, rho: 1100, Q: 14, color: '#bfa77a' };
 const diat = (root, steps, count) => { const out = []; for (let i = 0; out.length < count; i++) out.push(root + 12 * Math.floor(i / steps.length) + steps[i % steps.length]); return out; };
 const body = (o) => ({ topT: 3, backT: 3, bracing: 'none', braceS: .5, hole: { type: 'round', x: .3, size: .6 }, bridgeX: .6, neckLen: .3, nutX: .05, backShape: 'flat', ...o });
-const pre = (o) => () => ({ ex: { ...exDefault(), ...o.ex }, nk: { ...nkDefault(), ...o.nk }, pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8, ...o.pk }, strings: o.strings(), body: body(o.body) });
+const pre = (o) => () => ({ ex: { ...exDefault(), ...o.ex }, nk: { ...nkDefault(), ...o.nk }, pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8, ...o.pk }, strings: o.strings(), body: body(o.body), ampPreset: o.amp });
 Object.assign(PRESETS, {
   'Violin': pre({
     strings: () => [S('stopped',55,'Gut',.45,{range:31}), S('stopped',62,'Gut',.35,{range:31}), S('stopped',69,'Steel',.25,{range:31}), S('stopped',76,'Steel',.15,{range:31})],
@@ -1014,12 +1363,12 @@ Object.assign(PRESETS, {
   'Electric guitar': pre({
     strings: () => [S('stopped',40,'Nickel-wound',.75,{range:22,wound:1}), S('stopped',45,'Nickel-wound',.6,{range:22,wound:1}), S('stopped',50,'Nickel-wound',.5,{range:22,wound:1}),
       S('stopped',55,'Steel',.35,{range:22}), S('stopped',59,'Steel',.25,{range:22}), S('stopped',64,'Steel',.18,{range:22})],
-    ex: { type: 'pick', pos: .13, pickStiff: .7 }, nk: { frets: true, buzz: .03, glide: .01 }, pk: { mag: 1.1, magPos: .18, piezo: 0, mic: 0 },
+    ex: { type: 'pick', pos: .13, pickStiff: .7 }, nk: { frets: true, buzz: .03, glide: .01 }, pk: { mag: 1.1, magPos: .18, piezo: 0, mic: 0 }, amp: 'Clean American',
     body: { length: .45, hw: [.1,.15,.16,.15,.12,.13,.16,.17,.165,.14,.07], depth: [.045,.045,.045,.045,.045,.045,.045], top: 'Mahogany', back: 'Mahogany', topT: 25, backT: 20,
       hole: { type: 'none', x: .5, size: .5 }, bridgeX: .48, neckLen: .43 } }),
   'Electric bass': pre({
     strings: () => [S('stopped',28,'Nickel-wound',.95,{range:20,wound:1}), S('stopped',33,'Nickel-wound',.85,{range:20,wound:1}), S('stopped',38,'Nickel-wound',.72,{range:20,wound:1}), S('stopped',43,'Nickel-wound',.6,{range:20,wound:1})],
-    ex: { type: 'finger', pos: .2, fingerSoft: .3 }, nk: { frets: true, glide: .01 }, pk: { mag: 1.1, magPos: .2, piezo: 0, mic: 0 },
+    ex: { type: 'finger', pos: .2, fingerSoft: .3 }, nk: { frets: true, glide: .01 }, pk: { mag: 1.1, magPos: .2, piezo: 0, mic: 0 }, amp: 'Bass amp',
     body: { length: .5, hw: [.11,.16,.17,.16,.13,.14,.17,.18,.175,.15,.08], depth: [.045,.045,.045,.045,.045,.045,.045], top: 'Mahogany', back: 'Mahogany', topT: 25, backT: 20,
       hole: { type: 'none', x: .5, size: .5 }, bridgeX: .49, neckLen: .62 } }),
   'Oud': pre({
@@ -1159,7 +1508,7 @@ function pushEx() { send('ex', cfg.ex); }
 function pushNk() { const nk = { ...cfg.nk }; if (nk.thrAuto) nk.thr = autoThr(); send('nk', nk); }
 function pushBody() { const m = computeBody(); send('modes', m.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan }))); renderInfo(); }
 function pushPk() { send('pk', { ...cfg.pk, master: cfg.pk.master * +$('vol').value }); }
-function pushAll() { pushStrings(); pushEx(); pushNk(); pushBody(); pushPk(); if (cfg.synth) pushSynth(); }
+function pushAll() { pushStrings(); pushEx(); pushNk(); pushBody(); pushPk(); if (cfg.synth) pushSynth(); if (cfg.amp) pushAmp(); }
 async function startAudio() {
   actx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
   const src = $('dsp').textContent;
@@ -1780,7 +2129,7 @@ function drawDepth() {
 let hoverD = -1, dragD = -1;
 function frame(now) {
   tAnim += (now - lastT) / 1000; lastT = now;
-  if (face === 'synth') synthFrame(); else draw();
+  if (face === 'synth') synthFrame(); else if (face === 'amp') ampFrame(); else draw();
   const lvl = Math.max(0, ...viz.amp.map(a => a || 0)); $('meter').firstChild.style.width = Math.min(100, lvl * 900) + '%';
   requestAnimationFrame(frame);
 }
@@ -1868,12 +2217,17 @@ function fillPresets(sel) {
 }
 function loadCfg(c) {
   const d = PRESETS['Acoustic guitar']();
-  const prevSynth = cfg.synth;
+  const prevSynth = cfg.synth, prevAmp = cfg.amp;
   if (c.body && !c.body.backShape) c = { ...c, body: { ...c.body, backShape: 'custom' } };
   cfg = { ...d, ...c, ex: { ...exDefault(), ...c.ex }, nk: { ...nkDefault(), ...c.nk }, body: { ...d.body, ...c.body, hole: { ...d.body.hole, ...(c.body?.hole || {}) } }, pk: { ...d.pk, ...c.pk } };
   cfg.strings = (c.strings || d.strings).slice(0, 24);
   cfg.synth = c.synth ? { ...synthDefault(), ...c.synth, p: { ...synthDefault().p, ...c.synth.p }, o: { ...SOPT(), ...c.synth.o } } : (prevSynth || synthDefault());
+  // amp: a saved instrument brings its own rig; factory presets keep your pedals, and electric ones switch on a matching amp
+  if (c.amp) cfg.amp = { ...ampDefault(), ...c.amp, head: { ...ampDefault().head, ...c.amp.head }, cab: { ...ampDefault().cab, ...c.amp.cab } };
+  else if (c.ampPreset) { cfg.amp = ampPreset(c.ampPreset, prevAmp || ampDefault()); cfg.amp.on = true; }
+  else cfg.amp = { ...(prevAmp || ampDefault()), on: false };
   if (face === 'synth') buildSynth();
+  if (face === 'amp') buildAmp();
   if (node) node.port.postMessage({ t: 'panic' });
   pushAll(); buildAll(); renderInfo(); drawDepth(); draw();
 }
@@ -2193,7 +2547,324 @@ function setFace(f) {
   face = f;
   document.querySelectorAll('.faces button').forEach(b => b.classList.toggle('on', b.dataset.face === f));
   document.querySelector('main').classList.toggle('synthOn', f === 'synth');
-  if (f === 'synth') buildSynth(); else requestAnimationFrame(fit);
+  document.querySelector('main').classList.toggle('ampOn', f === 'amp');
+  if (f === 'synth') buildSynth(); else if (f === 'amp') buildAmp(); else requestAnimationFrame(fit);
+}
+
+// ───────────────────────── shared filter maths (used by the audio engine and by the on-screen curves) ─────────────────────────
+// RBJ cookbook biquads → [b0, b1, b2, a1, a2] (a0 normalised to 1)
+function bqCoefs(type, f, q, gdb, fs) {
+  f = Math.max(10, Math.min(f, fs * 0.45)); q = Math.max(0.05, q || 0.707);
+  const w = 2 * Math.PI * f / fs, cw = Math.cos(w), sw = Math.sin(w), al = sw / (2 * q), A = Math.pow(10, (gdb || 0) / 40);
+  let b0, b1, b2, a0, a1, a2;
+  switch (type) {
+    case 'lp': b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = b0; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'hp': b0 = (1 + cw) / 2; b1 = -(1 + cw); b2 = b0; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'bp': b0 = al; b1 = 0; b2 = -al; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'notch': b0 = 1; b1 = -2 * cw; b2 = 1; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'ap': b0 = 1 - al; b1 = -2 * cw; b2 = 1 + al; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; break;
+    case 'peak': b0 = 1 + al * A; b1 = -2 * cw; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * cw; a2 = 1 - al / A; break;
+    case 'ls': { const s = 2 * Math.sqrt(A) * al; b0 = A * ((A + 1) - (A - 1) * cw + s); b1 = 2 * A * ((A - 1) - (A + 1) * cw); b2 = A * ((A + 1) - (A - 1) * cw - s);
+      a0 = (A + 1) + (A - 1) * cw + s; a1 = -2 * ((A - 1) + (A + 1) * cw); a2 = (A + 1) + (A - 1) * cw - s; break; }
+    case 'hs': { const s = 2 * Math.sqrt(A) * al; b0 = A * ((A + 1) + (A - 1) * cw + s); b1 = -2 * A * ((A - 1) + (A + 1) * cw); b2 = A * ((A + 1) + (A - 1) * cw - s);
+      a0 = (A + 1) - (A - 1) * cw + s; a1 = 2 * ((A - 1) - (A + 1) * cw); a2 = (A + 1) - (A - 1) * cw - s; break; }
+    default: return [1, 0, 0, 0, 0];
+  }
+  return [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
+}
+function bqMag(c, f, fs) { // |H(e^jw)|
+  const w = 2 * Math.PI * f / fs, c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+  const nr = c[0] + c[1] * c1 + c[2] * c2, ni = -(c[1] * s1 + c[2] * s2), dr = 1 + c[3] * c1 + c[4] * c2, di = -(c[3] * s1 + c[4] * s2);
+  return Math.sqrt((nr * nr + ni * ni) / (dr * dr + di * di));
+}
+// Amp tone stacks: each type has its own voicing (where the mid knob sits and its built-in scoop)
+const STACKS = {
+  fender:   { label: 'American (scooped)', bf: 110, mf: 420, mq: .6, base: -7, tf: 2600, bw: 2.4, mw: 1.4, tw: 2.6 },
+  marshall: { label: 'British (mid-forward)', bf: 120, mf: 650, mq: .7, base: -2.5, tf: 3000, bw: 2.2, mw: 1.6, tw: 2.4 },
+  vox:      { label: 'Top boost (chimey)', bf: 130, mf: 1000, mq: .8, base: -4, tf: 3400, bw: 1.8, mw: 1.3, tw: 3 },
+  modern:   { label: 'Modern high-gain', bf: 90, mf: 750, mq: .9, base: -3, tf: 2800, bw: 2, mw: 2, tw: 2.2 },
+  flat:     { label: 'Flat / bass', bf: 80, mf: 800, mq: .7, base: 0, tf: 3000, bw: 2.4, mw: 1.6, tw: 2.4 },
+};
+function toneStackDesign(h) { // knobs 0..10, 5 = flat-ish
+  const s = STACKS[h.stack] || STACKS.marshall, out = [];
+  out.push(['ls', s.bf, .7, (h.bass - 5) * s.bw]);
+  out.push(['peak', s.mf, s.mq, s.base * (1 - h.mid / 10 * .6) + (h.mid - 5) * s.mw]);
+  out.push(['hs', s.tf, .7, (h.treble - 5) * s.tw]);
+  out.push(['hs', 3800, .6, (h.presence - 5) * 1.4]);
+  out.push(['peak', 100, 1.1, h.resonance * 6]);
+  if (h.bright) out.push(['hs', 2200, .7, 6 * (1 - Math.min(1, h.gain / 10) * .7)]);
+  return out;
+}
+// Cabinet: speakers, box and microphone as a chain of filters
+const CABS = {
+  '1x12 open': { label: '1×12 open back', hp: 85, bump: [95, 1.2, 1], dip: [180, 1.2, -2] },
+  '2x12 open': { label: '2×12 open back', hp: 75, bump: [100, 1.1, 2.5], dip: [200, 1.4, -1.5] },
+  '2x12 closed': { label: '2×12 closed', hp: 70, bump: [105, 1.3, 4], dip: [300, 1, -1] },
+  '4x12': { label: '4×12 closed', hp: 65, bump: [95, 1.5, 5.5], dip: [400, .9, -1.5] },
+  '1x15 bass': { label: '1×15 bass', hp: 38, bump: [60, 1.2, 4], dip: [500, .8, -2] },
+  '8x10 bass': { label: '8×10 bass', hp: 42, bump: [75, 1.1, 5], dip: [900, 1, -1] },
+};
+const SPEAKERS = {
+  v30:      { label: 'Vintage 30 (aggressive mids)', pk: [2400, 1.3, 4.5], pk2: [1200, 1, 1.5], lp: 5200 },
+  green:    { label: 'Greenback (warm, woody)', pk: [1500, 1.1, 3], pk2: [3000, 2, -2], lp: 4500 },
+  alnico:   { label: 'Alnico blue (chimey)', pk: [3000, 1.4, 4], pk2: [700, 1, -1.5], lp: 6500 },
+  jensen:   { label: 'American 12" (clean, scooped)', pk: [2200, 1.2, 2], pk2: [500, .8, -2.5], lp: 5500 },
+  bass:     { label: 'Bass driver', pk: [800, 1, 2], pk2: [2200, 1, -3], lp: 3200 },
+  fullrange:{ label: 'Full-range (for acoustic)', pk: [3000, 1, 0], pk2: [800, 1, 0], lp: 14000 },
+};
+const MICS = {
+  dyn57: { label: 'Dynamic 57', fx: [['hp', 90, .7, 0], ['peak', 5500, 1.5, 5]] },
+  ribbon: { label: 'Ribbon (dark, smooth)', fx: [['hs', 4000, .7, -6], ['ls', 160, .7, 2.5]] },
+  cond: { label: 'Condenser (open, detailed)', fx: [['hs', 9000, .7, 2.5], ['peak', 2500, .9, 1]] },
+};
+function cabDesign(c) {
+  const box = CABS[c.cab] || CABS['4x12'], spk = SPEAKERS[c.speaker] || SPEAKERS.v30, mic = MICS[c.mic] || MICS.dyn57, out = [];
+  out.push(['hp', box.hp, .8, 0], ['peak', ...box.bump], ['peak', ...box.dip]);
+  out.push(['peak', ...spk.pk], ['peak', ...spk.pk2]);
+  const lp = spk.lp * (1 - c.pos * .45); // mic toward the edge of the cone = darker
+  out.push(['lp', lp, .8, 0], ['lp', lp * 1.15, .6, 0]);
+  out.push(['peak', 3500, .8, (0.5 - c.pos) * 6]); // centre = presence, edge = softer
+  for (const f of mic.fx) out.push(f);
+  out.push(['ls', 200, .7, (0.5 - c.dist) * 5]); // close = proximity bass, far = thinner
+  return out;
+}
+
+// ───────────────────────── amp face: pedals, amp head, cabinet definitions ─────────────────────────
+// param: [key, label, min, max, default, log?, unit]
+const PDIVS = []; for (const d of ['1/1', '1/2', '1/4', '1/8', '1/16', '1/32']) PDIVS.push(d, d + '.', d + 't');
+const PEDALS = {
+  comp:   { name: 'Compressor', color: '#3c6e9e', board: 'pre', params: [['thresh', 'Threshold', -50, 0, -24, 0, 'dB'], ['ratio', 'Ratio', 1, 20, 4, 1, ':1'], ['attack', 'Attack', .1, 80, 5, 1, 'ms'], ['release', 'Release', 20, 1000, 150, 1, 'ms'], ['makeup', 'Makeup', 0, 24, 6, 0, 'dB'], ['blend', 'Blend', 0, 1, 1, 0, '%']] },
+  boost:  { name: 'Clean boost', color: '#c9c2b0', board: 'pre', params: [['gain', 'Gain', 0, 20, 8, 0, 'dB'], ['tone', 'Tone', -1, 1, 0, 0, 'tilt']] },
+  od:     { name: 'Overdrive', color: '#4f9d58', board: 'pre', params: [['drive', 'Drive', 0, 1, .5, 0, '%'], ['tone', 'Tone', 0, 1, .5, 0, '%'], ['level', 'Level', -24, 12, 0, 0, 'dB']] },
+  dist:   { name: 'Distortion', color: '#2e2e2e', board: 'pre', params: [['dist', 'Distortion', 0, 1, .6, 0, '%'], ['filter', 'Filter', 0, 1, .4, 0, '%'], ['level', 'Level', -24, 12, 0, 0, 'dB']] },
+  fuzz:   { name: 'Fuzz', color: '#b23b3b', board: 'pre', params: [['sustain', 'Sustain', 0, 1, .7, 0, '%'], ['tone', 'Tone', 0, 1, .5, 0, '%'], ['level', 'Level', -24, 12, 0, 0, 'dB']] },
+  octave: { name: 'Octave fuzz', color: '#d08a2a', board: 'pre', params: [['fuzz', 'Fuzz', 0, 1, .6, 0, '%'], ['octave', 'Octave', 0, 1, .6, 0, '%'], ['level', 'Level', -24, 12, 0, 0, 'dB']] },
+  crush:  { name: 'Bitcrusher', color: '#7a4fb0', board: 'pre', params: [['bits', 'Bits', 2, 16, 6, 0, 'bit'], ['down', 'Rate ÷', 1, 40, 4, 1, '×'], ['mix', 'Mix', 0, 1, 1, 0, '%']] },
+  gate:   { name: 'Noise gate', color: '#4b4b4b', board: 'pre', params: [['thresh', 'Threshold', -80, -10, -55, 0, 'dB'], ['release', 'Release', 5, 500, 80, 1, 'ms'], ['range', 'Range', 6, 80, 60, 0, 'dB']] },
+  geq:    { name: 'Graphic EQ', color: '#cfcfcf', board: 'pre', params: [['b0', '100', -12, 12, 0, 0, 'dB'], ['b1', '200', -12, 12, 0, 0, 'dB'], ['b2', '400', -12, 12, 0, 0, 'dB'], ['b3', '800', -12, 12, 0, 0, 'dB'], ['b4', '1.6k', -12, 12, 0, 0, 'dB'], ['b5', '3.2k', -12, 12, 0, 0, 'dB'], ['b6', '6.4k', -12, 12, 0, 0, 'dB'], ['level', 'Level', -12, 12, 0, 0, 'dB']], eq: true },
+  phaser: { name: 'Phaser', color: '#e07a2a', board: 'pre', params: [['rate', 'Rate', .05, 8, .5, 1, 'Hz'], ['depth', 'Depth', 0, 1, .7, 0, '%'], ['center', 'Center', 150, 3000, 700, 1, 'Hz'], ['fb', 'Feedback', 0, .9, .4, 0, '%'], ['mix', 'Mix', 0, 1, 1, 0, '%']], opts: { stages: ['6', [['4', '4 stage'], ['6', '6 stage'], ['8', '8 stage'], ['12', '12 stage']]], sync: ['free', 'sync'] } },
+  rotary: { name: 'Rotary speaker', color: '#8a5a2a', board: 'post', params: [['drive', 'Drive', 0, 1, .2, 0, '%'], ['balance', 'Horn/drum', 0, 1, .6, 0, '%'], ['spread', 'Mic spread', 0, 1, .6, 0, '%']], opts: { fast: [false, 'toggle', 'Fast'] } },
+  delay:  { name: 'Tape delay', color: '#3f8f8a', board: 'post', params: [['time', 'Time', 20, 2000, 375, 1, 'ms'], ['fb', 'Feedback', 0, .95, .4, 0, '%'], ['mix', 'Mix', 0, 1, .35, 0, '%'], ['tone', 'Tone', 600, 12000, 3500, 1, 'Hz'], ['wow', 'Wow', 0, 1, .2, 0, '%']], opts: { sync: ['1/8.', 'sync'], pp: [false, 'toggle', 'Ping-pong'] } },
+  spring: { name: 'Spring reverb', color: '#8c7a5a', board: 'post', params: [['decay', 'Decay', 0, 1, .5, 0, '%'], ['tone', 'Tone', 1000, 8000, 3500, 1, 'Hz'], ['mix', 'Mix', 0, 1, .35, 0, '%']] },
+  hall:   { name: 'Hall reverb', color: '#4a5a8c', board: 'post', params: [['size', 'Size', 0, 1, .7, 0, '%'], ['damp', 'Damping', 0, 1, .5, 0, '%'], ['pre', 'Pre-delay', 0, 200, 20, 0, 'ms'], ['width', 'Width', 0, 1, 1, 0, '%'], ['mix', 'Mix', 0, 1, .3, 0, '%']] },
+};
+const AHP = { // amp head knobs
+  gain: ['Gain', 0, 10, 5], bass: ['Bass', 0, 10, 5], mid: ['Middle', 0, 10, 5], treble: ['Treble', 0, 10, 5], presence: ['Presence', 0, 10, 5], master: ['Master', 0, 10, 5],
+  stages: ['Gain stages', 1, 4, 2, 1], character: ['Clipping', 0, 1, .3], bias: ['Bias', 0, 1, .2], tight: ['Low cut', 20, 300, 70], sag: ['Sag', 0, 1, .3], pdrive: ['Power drive', 0, 1, .3], resonance: ['Resonance', 0, 1, .3],
+};
+const H = (stack, gain, stages, character, bias, tight, bright, bass, mid, treble, presence, resonance, sag, pdrive, master) => ({ stack, gain, stages, character, bias, tight, bright, bass, mid, treble, presence, resonance, sag, pdrive, master });
+const C = (cab, speaker, mic, pos, dist, on = true) => ({ cab, speaker, mic, pos, dist, on });
+const AMP_PRESETS = {
+  'Clean American':    { head: H('fender', 2.8, 2, .15, .1, 60, true, 6, 4, 6.5, 5.5, .3, .35, .2, 6), cab: C('2x12 open', 'jensen', 'dyn57', .3, .2) },
+  'British crunch':    { head: H('marshall', 6, 3, .35, .25, 90, false, 5, 7, 6, 6, .4, .3, .4, 5), cab: C('4x12', 'green', 'dyn57', .35, .25) },
+  'High-gain modern':  { head: H('modern', 8.5, 4, .55, .3, 160, false, 6, 4.5, 6.5, 6.5, .6, .15, .3, 4.5), cab: C('4x12', 'v30', 'dyn57', .25, .15) },
+  'Vintage tweed':     { head: H('fender', 6.5, 2, .1, .45, 50, true, 5, 6, 6, 5, .2, .8, .7, 6), cab: C('1x12 open', 'alnico', 'ribbon', .4, .35) },
+  'Chime (top boost)': { head: H('vox', 5, 2, .25, .2, 80, false, 4.5, 5, 7, 6, .3, .5, .5, 5.5), cab: C('2x12 open', 'alnico', 'dyn57', .3, .3) },
+  'Bass amp':          { head: H('flat', 3, 1, .2, .1, 25, false, 6.5, 5, 5, 5, .5, .3, .2, 6), cab: C('8x10 bass', 'bass', 'cond', .4, .3) },
+  'Acoustic DI':       { head: H('flat', 1, 1, 0, 0, 40, false, 5, 5, 5.5, 5, 0, 0, 0, 6), cab: C('1x12 open', 'fullrange', 'cond', .5, .4, false) },
+};
+const AMP_OUT = {"Clean American": -5.9, "British crunch": -6.7, "High-gain modern": -7.1, "Vintage tweed": -5.6, "Chime (top boost)": -7.8, "Bass amp": -0.8, "Acoustic DI": 6.6}; // per-preset output trim (dB) from the QA calibration: strummed chords peak near -3 dBFS
+let pedalUid = 1;
+function newPedal(type) {
+  const d = PEDALS[type], p = {}, o = {};
+  for (const q of d.params) p[q[0]] = q[4];
+  for (const k in d.opts || {}) o[k] = d.opts[k][0];
+  return { uid: 'p' + (pedalUid++) + '_' + Math.random().toString(36).slice(2, 6), type, on: true, p, o };
+}
+function ampPreset(name, keep) {
+  const pr = AMP_PRESETS[name];
+  return { on: keep ? keep.on : true, preset: name, head: { ...pr.head }, cab: { ...pr.cab }, pre: keep ? keep.pre : [], post: keep ? keep.post : [], trim: AMP_OUT[name] || 0, out: keep ? keep.out || 0 : 0 };
+}
+function ampDefault() { const a = ampPreset('British crunch'); a.on = false; return a; }
+
+// ───────────────────────── amp face UI ─────────────────────────
+function pushAmp() { send('amp', cfg.amp); }
+let ampSendQ = false;
+function pushAmpSoon() { if (ampSendQ) return; ampSendQ = true; requestAnimationFrame(() => { ampSendQ = false; pushAmp(); }); }
+// generic knob (same look as the synth face, not a modulation target)
+function gknob(o) {
+  const w = el('div', { class: 'knob sm', title: o.label + ' — drag up/down, double-click to reset' });
+  w.innerHTML = `<svg viewBox="0 0 48 48"><path class="trk" d="${arcD(17, A0, A1)}"/><path class="val"/><circle class="cap" cx="24" cy="24" r="12"/><line class="ptr" x1="24" y1="24" x2="24" y2="14"/></svg><div class="kv"></div><div class="kl">${o.label}</div>`;
+  const toN = v => o.log ? Math.log(v / o.min) / Math.log(o.max / o.min) : (v - o.min) / (o.max - o.min);
+  const fromN = n => { n = Math.max(0, Math.min(1, n)); let v = o.log ? o.min * Math.pow(o.max / o.min, n) : o.min + (o.max - o.min) * n; if (o.step) v = Math.round(v / o.step) * o.step; return v; };
+  const draw = () => { const v = o.get(), n = toN(v), ang = A0 + (A1 - A0) * n, svg = w.firstChild, bip = o.min < 0 && o.max > 0, z = bip ? A0 + (A1 - A0) * toN(0) : A0;
+    svg.querySelector('.val').setAttribute('d', Math.abs(ang - z) < .5 ? '' : arcD(17, Math.min(z, ang), Math.max(z, ang)));
+    const r = ang * Math.PI / 180, p = svg.querySelector('.ptr'); p.setAttribute('x2', 24 + 10 * Math.sin(r)); p.setAttribute('y2', 24 - 10 * Math.cos(r));
+    w.querySelector('.kv').textContent = o.fmt ? o.fmt(v) : (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)); };
+  let y0, n0, drag = false;
+  w.addEventListener('pointerdown', e => { if (e.button) return; drag = true; y0 = e.clientY; n0 = toN(o.get()); w.setPointerCapture(e.pointerId); e.preventDefault(); });
+  w.addEventListener('pointermove', e => { if (!drag) return; o.set(fromN(n0 + (y0 - e.clientY) / (e.shiftKey ? 900 : 170))); draw(); });
+  w.addEventListener('pointerup', () => drag = false);
+  w.addEventListener('dblclick', () => { if (o.def !== undefined) { o.set(o.def); draw(); } });
+  draw(); w._draw = draw; return w;
+}
+const ufmt = (u) => v => u === 'dB' ? (v > 0 ? '+' : '') + v.toFixed(1) : u === '%' ? Math.round(v * 100) + '%' : u === 'Hz' ? (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toFixed(v < 10 ? 2 : 0)) : u === 'ms' ? v.toFixed(v < 10 ? 1 : 0) + 'ms' : u === ':1' ? v.toFixed(1) + ':1' : u === 'tilt' ? (v > 0 ? 'bright ' : v < 0 ? 'dark ' : '') + Math.abs(v * 100).toFixed(0) : u === 'bit' ? v.toFixed(0) + ' bit' : u === '×' ? '÷' + v.toFixed(0) : v.toFixed(1);
+function ampEdited() { if (cfg.amp.preset !== 'Custom') { cfg.amp.preset = 'Custom'; const s = $('ampPreset'); if (s) s.value = 'Custom'; } pushAmpSoon(); }
+
+// ── pedal ──
+let dragUid = null;
+// drag a pedal by its ⠿ grip: drop it between pedals on either board
+function startPedalDrag(e, uid, card) {
+  e.preventDefault(); dragUid = uid; card.classList.add('dragging');
+  const ghost = el('div', { class: 'chip ghost', style: '--c:' + PEDALS[[...cfg.amp.pre, ...cfg.amp.post].find(p => p.uid === uid).type].color + ';color:#fff' }, '⠿ ' + card.querySelector('.pn').textContent); document.body.append(ghost);
+  let target = null;
+  const mv = ev => { ghost.style.left = ev.clientX + 10 + 'px'; ghost.style.top = ev.clientY + 10 + 'px';
+    const b = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.board'); document.querySelectorAll('.board').forEach(x => x.classList.toggle('over', x === b)); target = b ? { b, x: ev.clientX } : null; };
+  const up = () => { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); ghost.remove(); card.classList.remove('dragging');
+    document.querySelectorAll('.board').forEach(x => x.classList.remove('over'));
+    if (target) { const which = target.b.dataset.b; let item;
+      for (const k of ['pre', 'post']) { const i = cfg.amp[k].findIndex(p => p.uid === uid); if (i >= 0) item = cfg.amp[k].splice(i, 1)[0]; }
+      const after = [...target.b.querySelectorAll('.pedal')].filter(p => p.dataset.uid !== uid).find(p => { const r = p.getBoundingClientRect(); return target.x < r.left + r.width / 2; });
+      const idx = after ? cfg.amp[which].findIndex(p => p.uid === after.dataset.uid) : -1;
+      if (idx >= 0) cfg.amp[which].splice(idx, 0, item); else cfg.amp[which].push(item);
+      pushAmp(); buildAmp(); }
+    dragUid = null; };
+  mv(e); document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+}
+function pedalEl(d, board) {
+  const def = PEDALS[d.type];
+  const c = el('div', { class: 'pedal' + (d.on ? '' : ' bypassed'), 'data-uid': d.uid });
+  c.style.setProperty('--pc', def.color);
+  const led = el('span', { class: 'led' + (d.on ? ' on' : '') });
+  const sw = el('button', { class: 'foot', title: 'Footswitch: on / bypass' }, led);
+  sw.onclick = () => { d.on = !d.on; led.classList.toggle('on', d.on); c.classList.toggle('bypassed', !d.on); pushAmpSoon(); };
+  const head = el('div', { class: 'ph' }, el('span', { class: 'grip', title: 'Drag to reorder or move to the other board' }, '⠿'), el('span', { class: 'pn' }, def.name), sw,
+    el('button', { class: 'x', title: 'Remove pedal', onclick: () => { removePedal(d.uid); } }, '×'));
+  const nk = def.eq ? 0 : def.params.length;
+  c.style.width = (def.eq ? 214 : Math.max(150, nk * 45 + 20)) + 'px';
+  c.append(head, el('canvas', { class: 'pscreen', id: 'ps_' + d.uid, height: 34 }));
+  const ks = el('div', { class: 'pk' + (def.eq ? ' eq' : '') });
+  for (const q of def.params) {
+    const [k, label, min, max, dflt, log, unit] = q;
+    if (def.eq && k !== 'level') { // graphic EQ: vertical sliders read better than knobs
+      const s = el('input', { type: 'range', min, max, step: .5, class: 'vsl', title: label + ' Hz — double-click to reset' }); s.value = d.p[k];
+      s.oninput = () => { d.p[k] = +s.value; pushAmpSoon(); }; s.ondblclick = () => { s.value = 0; s.oninput(); };
+      ks.append(el('div', { class: 'vcol' }, el('div', { class: 'vwrap' }, s), el('span', {}, label))); continue;
+    }
+    ks.append(gknob({ label, min, max, log, def: dflt, step: unit === 'bit' || unit === '×' ? 1 : 0, fmt: ufmt(unit), get: () => d.p[k], set: v => { d.p[k] = v; pushAmpSoon(); } }));
+  }
+  c.append(ks);
+  const opts = el('div', { class: 'popts' });
+  for (const k in def.opts || {}) {
+    const spec = def.opts[k];
+    if (spec[1] === 'toggle') { const b = el('button', { class: 'tog' + (d.o[k] ? ' on' : ''), onclick: () => { d.o[k] = !d.o[k]; b.classList.toggle('on', d.o[k]); pushAmpSoon(); } }, spec[2]); opts.append(b); }
+    else if (spec[1] === 'sync') { const s = el('select', { class: 'ssel' }); [['free', 'Free'], ...PDIVS.map(v => [v, divLabel(v)])].forEach(([v, l]) => s.append(el('option', { value: v }, l)));
+      s.value = d.o[k]; s.onchange = () => { d.o[k] = s.value; pushAmpSoon(); }; opts.append(el('span', { class: 'note', style: 'margin:0' }, 'Sync'), s); }
+    else { const s = el('select', { class: 'ssel' }); spec[1].forEach(([v, l]) => s.append(el('option', { value: v }, l))); s.value = d.o[k]; s.onchange = () => { d.o[k] = s.value; pushAmpSoon(); }; opts.append(s); }
+  }
+  if (opts.children.length) c.append(opts);
+  head.querySelector('.grip').addEventListener('pointerdown', e => startPedalDrag(e, d.uid, c));
+  return c;
+}
+function removePedal(uid) { for (const b of ['pre', 'post']) cfg.amp[b] = cfg.amp[b].filter(p => p.uid !== uid); pushAmp(); buildAmp(); }
+function boardEl(which, title, note) {
+  const list = cfg.amp[which], b = el('div', { class: 'board', 'data-b': which });
+  const add = el('select', { class: 'ssel addp' }); add.append(el('option', { value: '' }, '+ Add pedal…'));
+  Object.entries(PEDALS).forEach(([k, v]) => add.append(el('option', { value: k }, v.name)));
+  add.onchange = () => { if (!add.value) return; list.push(newPedal(add.value)); pushAmp(); buildAmp(); };
+  const wrap = el('div', { class: 'bcard' }, el('div', { class: 'ch' }, el('span', { class: 'ct' }, title), el('span', { class: 'note', style: 'margin:0;flex:1' }, note), add), b);
+  if (!list.length) b.append(el('div', { class: 'note bempty' }, 'Empty. Add a pedal, or drag one here from the other board.'));
+  list.forEach(d => b.append(pedalEl(d, which)));
+  return wrap;
+}
+
+// ── head & cab ──
+function buildAmp() {
+  const root = $('amp'); if (!root) return; root.innerHTML = '';
+  const a = cfg.amp, h = a.head, cb = a.cab;
+  const power = el('button', { class: 'power' + (a.on ? ' on' : ''), title: 'Amp & cabinet on/off (off = pedals only, straight to the output)' }, el('span', { class: 'led' + (a.on ? ' on' : '') }), a.on ? 'Amp ON' : 'Amp OFF');
+  power.onclick = () => { a.on = !a.on; pushAmp(); buildAmp(); };
+  const ps = el('select', { class: 'ssel', id: 'ampPreset', style: 'width:200px;margin:0' }); [...Object.keys(AMP_PRESETS), 'Custom'].forEach(k => ps.append(el('option', { value: k }, k)));
+  ps.value = a.preset in AMP_PRESETS ? a.preset : 'Custom';
+  ps.onchange = () => { if (ps.value === 'Custom') return; cfg.amp = ampPreset(ps.value, a); cfg.amp.on = true; pushAmp(); buildAmp(); };
+  root.append(el('div', { class: 'sbar' }, el('span', { class: 'ct', style: 'flex:0 0 auto' }, 'Amp'), ps, power,
+    gknob({ label: 'Output', min: -24, max: 12, def: 0, fmt: ufmt('dB'), get: () => a.out || 0, set: v => { a.out = v; pushAmpSoon(); } }),
+    el('span', { class: 'note', style: 'margin:0;flex:1' }, 'Signal: synth face → front pedals → amp head → cabinet → effects loop → out. Drag pedals by ⠿ to reorder them or move them between boards.')));
+  const G = el('div', { class: 'agrid' }); root.append(G);
+  G.append(boardEl('pre', 'Front pedals', 'Into the amp: dynamics, drive, fuzz, filters.'));
+  // head
+  const hk = (k, extra = {}) => { const s = AHP[k]; return gknob({ label: s[0], min: s[1], max: s[2], step: s[4], def: s[3], log: k === 'tight', fmt: k === 'tight' ? ufmt('Hz') : ['character', 'bias', 'sag', 'pdrive', 'resonance'].includes(k) ? ufmt('%') : v => v.toFixed(k === 'stages' ? 0 : 1),
+    get: () => h[k], set: v => { h[k] = v; ampEdited(); }, ...extra }); };
+  const stk = el('select', { class: 'ssel', style: 'margin:0' }); Object.entries(STACKS).forEach(([k, v]) => stk.append(el('option', { value: k }, v.label))); stk.value = h.stack;
+  stk.onchange = () => { h.stack = stk.value; ampEdited(); };
+  const br = el('button', { class: 'tog' + (h.bright ? ' on' : '') }, 'Bright'); br.onclick = () => { h.bright = !h.bright; br.classList.toggle('on', h.bright); ampEdited(); };
+  const head = el('div', { class: 'card ahead' + (a.on ? '' : ' off') }, el('div', { class: 'ch' }, el('span', { class: 'ct' }, 'Amp head'), stk, br),
+    el('canvas', { class: 'mini', id: 'cv_head', height: 48 }),
+    el('div', { class: 'krow hk' }, ...['gain', 'bass', 'mid', 'treble', 'presence', 'master'].map(k => hk(k)), el('span', { class: 'ksep' }), ...['stages', 'character', 'bias', 'tight', 'sag', 'pdrive', 'resonance'].map(k => hk(k))));
+  // cab
+  const sel3 = (obj, key, opts) => { const s = el('select', { class: 'ssel', style: 'margin:0' }); Object.entries(opts).forEach(([k, v]) => s.append(el('option', { value: k }, v.label))); s.value = obj[key]; s.onchange = () => { obj[key] = s.value; ampEdited(); }; return s; };
+  const cabOn = el('button', { class: 'sw' + (cb.on !== false ? ' on' : ''), title: 'Cabinet on/off (off = direct out of the head)' }); cabOn.onclick = () => { cb.on = cb.on === false; cabOn.classList.toggle('on', cb.on !== false); ampEdited(); };
+  const cab = el('div', { class: 'card acab' + (a.on ? '' : ' off') }, el('div', { class: 'ch' }, el('span', { class: 'ct' }, 'Cabinet & mic'), cabOn),
+    el('div', { class: 'two' }, sel3(cb, 'cab', CABS), sel3(cb, 'speaker', SPEAKERS)), el('div', { class: 'two' }, sel3(cb, 'mic', MICS), el('span', { class: 'note', style: 'margin:0' }, 'Drag the mic ↔ centre/edge, ↕ distance')),
+    el('div', { class: 'cabview' }, el('canvas', { id: 'cv_spk', height: 100 }), el('canvas', { id: 'cv_cab', height: 100 })));
+  G.append(el('div', { class: 'arow' }, head, cab));
+  G.append(boardEl('post', 'Effects loop', 'After the cabinet: modulation, delay, reverb.'));
+  requestAnimationFrame(() => { document.querySelectorAll('#amp canvas').forEach(c => { const d = devicePixelRatio || 1; c.width = c.clientWidth * d; c.height = c.clientHeight * d; }); wireMic(); });
+}
+function wireMic() {
+  const cv = $('cv_spk'); if (!cv) return; let drag = false;
+  const setFrom = e => { const r = cv.getBoundingClientRect(), cx = r.width / 2, rad = Math.min(r.width, r.height) * .42;
+    cfg.amp.cab.pos = Math.max(0, Math.min(1, Math.abs(e.clientX - r.left - cx) / rad)); cfg.amp.cab.dist = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)); ampEdited(); };
+  cv.onpointerdown = e => { drag = true; cv.setPointerCapture(e.pointerId); setFrom(e); }; cv.onpointermove = e => { if (drag) setFrom(e); }; cv.onpointerup = () => drag = false;
+}
+
+// ── screens (every frame) ──
+function respCurve(c, W, H, list, fs, col, range = 18) {
+  const ds = list.map(f => bqCoefs(f[0], f[1], f[2], f[3], fs)); c.strokeStyle = col; c.lineWidth = 2 * (devicePixelRatio || 1); c.beginPath();
+  for (let x = 0; x <= W; x += 2) { const f = 20 * Math.pow(1000, x / W); let m = 1; for (const d of ds) m *= bqMag(d, f, fs); const db = 20 * Math.log10(m), y = H / 2 - db / range * H * .45; x ? c.lineTo(x, y) : c.moveTo(x, y); }
+  c.stroke();
+}
+function grid(c, W, H) { c.strokeStyle = 'rgba(255,255,255,.06)'; c.lineWidth = 1; [100, 1000, 10000].forEach(f => { const x = Math.log(f / 20) / Math.log(1000) * W; c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }); c.beginPath(); c.moveTo(0, H / 2); c.lineTo(W, H / 2); c.stroke(); }
+function curveTF(c, W, H, fn, col, dotX) { c.strokeStyle = col; c.lineWidth = 2 * (devicePixelRatio || 1); c.beginPath();
+  for (let x = 0; x <= W; x += 2) { const u = x / W * 2 - 1, y = H / 2 - fn(u) * H * .42; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
+  if (dotX != null) { const u = Math.max(-1, Math.min(1, dotX)); c.fillStyle = '#fff'; c.beginPath(); c.arc((u + 1) / 2 * W, H / 2 - fn(u) * H * .42, 3.5 * (devicePixelRatio || 1), 0, 7); c.fill(); } }
+const tnh = x => Math.tanh(x), hcl = x => x <= -1.5 ? -1 : x >= 1.5 ? 1 : x - x * x * x / 6.75;
+function ampFrame() {
+  const av = viz.rig || { pd: {}, head: {} }, fs = actx ? actx.sampleRate : 48000, d = devicePixelRatio || 1, t = performance.now() / 1000;
+  for (const b of ['pre', 'post']) for (const p of cfg.amp[b]) {
+    const cv = $('ps_' + p.uid); if (!cv) continue; const c = cv.getContext('2d'), W = cv.width, H = cv.height, v = av.pd[p.uid] || {}, q = p.p, col = '#9fe0c8';
+    c.clearRect(0, 0, W, H); c.fillStyle = '#0c0a08'; c.fillRect(0, 0, W, H);
+    switch (p.type) {
+      case 'od': { const g = 1 + q.drive * 60; curveTF(c, W, H, u => Math.tanh(u * .3 * g) * .55 + u * .3 * .5, col, (v.in || 0) / .7); break; }
+      case 'dist': { const g = 1 + q.dist * 300; curveTF(c, W, H, u => hcl(u * .02 * g), col, (v.in || 0) / .7); break; }
+      case 'fuzz': { const g = 1 + q.sustain * 50; curveTF(c, W, H, u => { let x = Math.tanh(u * .05 * g + .15) - .149; return Math.tanh(x * 8 + .1) - .0997; }, col, (v.in || 0) / .7); break; }
+      case 'octave': { const g = 1 + q.fuzz * 40; curveTF(c, W, H, u => { const f = Math.tanh(u * .05 * g); return f * (1 - q.octave) + (Math.abs(f) * 2 - .6) * q.octave; }, col, (v.in || 0) / .7); break; }
+      case 'boost': curveTF(c, W, H, u => Math.max(-1, Math.min(1, u * Math.pow(10, q.gain / 20) * .5)), col); break;
+      case 'comp': { const th = q.thresh, rt = q.ratio; curveTF(c, W, H, u => { const db = (u + 1) / 2 * 60 - 60, o = db > th ? th + (db - th) / rt : db; return (o + 60) / 60 * 2 - 1; }, col);
+        const gr = Math.min(30, v.gr || 0); c.fillStyle = '#e0a040'; c.fillRect(W - 7 * d, 0, 6 * d, H * gr / 30); break; }
+      case 'gate': { const o = v.open ?? 1; c.fillStyle = o > .5 ? '#5fd07a' : '#c0503a'; c.beginPath(); c.arc(W / 2, H / 2, H * .3, 0, 7); c.fill(); c.fillStyle = '#ccc'; c.font = `${10 * d}px IBM Plex Mono`; c.fillText(o > .5 ? 'OPEN' : 'CLOSED', W / 2 + H * .4, H / 2 + 4 * d); break; }
+      case 'crush': { const st = Math.pow(2, q.bits - 1); c.strokeStyle = col; c.lineWidth = 2 * d; c.beginPath(); let last = 0;
+        for (let x = 0; x <= W; x++) { if (x % Math.max(1, Math.round(q.down * W / 80)) === 0) last = Math.round(Math.sin(x / W * Math.PI * 4) * st) / st; const y = H / 2 - last * H * .42; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); break; }
+      case 'geq': grid(c, W, H); respCurve(c, W, H, [0, 1, 2, 3, 4, 5, 6].map(i => ['peak', [100, 200, 400, 800, 1600, 3200, 6400][i], 1.1, q['b' + i]]), fs, col, 15); break;
+      case 'phaser': { grid(c, W, H); const n = +p.o.stages || 6, fc = v.f || q.center; c.strokeStyle = col; c.lineWidth = 2 * d; c.beginPath();
+        for (let x = 0; x <= W; x += 2) { const f = 20 * Math.pow(1000, x / W), ph = -2 * n * Math.atan(f / fc), m = Math.abs(Math.cos(ph / 2)) * q.mix + (1 - q.mix), y = H * .1 + (1 - m) * H * .8; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); break; }
+      case 'rotary': { const cx = W / 2, cy = H / 2, r = H * .42; c.strokeStyle = '#6b5636'; c.lineWidth = 2 * d; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke();
+        const ha = (v.hp || 0) * Math.PI * 2, da = (v.dp || 0) * Math.PI * 2; c.strokeStyle = col; c.beginPath(); c.moveTo(cx - Math.cos(ha) * r, cy - Math.sin(ha) * r * .5); c.lineTo(cx + Math.cos(ha) * r, cy + Math.sin(ha) * r * .5); c.stroke();
+        c.fillStyle = '#e0a040'; c.beginPath(); c.arc(cx + Math.cos(da) * r * .5, cy + Math.sin(da) * r * .25, 3 * d, 0, 7); c.fill(); c.fillStyle = '#ccc'; c.font = `${10 * d}px IBM Plex Mono`; c.fillText(v.fast ? 'FAST' : 'SLOW', 4 * d, 12 * d); break; }
+      case 'delay': { const tm = v.time || q.time / 1000, fb = q.fb; c.fillStyle = col; c.fillRect(2 * d, H * .15, 3 * d, H * .8);
+        for (let k = 1; k < 12; k++) { const x = 2 * d + k * tm / 2 * W; if (x > W) break; const a = q.mix * Math.pow(fb, k - 1); c.globalAlpha = .9; c.fillRect(x, H * .95 - a * H * .8, 3 * d, a * H * .8); } c.globalAlpha = 1;
+        c.fillStyle = '#ccc'; c.font = `${10 * d}px IBM Plex Mono`; c.fillText(Math.round(tm * 1000) + 'ms' + (p.o.sync && p.o.sync !== 'free' ? ' ' + p.o.sync : ''), W - 70 * d, 12 * d); break; }
+      case 'spring': { c.strokeStyle = col; c.lineWidth = 1.5 * d; c.beginPath(); for (let x = 0; x <= W; x++) { const u = x / W, env = Math.exp(-u * (5 - q.decay * 4)), y = H / 2 + Math.sin(u * 90 * (1 - u * .5) + t * 6) * env * H * .4; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); break; }
+      case 'hall': { c.fillStyle = col; const pre = q.pre / 400 * W; for (let x = 0; x < W; x += 2) { const u = (x - pre) / W; if (u < 0) continue; const e = Math.exp(-u * (6 - q.size * 5)) * (0.6 + .4 * Math.random()); c.globalAlpha = .8; c.fillRect(x, H - e * H * .9, 1.5 * d, e * H * .9); } c.globalAlpha = 1; break; }
+    }
+  }
+  // head: preamp transfer curve (left) + tone stack (right)
+  const hc = $('cv_head'); if (hc) { const c = hc.getContext('2d'), W = hc.width, H = hc.height, h = cfg.amp.head, hv = av.head || {}; c.clearRect(0, 0, W, H); c.fillStyle = '#0c0a08'; c.fillRect(0, 0, W, H);
+    const G = .3 * Math.pow(10, h.gain / 10 * 3.2), n = Math.max(1, Math.round(h.stages)), gs = Math.pow(G, 1 / n) * (n > 1 ? 1.6 : 1), b = h.bias * .35, ch = h.character;
+    const clip = x => { x += b; return (1 - ch) * tnh(x) + ch * hcl(x * 1.2) - ((1 - ch) * tnh(b) + ch * hcl(b * 1.2)); };
+    const tf = u => { let x = u * .5; for (let i = 0; i < n; i++) x = clip(x * gs); return Math.max(-1, Math.min(1, x / Math.max(1, G * .6) * Math.max(1, Math.min(1.6, 1 / (G * .6))))); };
+    c.save(); c.beginPath(); c.rect(0, 0, W * .38, H); c.clip(); curveTF(c, W * .38, H, tf, '#f2c568', (hv.in || 0) / .5); c.restore();
+    c.save(); c.translate(W * .42, 0); grid(c, W * .58, H); respCurve(c, W * .58, H, toneStackDesign(h), fs, '#7fc4b8', 20); c.restore();
+    c.fillStyle = '#a8957b'; c.font = `${10 * d}px IBM Plex Sans`; c.fillText('PREAMP', 4 * d, 11 * d); c.fillText('TONE STACK', W * .42 + 4 * d, 11 * d);
+    if (h.sag > 0) { c.fillStyle = '#e0804a'; c.fillRect(W * .38 - 6 * d, H - Math.min(1, (hv.sag || 0) * 1.5) * h.sag * H, 4 * d, H); } }
+  // cabinet: speaker with mic, and frequency response
+  const sc = $('cv_spk'); if (sc) { const c = sc.getContext('2d'), W = sc.width, H = sc.height, cb = cfg.amp.cab, cx = W / 2, cy = H / 2, r = Math.min(W, H) * .42; c.clearRect(0, 0, W, H);
+    c.fillStyle = '#16120d'; c.fillRect(0, 0, W, H); const g = c.createRadialGradient(cx, cy, r * .1, cx, cy, r); g.addColorStop(0, '#3a332a'); g.addColorStop(.25, '#1d1a15'); g.addColorStop(1, '#2a241c');
+    c.fillStyle = g; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.fill(); c.strokeStyle = '#555'; c.lineWidth = 2 * d; c.stroke(); c.beginPath(); c.arc(cx, cy, r * .22, 0, 7); c.fillStyle = '#4a4238'; c.fill();
+    const mx = cx + cb.pos * r, my = H * cb.dist; c.fillStyle = cb.on === false ? '#555' : '#d8d0c0'; c.beginPath(); c.arc(mx, my, 6 * d, 0, 7); c.fill(); c.fillRect(mx - 2 * d, my, 4 * d, H - my);
+    c.fillStyle = '#a8957b'; c.font = `${10 * d}px IBM Plex Sans`; c.fillText(cb.pos < .3 ? 'centre: bright' : cb.pos > .7 ? 'edge: dark' : 'between', 4 * d, H - 6 * d); c.fillText(cb.dist < .3 ? 'close' : cb.dist > .7 ? 'far' : 'mid', 4 * d, 12 * d); }
+  const cc = $('cv_cab'); if (cc) { const c = cc.getContext('2d'), W = cc.width, H = cc.height; c.clearRect(0, 0, W, H); c.fillStyle = '#0c0a08'; c.fillRect(0, 0, W, H); grid(c, W, H);
+    if (cfg.amp.cab.on !== false) respCurve(c, W, H, cabDesign(cfg.amp.cab), fs, '#f2c568', 30); else { c.fillStyle = '#a8957b'; c.font = `${11 * d}px IBM Plex Sans`; c.fillText('Cabinet off: direct out', 8 * d, H / 2); } }
 }
 
 // ───────────────────────── wiring ─────────────────────────
@@ -2215,7 +2886,7 @@ $('startBtn').onclick = async () => {
   catch (e) { $('startBtn').textContent = 'Audio failed: ' + e.message; }
 };
 window.addEventListener('resize', fit);
-cfg.synth = synthDefault();
+cfg.synth = synthDefault(); cfg.amp = ampDefault();
 document.querySelectorAll('.faces button[data-face]').forEach(b => b.onclick = () => setFace(b.dataset.face));
 fillPresets('f:Acoustic guitar');
 buildAll(); setPurity({}); renderInfo();

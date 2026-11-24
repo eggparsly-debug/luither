@@ -107,3 +107,8 @@ if (which === 'pedals') {
     console.log(t.padEnd(14), 'pk', r.pk, 'rms', r.rms, 'Δrms', (r.rms - base.rms).toFixed(1), 'GR', r.gr, 'corr', r.corr, 'mono', r.mono, 'tail', r.tail, 'cpu', r.cpu, r.bad ? 'NaN!' : '');
   }
 }
+if (which === 'rig') {
+  const amp = JSON.parse(vm.runInContext('(() => { const a = ampPreset("British crunch"); a.pre = ["comp","boost","od","dist","fuzz","octave","crush","gate","geq","phaser"].map(newPedal); a.post = ["rotary","delay","spring","hall"].map(newPedal); return JSON.stringify(a); })()', ctx0));
+  for (const sr of [48000, 96000]) { const r = run(sr, 'Electric guitar', 'Chorus', 'chord', amp); console.log('full rig (amp + all 14 pedals + chorus)', sr, 'pk', r.pk, 'rms', r.rms, 'GR', r.gr, 'tail', r.tail, 'cpu', r.cpu, r.bad ? 'NaN!' : 'no NaN'); }
+  for (const an of vm.runInContext('Object.keys(AMP_PRESETS)', ctx0)) { const a = vm.runInContext('ampPreset(' + JSON.stringify(an) + ')', ctx0); const r = run(48000, 'Electric guitar', 'Init (clean)', 'chord', JSON.parse(JSON.stringify(a))); console.log(an.padEnd(18), 'pk', r.pk, 'rms', r.rms, 'GR', r.gr); }
+}

@@ -42,6 +42,6 @@ function newPedal(type) {
 }
 function ampPreset(name, keep) {
   const pr = AMP_PRESETS[name];
-  return { on: keep ? keep.on : true, preset: name, head: { ...pr.head }, cab: { ...pr.cab }, pre: keep ? keep.pre : [], post: keep ? keep.post : [], out: AMP_OUT[name] || 0 };
+  return { on: keep ? keep.on : true, preset: name, head: { ...pr.head }, cab: { ...pr.cab }, pre: keep ? keep.pre : [], post: keep ? keep.post : [], trim: AMP_OUT[name] || 0, out: keep ? keep.out || 0 : 0 };
 }
 function ampDefault() { const a = ampPreset('British crunch'); a.on = false; return a; }
