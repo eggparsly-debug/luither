@@ -117,9 +117,58 @@ function drawFrame(g, c, look) {
   const nm = (NECKMATS[look.neckMat] || NECKMATS.Maple).c, P = bodyPoly(g.b);
   c.lineCap = 'round'; c.lineJoin = 'round';
   if (look.frame === 'bar') { const x = Math.min(...pl.map(l => l.start)) - .015; c.strokeStyle = nm; c.lineWidth = .022 * u; c.beginPath(); c.moveTo(g.X(x), g.Y(pl[0].y0 - .02)); c.lineTo(g.X(x), g.Y(pl[pl.length - 1].y0 + .02)); c.stroke(); }
-  if (look.frame === 'harp') {
-    c.strokeStyle = nm; c.lineWidth = .03 * u; c.beginPath(); pl.forEach((l, i) => { const x = g.X(l.start - .015), y = g.Y(l.y0); i ? c.lineTo(x, y) : c.moveTo(x, y); }); // neck through the string ends
-    const first = pl[0], baseY = P.bb.y1 + .03; c.stroke();
-    c.lineWidth = .04 * u; c.strokeStyle = shade(nm, .85); c.beginPath(); c.moveTo(g.X(first.start - .02), g.Y(first.y0 - .02)); c.lineTo(g.X(first.start - .05), g.Y(baseY)); c.lineTo(g.X(P.bb.x0 + .05), g.Y(baseY)); c.stroke(); // pillar and base
-  }
+  if (look.frame === 'harp') drawHarpFrame(g, c, pl, P, nm, u, d);
+}
+
+// Catmull-Rom through points → dense smooth polyline
+function smoothPath(pts, steps = 10) {
+  const out = []; for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    for (let s = 0; s < steps; s++) { const t = s / steps, t2 = t * t, t3 = t2 * t;
+      out.push([0, 1].map(k => .5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3))); } }
+  out.push(pts[pts.length - 1]); return out;
+}
+// a shaded band of varying width along a centre line (world coords → screen)
+function drawBand(c, g, line, wA, wB, col) {
+  const n = line.length, L = [], R = [];
+  for (let i = 0; i < n; i++) { const a = line[Math.max(0, i - 1)], b = line[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1, w = (wA + (wB - wA) * i / (n - 1)) / 2;
+    L.push([line[i][0] - dy / m * w, line[i][1] + dx / m * w]); R.push([line[i][0] + dy / m * w, line[i][1] - dx / m * w]); }
+  const path = () => { c.beginPath(); L.forEach(([x, y], i) => i ? c.lineTo(g.X(x), g.Y(y)) : c.moveTo(g.X(x), g.Y(y))); for (let i = n - 1; i >= 0; i--) c.lineTo(g.X(R[i][0]), g.Y(R[i][1])); c.closePath(); };
+  path(); c.fillStyle = col; c.fill(); c.strokeStyle = shade(col.startsWith('#') ? col : '#888888', .45); c.lineWidth = 1.5 * (devicePixelRatio || 1); c.stroke();
+  // highlight and shadow lines give the wood some roundness
+  for (const [k, a, sc] of [[.45, .35, 1.35], [-.5, .45, .55]]) { c.beginPath(); line.forEach(([x, y], i) => { const a2 = line[Math.max(0, i - 1)], b = line[Math.min(n - 1, i + 1)], dx = b[0] - a2[0], dy = b[1] - a2[1], m = Math.hypot(dx, dy) || 1, w = (wA + (wB - wA) * i / (n - 1)) / 2 * k;
+      const px = g.X(x + dy / m * w), py = g.Y(y - dx / m * w); i ? c.lineTo(px, py) : c.moveTo(px, py); }); c.strokeStyle = shade(col, sc); c.globalAlpha = a; c.lineWidth = Math.max(1, (wA + wB) / 2 * g.sc * .18); c.stroke(); c.globalAlpha = 1; }
+  return { L, R };
+}
+// harp: soundbox on the right; the neck curves through the string anchors from the treble end (where it meets the soundbox)
+// up to the crown; the pillar runs from the crown along the bass side back to a foot on the soundbox, closing the triangle
+function drawHarpFrame(g, c, pl, P, nm, u, d) {
+  const bb = P.bb, first = pl[0], last = pl[pl.length - 1], off = .016;
+  const anchors = pl.map(l => [l.start - off, l.y0]);
+  const join = [bb.x0 + .025, Math.min(bb.y1 - .04, last.y0 + .07)];           // neck meets the soundbox (treble end)
+  const crown = [first.start - .075, first.y0 - .085];                           // neck meets the pillar (bass end)
+  const foot = [bb.x0 + .06, bb.y0 - .01];                                       // pillar meets the soundbox (bass end)
+  // swan-neck: thin out the anchor list, add an S-bend into the soundbox and a rise into the crown
+  const step = Math.max(1, Math.floor(anchors.length / 7)), core = anchors.filter((_, i) => i % step === 0 || i === anchors.length - 1).reverse();
+  const neckPts = [join, [join[0] - .02, join[1] - .045], ...core.map(([x, y]) => [x - .006, y]), [first.start - .055, first.y0 - .03], crown];
+  const neck = smoothPath(neckPts, 12);
+  // pillar: gentle outward bow, from crown to foot
+  const mid = [(crown[0] + foot[0]) / 2, Math.min(crown[1], foot[1]) - .035];
+  const pillar = smoothPath([crown, [crown[0] + .05, crown[1] - .02], mid, [foot[0] - .06, foot[1] - .02], foot], 10);
+  const wood = nm, gold = '#c9a24a';
+  drawBand(c, g, pillar, .05, .04, shade(wood, .92));
+  // pillar fluting and capitals
+  c.strokeStyle = shade(wood, .55); c.globalAlpha = .5; c.lineWidth = Math.max(1, .002 * u); c.setLineDash([.02 * u, .012 * u]);
+  c.beginPath(); pillar.forEach(([x, y], i) => i ? c.lineTo(g.X(x), g.Y(y)) : c.moveTo(g.X(x), g.Y(y))); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+  for (const k of [3, pillar.length - 4]) { const [x, y] = pillar[k]; c.fillStyle = gold; c.beginPath(); c.ellipse(g.X(x), g.Y(y), .012 * u, .03 * u, 0, 0, 7); c.fill(); }
+  drawBand(c, g, neck, .04, .066, wood);
+  // foot block on the soundbox
+  c.fillStyle = shade(wood, .8); c.beginPath(); c.ellipse(g.X(foot[0]), g.Y(foot[1]), .04 * u, .03 * u, 0, 0, 7); c.fill(); c.strokeStyle = shade(wood, .45); c.lineWidth = 1.5 * d; c.stroke();
+  // crown: a carved volute where neck and pillar meet
+  const cx = g.X(crown[0]), cy = g.Y(crown[1]), r = .034 * u;
+  c.fillStyle = shade(wood, .95); c.beginPath(); c.arc(cx, cy, r, 0, 7); c.fill(); c.strokeStyle = shade(wood, .45); c.lineWidth = 1.5 * d; c.stroke();
+  c.strokeStyle = gold; c.lineWidth = Math.max(1.2, .0035 * u); c.beginPath();
+  for (let t = 0; t < 13; t += .15) { const rr = r * .85 * (1 - t / 14); const px = cx + Math.cos(t + 1) * rr, py = cy + Math.sin(t + 1) * rr; t ? c.lineTo(px, py) : c.moveTo(px, py); } c.stroke();
+  // brass tuning pins along the neck, one per string, with a bridge pin just inside it
+  pl.forEach(l => { const x = g.X(l.start - off), y = g.Y(l.y0); c.fillStyle = gold; c.beginPath(); c.arc(x, y, Math.max(1.8 * d, .0034 * u), 0, 7); c.fill();
+    c.fillStyle = '#5a4520'; c.beginPath(); c.arc(x, y, Math.max(.7 * d, .0012 * u), 0, 7); c.fill(); });
 }

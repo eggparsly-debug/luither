@@ -736,7 +736,7 @@ function geom() {
     const off = k - (np - 1) / 2, y0 = off * nutSp, y1 = off * brSp;
     let start = nutX;
     if (!neck && o.s.role !== 'stopped') { // movable bridges (ji) or anchor points for floating strings
-      const span = bridgeX - nutX; start = bridgeX - span * Math.max(.38, Math.pow(2, -(o.s.note - minNote) / 12)) * .95; }
+      const span = bridgeX - nutX; start = bridgeX - span * Math.max(floating ? .14 : .38, Math.pow(2, -(o.s.note - minNote) / 12)) * .95; }
     lines.push({ ...o, x0: floating ? start : nutX, y0, x1: bridgeX, y1, start });
   });
   const sStart = nutX + (bridgeX - nutX) * (neck ? .3 : .15);
@@ -744,8 +744,8 @@ function geom() {
     lines.push({ ...o, x0: sStart, y0: off * sp * .7, x1: bridgeX + .012, y1: off * sp, start: sStart, symp: true }); });
   // fit everything (body, horns, neck, head, floating strings, frame) on screen
   const sy = Math.max(...lines.map(l => Math.abs(l.y0)), 0) + .05;
-  const left = Math.min(P.bb.x0, neck ? -(neck + head) - .02 : Math.min(...lines.map(l => l.x0), nutX) - .08), right = Math.max(P.bb.x1, bridgeX + .05) + .02;
-  const top = Math.min(P.bb.y0, -sy) - .03, bot = Math.max(P.bb.y1 + (floating ? .06 : 0), sy) + .05;
+  const left = Math.min(P.bb.x0, neck ? -(neck + head) - .02 : Math.min(...lines.map(l => l.x0), nutX) - (look.frame === 'harp' ? .15 : .08)), right = Math.max(P.bb.x1, bridgeX + .05) + .02;
+  const top = Math.min(P.bb.y0, -sy) - (look.frame === 'harp' ? .1 : .03), bot = Math.max(P.bb.y1 + (floating ? .06 : 0), sy) + .05;
   const sc = Math.min(W * .92 / (right - left), (H - 60 * devicePixelRatio) / (bot - top));
   const ox = (W - (right - left) * sc) / 2 - left * sc, oy = (H + 26 * devicePixelRatio) / 2 - (top + bot) / 2 * sc;
   const X = x => ox + x * sc, Y = y => oy + y * sc;
@@ -810,7 +810,7 @@ function draw() {
   }
   // nut (or, without a neck, the pegs / pins that hold each string)
   if (!g.floating) { c.fillStyle = '#efe6d0'; const nw = g.neck ? ((g.np * g.nutSp) / 2 + .006) * g.look.neckWidth : bw; c.fillRect(g.X(g.nutX) - 2 * dpr, g.Y(-nw), 4 * dpr, nw * 2 * g.sc); }
-  if (!g.neck) g.lines.filter(l => !l.symp).forEach(l => drawPeg(c, g.X(l.x0), g.Y(l.y0), -1, g.look.pegs === 'machine' || g.look.pegs === 'bass' ? 'planetary' : g.look.pegs, g.sc * .7, false));
+  if (!g.neck && g.look.frame !== 'harp') g.lines.filter(l => !l.symp).forEach(l => drawPeg(c, g.X(l.x0), g.Y(l.y0), -1, g.look.pegs === 'machine' || g.look.pegs === 'bass' ? 'planetary' : g.look.pegs, g.sc * .7, false));
   // strings
   const slow = +$('slow').value, exag = +$('exag').value;
   g.lines.forEach(l => {
@@ -838,7 +838,7 @@ function draw() {
     c.globalAlpha = 1;
     if (vs !== l.x0 && !l.symp) { c.fillStyle = s.role === 'stopped' ? '#f6d8b0' : '#d8c8a8'; c.beginPath(); s.role === 'stopped' ? c.arc(g.X(vs), g.Y(yAt(vs)), 3.2 * dpr, 0, 7) : c.rect(g.X(vs) - 3 * dpr, g.Y(yAt(vs)) - 2.5 * dpr, 6 * dpr, 5 * dpr); c.fill(); }
     // role tick at nut end
-    if (!l.symp) { c.fillStyle = ROLE[s.role].c; c.beginPath(); c.arc(g.X(l.x0) - 9 * dpr, g.Y(l.y0), 2.4 * dpr, 0, 7); c.fill(); }
+    if (!l.symp && !g.floating) { c.fillStyle = ROLE[s.role].c; c.beginPath(); c.arc(g.X(l.x0) - 9 * dpr, g.Y(l.y0), 2.4 * dpr, 0, 7); c.fill(); }
   });
   // exciter marker
   const ex = cfg.ex, exX = g.bridgeX - scale * ex.pos, spread = (g.np * (g.nutSp + (g.brSp - g.nutSp) * (exX - g.nutX) / scale)) / 2 + .01;
