@@ -18,6 +18,20 @@ class Delay {
   }
 }
 
+// ── fretting-hand noises: each is a few resonators excited by a click or a noise burst ──
+// [centre Hz, Q, decay s, gain, impulse?]
+const FNOISE = {
+  hammer:   [[340, .8, .007, 1, 0], [3200, 7, .0018, .45, 1], [1500, 3, .002, .25, 1]],   // fingertip thump + string slapping the fret
+  pull:     [[2600, 2.2, .009, .55, 0], [650, .9, .004, .45, 0]],                          // fingertip scuff as it snaps off
+  lift:     [[300, .8, .009, .5, 0], [1900, 3, .003, .12, 0]],                              // finger leaving the string
+  press:    [[420, .9, .004, .35, 0], [3300, 7, .0012, .2, 1]],                             // finger landing on a fret before a pluck
+  clack:    [[900, 6, .012, 1, 1], [2400, 4, .004, .45, 1], [260, 1, .006, .4, 0]],         // key / tangent striking
+  unclack:  [[700, 5, .01, .45, 1], [240, 1, .005, .25, 0]],
+  clank:    [[4300, 14, .05, .55, 1], [2150, 12, .04, .45, 1], [1150, 2, .004, .3, 0]],    // slide landing on the strings
+  slidelift:[[3000, 3, .006, .3, 0]],
+};
+const FN_SCALE = { hammer: 2.2, pull: 2.2, lift: 3, press: 5, clack: 9, unclack: 6, clank: 12, slidelift: 3 }; // measured against the notes (see noiseqa)
+const SLIDES = { glass: { f: 1700, q: 1.1, g: .7, ring: .8 }, brass: { f: 3300, q: 2, g: 1.25, ring: 1.3 }, steel: { f: 2600, q: 1.7, g: 1, ring: 1.1 } };
 class Str {
   constructor(E) {
     this.E = E; this.neck = new Delay(); this.br = new Delay();
@@ -30,7 +44,7 @@ class Str {
     this.vib = 1; this.vph = Math.random() * 6; this.drift = 0;
     this.b1 = 0; this.b2 = 0; this.bpA1 = 0; this.bpA2 = 0; this.bpG = 0;
     this.role = 'stopped'; this.open = 45; this.range = 12; this.mag = 0;
-    this.awake = 0; this.oph = Math.random(); this.oenv = 0; this.cf = 110; this.bj = 0; this.harm = false; this.touch = 45; this.d = 0.2; this.apA = -0.2; this.comp = 1; this.tm = 0.05; this.decay = 5;
+    this.awake = 0; this.sqL = 0; this.sqT = 0; this.sq1 = 0; this.sq2 = 0; this.sqx1 = 0; this.sqx2 = 0; this.pf = 0; this.oph = Math.random(); this.oenv = 0; this.cf = 110; this.bj = 0; this.harm = false; this.touch = 45; this.d = 0.2; this.apA = -0.2; this.comp = 1; this.tm = 0.05; this.decay = 5;
   }
   set(p) {
     const roleChanged = this.role !== p.role;
@@ -41,7 +55,7 @@ class Str {
     this.decay = m.decay * (1.2 - 0.4 * p.gauge) * (p.role === 'symp' ? 1.4 : 1) * (p.sus || 1); // neck stiffness
     this.d = Math.pow(Math.min(0.9, m.bright + 0.12 * p.gauge + (p.wound ? 0.08 : 0)), SRK); // same cutoff in Hz at any sample rate
     this.tm = (1 - p.tension) * 0.12;
-    this.mag = m.magnetic;
+    this.mag = m.magnetic; this.wound = !!p.wound;
     this.comp = 2 + this.d / (1 - this.d) + 2 * (1 - this.apA) / (1 + this.apA);
     if (!this.held || roleChanged) this.setNote(this.open, 0); else this.calcG();
   }
@@ -113,21 +127,33 @@ class Str {
     if (plucked && v < GHOST && (this.role === 'stopped' || this.role === 'open')) { this.ghost(n, v, h); return; }
     if (!CONT[type]) this.restrike();
     this.setNote(n, 0); this.excite(v);
+    if (this.role === 'stopped') { const fr = this.E.ex.fretter || 'fingers', fretted = n - this.open > .5;
+      if (fr === 'keys' && fretted) this.E.fretNoise('clack', v * .7, this);
+      else if (fr === 'slide' && fretted) this.E.fretNoise('clank', v * .5, this);
+      else if (fr === 'fingers' && fretted) this.E.fretNoise('press', v * .5, this); }
   }
-  slur(n, v) {
+  slur(n, v, kind = 'on') {
     this.idle = false; this.wake();
-    const E = this.E, nk = E.nk;
+    const E = this.E, nk = E.nk, fr = E.ex.fretter || 'fingers', from = this.note;
     this.lastUse = E.clock; this.damp = 1; this.wantDamp = 0; this.held = true; this.harm = false; this.touch = n;
-    this.setNote(n, nk.frets ? Math.max(0.004, nk.glide * 0.25) : nk.glide);
+    const jump = Math.abs(n - from), fretSlide = fr === 'fingers' && nk.frets && jump > 2.5 && kind === 'on';
+    this.slideSteps = null;
+    if (fretSlide) { // a fingered slide on frets steps through each fret on the way
+      const dir = Math.sign(n - from); this.slideSteps = { to: n, cur: Math.round(from) + dir, dir, per: Math.max(.012, (E.ex.slideTime || .12) / jump) * E.fs, cnt: 0 };
+      this.setNote(this.slideSteps.cur, .002);
+    } else this.setNote(n, fr === 'slide' ? (E.ex.slideTime || .12) * (.55 + .22 * Math.sqrt(jump)) : fr === 'keys' ? .002 : nk.frets ? Math.max(0.004, nk.glide * 0.25) : nk.glide);
     if (CONT[E.ex.type]) { if (this.contT === 0) this.excite(v); }
-    else if (nk.frets) this.pluckPulse(v * 0.35);
+    else if (fr === 'slide' || fretSlide) { /* sliding doesn't re-pluck */ }
+    else if (nk.frets || fr === 'keys') this.pluckPulse(v * (kind === 'off' ? 0.42 : 0.35));
     else this.pluckPulse(v * 0.08);
+    if (this.role === 'stopped' && !fretSlide) E.fretNoise(fr === 'fingers' ? (kind === 'off' ? 'pull' : (nk.frets ? 'hammer' : 'press')) : fr === 'keys' ? 'clack' : '', kind === 'off' ? .6 : v, this);
   }
   wake() { this.awake = Math.round(3 * this.E.fs / Math.max(20, Math.min(this.freq, this.target))) + 1024; }
   release() {
-    this.held = false; this.pend = false; this.contT = 0;
+    this.slideSteps = null; this.held = false; this.pend = false; this.contT = 0;
     const nk = this.E.nk;
     if (this.harm) return; // natural harmonics keep ringing after the finger lifts
+    if (this.role === 'stopped' && this.note - this.open > .5) { const fr = this.E.ex.fretter || 'fingers'; this.E.fretNoise(fr === 'keys' ? 'unclack' : fr === 'slide' ? 'slidelift' : 'lift', .5 + .3 * Math.min(1, this.env * 4), this); }
     if (this.role === 'stopped' || (this.role === 'open' && nk.dampOpen)) {
       const mt = CONT[this.E.ex.type] ? 0.5 : nk.mute;
       this.wantDamp = Math.pow(10, -3 / (mt * this.freq));
@@ -152,6 +178,16 @@ class Str {
       this.bpA1 = 2 * r * Math.cos(6.2832 * c / fs); this.bpA2 = r * r; this.bpG = 1 - r;
     }
     this.elC = 1 - Math.exp(-6.2832 * 1.3 * this.freq / fs);
+    { // finger squeak or slide scrape: louder the faster the hand moves, much louder on wound strings
+      const rate = Math.abs(Math.log2(this.freq / (this.pf || this.freq))) * fs / n; this.pf = this.freq;
+      if (this.slideSteps) { const st = this.slideSteps; st.cnt += n; while (st.cnt >= st.per && this.slideSteps) { st.cnt -= st.per; if (st.cur === st.to) { this.slideSteps = null; break; } st.cur += st.dir; this.setNote(st.cur, .002); } }
+      const fr = ex.fretter || 'fingers', amt = ex.fretNoise ?? .5; let lvl = 0, f = 1500, q = 6;
+      const sliding = fr === 'slide' || !this.E.nk.frets || this.slideSteps; // hammer-ons don't squeak; only hands sliding along the string do
+      if (this.held && this.role === 'stopped' && fr !== 'keys' && sliding && rate > .03 && amt > 0) {
+        if (fr === 'slide') { const sl = SLIDES[ex.slideMat] || SLIDES.steel; lvl = Math.min(1, rate / 2.5) * (this.wound ? 1 : .3) * sl.g * amt * .3; f = sl.f * (.8 + Math.min(.6, rate * .15)); q = sl.q; }
+        else { lvl = Math.min(1, rate / 3) * (this.wound ? 1 : .1) * amt * .56; f = 1200 + Math.min(4200, rate * 700); q = 7; } }
+      this.sqT = lvl * .02 * Math.sqrt(SRR); if (lvl > 0 || this.sqL > 1e-6) { const r = Math.exp(-Math.PI * f / (q * fs)); this.sqA1 = 2 * r * Math.cos(2 * Math.PI * f / fs); this.sqA2 = r * r; this.sqB = (1 - r * r) * .5; }
+    }
     this.rms = Math.sqrt(this.acc / n); this.acc = 0;
     // a string that has fully died away goes to sleep (no CPU) until something excites it
     this.awake -= n; // never sleep while a wave is still travelling toward the ends
@@ -170,7 +206,8 @@ class Str {
     let bl = N * (E.beta + this.bj); if (bl < 2) bl = 2;
     let nl = N - bl; if (nl < 2) nl = 2;
     // bridge-side loss + brightness (jawari makes loud notes brighter)
-    const d = E.jaw > 0 ? this.d * (1 - E.jaw * 0.8 * (this.env > 0.25 ? 1 : this.env * 4)) : this.d;
+    const d0 = (E.ex.fretter === 'slide' && this.held && this.role === 'stopped') ? this.d * .55 : this.d;
+    const d = E.jaw > 0 ? d0 * (1 - E.jaw * 0.8 * (this.env > 0.25 ? 1 : this.env * 4)) : d0;
     this.lp = (1 - d) * this.br.last + d * this.lp;
     let x = this.lp * this.g * this.damp;
     // stiffness (dispersion)
@@ -238,11 +275,19 @@ class LuitherProc extends AudioWorkletProcessor {
       dampOpen: false, mute: 0.25, coupling: 0.5, sympC: 0.3 };
     this.pk = { mag: 0, magPos: 0.12, piezo: 0.3, mic: 0.8, master: 0.8 };
     this.held = []; this.map = new Map(); this.sus = false; this.bendSemis = 0; this.bendMul = 1; this.clock = 0;
-    this.sympFeed = 0; this.dc = [0, 0, 0, 0, 0, 0, 0, 0]; this.lim = 1; this.limMin = 1; this.dcA = 1 - 2 * Math.PI * 5 / sampleRate; this.dcB = 1 - 2 * Math.PI * 3 / sampleRate; this.frame = 0; this.lastOn = -1e9; this.bin1 = 0; this.bin2 = 0; this.pa = 0; this.pb = 0;
+    this.sympFeed = 0; this.dc = [0, 0, 0, 0, 0, 0, 0, 0]; this.lim = 1; this.limMin = 1; this.dcA = 1 - 2 * Math.PI * 5 / sampleRate; this.dcB = 1 - 2 * Math.PI * 3 / sampleRate; this.frame = 0; this.lastOn = -1e9; this.bin1 = 0; this.bin2 = 0; this.fn = []; this.pa = 0; this.pb = 0;
     { const g = Math.tan(Math.PI * Math.min(4500, sampleRate * .45) / sampleRate), k = 1 / 1.6; this.pa1 = 1 / (1 + g * (g + k)); this.pa2 = g * this.pa1; this.pa3 = g * this.pa2; } this.limRel = 1 - Math.exp(-1 / (0.12 * sampleRate)); this.blk = 0; this.seed = 22222; this.gustV = 0; this.gustT = 0;
     this.exBase = { ...this.ex }; this.nkBase = { ...this.nk }; this.syn = new Synth(this); this.rack = new AmpRack(sampleRate);
     this.derive();
     this.port.onmessage = e => this.msg(e.data);
+  }
+  fretNoise(type, v, s) {
+    const amt = this.ex.fretNoise ?? .5, spec = FNOISE[type]; if (!spec || amt <= 0 || this.fn.length > 24) return;
+    const fs = this.fs, sl = type === 'clank' || type === 'slidelift' ? (SLIDES[this.ex.slideMat] || SLIDES.steel) : null;
+    const a = Math.min(1.2, v) * amt * .045 * (FN_SCALE[type] || 1) * (s && s.wound && (type === 'pull' || type === 'lift') ? 1.4 : 1) * (sl ? sl.ring : 1);
+    this.fn.push({ t: 0, len: Math.round(fs * .08), parts: spec.map(([f, q, dec, gain, imp]) => { f *= .94 + Math.random() * .12;
+      const r = imp ? Math.exp(-1 / (dec * fs)) : Math.exp(-Math.PI * f / (q * fs));
+      return { a1: 2 * r * Math.cos(2 * Math.PI * f / fs), a2: r * r, b0: imp ? (1 - r * r) * 4 : (1 - r * r) * .5, g: gain * a, imp, ed: Math.exp(-1 / (dec * fs)), e: 1, y1: 0, y2: 0, x1: 0, x2: 0 }; }) });
   }
   noise() { this.seed = (this.seed * 1664525 + 1013904223) >>> 0; return this.seed / 4294967296 - 0.5; }
   derive() {
@@ -353,7 +398,7 @@ class LuitherProc extends AudioWorkletProcessor {
     this.map.delete(n);
     const s = this.S[si]; if (!s) return;
     const idx = s.stack.lastIndexOf(n); if (idx >= 0) s.stack.splice(idx, 1);
-    if (s.stack.length) { if (idx === s.stack.length) s.slur(s.stack[s.stack.length - 1], 0.6); }
+    if (s.stack.length) { if (idx === s.stack.length) s.slur(s.stack[s.stack.length - 1], 0.6, 'off'); }
     else if (this.sus) s.pend = true; else s.release();
     if (!this.held.length && !this.sus) { for (const d of this.S) if (d.role === 'drone' && d.held) d.release(); this.syn.allOff(); }
   }
@@ -377,13 +422,20 @@ class LuitherProc extends AudioWorkletProcessor {
     const mg = pk.mag * 0.6, pz = pk.piezo, mic = pk.mic; let mast = pk.master * 2.5;
     const dc = this.dc; mast *= TRIM[this.ex.type] || 1;
     for (let i = 0; i < n; i++) {
-      let bm = 0, bsy = 0, mgs = 0, oscSum = 0, ringSum = 0;
+      let bm = 0, bsy = 0, mgs = 0, oscSum = 0, ringSum = 0, nz = 0;
+      // fretting-hand noise: one-shot events + continuous squeak/scrape
+      for (let j = this.fn.length - 1; j >= 0; j--) { const ev = this.fn[j];
+        for (const q of ev.parts) { const x = q.imp ? (ev.t === 0 ? 1 : 0) : this.noise() * q.e; q.e *= q.ed;
+          const y = q.b0 * (x - q.x2) + q.a1 * q.y1 - q.a2 * q.y2; q.x2 = q.x1; q.x1 = x; q.y2 = q.y1; q.y1 = y; nz += y * q.g; }
+        if (++ev.t >= ev.len) this.fn.splice(j, 1); }
       const feed = this.sympFeed;
       for (let k = 0; k < nS; k++) {
         const s = S[k];
         if (s.idle && (s.role !== 'symp' || (feed < 1e-7 && feed > -1e-7))) continue;
         if (s.role === 'symp') { if (s.idle) s.wake(); s.idle = false; const o = s.tick(feed); bsy += o; if (s.mag > 0) mgs += s.magOut(o) * 0.5; }
         else {
+          if (s.sqT > 0 || s.sqL > 1e-6) { s.sqL += (s.sqT - s.sqL) * .002; const x = this.noise() * s.sqL, y = s.sqB * (x - s.sqx2) + s.sqA1 * s.sq1 - s.sqA2 * s.sq2;
+            s.sqx2 = s.sqx1; s.sqx1 = x; s.sq2 = s.sq1; s.sq1 = y; nz += y * 6; }
           const o = s.tick(0); bm += o; if (s.mag > 0) mgs += s.magOut(o);
           if (oscOn && s.role !== 'drone') { // the synth oscillator follows each string's pitch and loudness
             const ao = o < 0 ? -o : o; s.oenv += (ao - s.oenv) * (ao > s.oenv ? 0.02 * SRK : 0.0006 * SRK);
@@ -393,7 +445,7 @@ class LuitherProc extends AudioWorkletProcessor {
         }
       }
       this.sympFeed = bm * sc;
-      const bin = (bm + bsy) * cpl;
+      const bin = (bm + bsy + nz * .4) * cpl;
       let bl = 0, br = 0; const bx = bin - this.bin2; this.bin2 = this.bin1; this.bin1 = bin;
       for (let k = 0; k < nM; k++) {
         const m = M[k]; const y = m.b0 * bx + m.a1 * m.y1 - m.a2 * m.y2;
@@ -402,8 +454,9 @@ class LuitherProc extends AudioWorkletProcessor {
       const bs = bm + bsy, p = bs * 0.5 + (bl + br) * 0.04, direct = bs * 0.06;
       // magnetic pickup coil: resonant low-pass around 4.5 kHz, like a real single-coil's inductance
       { const v3 = mgs - this.pb, v1 = this.pa1 * this.pa + this.pa2 * v3, v2 = this.pb + this.pa2 * this.pa + this.pa3 * v3; this.pa = 2 * v1 - this.pa; this.pb = 2 * v2 - this.pb; mgs = v2 * 1.6; }
-      let l = mgs * mg + p * pz + (bl + direct) * mic;
-      let r = mgs * mg + p * pz + (br + direct) * mic;
+      const nzo = nz * (mic * .45 + pz * .35 + mg * .5); // the hand is near the pickups and the player's ear
+      let l = mgs * mg + p * pz + (bl + direct) * mic + nzo;
+      let r = mgs * mg + p * pz + (br + direct) * mic + nzo;
       // DC blockers
       let yl = l - dc[0] + this.dcA * dc[1]; dc[0] = l; dc[1] = yl;
       let yr = r - dc[2] + this.dcA * dc[3]; dc[2] = r; dc[3] = yr;

@@ -322,6 +322,7 @@ function computeBody() {
 function autoThr() {
   const hasStop = cfg.strings.some(s => s.role === 'stopped');
   if (!hasStop) return 2;
+  if (cfg.ex.fretter === 'slide') return 12; // a slide glides across big jumps on one string
   return cfg.nk.frets ? 4 : 5;
 }
 
@@ -570,6 +571,14 @@ function buildExciter() {
   if (t === 'ebow') { h3(p, 'E-bow'); slider(p, 'Strength', 'ex.ebow', 0, 1, .01, fmt.pct, on); slider(p, 'Attack', 'ex.attack', .005, 1.5, .005, fmt.s, on); slider(p, 'Release', 'ex.release', .01, 1.5, .01, fmt.s, on); }
   if (t === 'wind') { h3(p, 'Wind (Aeolian)'); slider(p, 'Wind speed', 'ex.wind', 0, 1, .01, fmt.pct, on); slider(p, 'Gustiness', 'ex.gust', 0, 1, .01, fmt.pct, on);
     slider(p, 'Attack', 'ex.attack', .005, 2, .005, fmt.s, on); slider(p, 'Release', 'ex.release', .01, 2, .01, fmt.s, on); noteP(p, 'Faster wind locks onto higher harmonics, like an Aeolian harp.'); }
+  h3(p, 'Fretting hand');
+  { const fr = cfg.ex.fretter || 'fingers', g2 = el('div', { class: 'exc' });
+    [['fingers', 'Fingers', '☝'], ['keys', 'Keys (tangents)', '▤'], ['slide', 'Slide', '▬']].forEach(([k, l, ic]) => g2.append(el('button', { class: fr === k ? 'on' : '', onclick: () => { cfg.ex.fretter = k; pushEx(); pushNk(); buildExciter(); buildNeck(); draw(); } }, el('span', {}, ic), l)));
+    p.append(g2);
+    noteP(p, { fingers: 'Fingertips thump on hammer-ons, snap on pull-offs, squeak when they slide along wound strings, and thud softly when they lift.', keys: 'Keys or tangents stop the string mechanically, like a hurdy-gurdy or nyckelharpa: a wooden clack, no squeak.', slide: 'A bar rests on the strings: pitch glides freely, it scrapes as it moves (most on wound strings), and it clanks when it lands. Legato jumps up to an octave glide on one string.' }[fr]);
+    slider(p, 'Fret-hand noise', 'ex.fretNoise', 0, 1, .01, fmt.pct, on);
+    if (fr === 'slide') { select(p, 'Slide', 'ex.slideMat', [['glass', 'Glass (smooth, quiet)'], ['steel', 'Steel'], ['brass', 'Brass (bright, loud)']], on); slider(p, 'Slide speed', 'ex.slideTime', .03, .5, .005, fmt.s, on); }
+    if (fr === 'fingers') slider(p, 'Slide speed', 'ex.slideTime', .03, .5, .005, fmt.s, on); }
   h3(p, 'Vibrato');
   slider(p, 'Depth', 'ex.vibDepth', 0, 60, 1, fmt.c, on);
   slider(p, 'Fade-in delay', 'ex.vibDelay', 0, 2, .01, fmt.s, on);
@@ -812,7 +821,7 @@ function draw() {
   if (!g.floating) { c.fillStyle = '#efe6d0'; const nw = g.neck ? ((g.np * g.nutSp) / 2 + .006) * g.look.neckWidth : bw; c.fillRect(g.X(g.nutX) - 2 * dpr, g.Y(-nw), 4 * dpr, nw * 2 * g.sc); }
   if (!g.neck && g.look.frame !== 'harp') g.lines.filter(l => !l.symp).forEach(l => drawPeg(c, g.X(l.x0), g.Y(l.y0), -1, g.look.pegs === 'machine' || g.look.pegs === 'bass' ? 'planetary' : g.look.pegs, g.sc * .7, false));
   // strings
-  const slow = +$('slow').value, exag = +$('exag').value;
+  const slow = +$('slow').value, exag = +$('exag').value; let slideX = null;
   g.lines.forEach(l => {
     const s = l.s, m = SMAT[s.mat] || SMAT.Steel, amp = viz.amp[l.i] || 0, held = viz.held[l.i];
     const yAt = x => l.y0 + (l.y1 - l.y0) * (x - l.x0) / (l.x1 - l.x0);
@@ -836,10 +845,15 @@ function draw() {
     c.stroke(); c.setLineDash([]);
     if (A > 2 && !l.symp) { c.globalAlpha = Math.min(.5, A / 40); c.lineWidth = thick + 4 * dpr; c.strokeStyle = ROLE[s.role].c; c.stroke(); }
     c.globalAlpha = 1;
-    if (vs !== l.x0 && !l.symp) { c.fillStyle = s.role === 'stopped' ? '#f6d8b0' : '#d8c8a8'; c.beginPath(); s.role === 'stopped' ? c.arc(g.X(vs), g.Y(yAt(vs)), 3.2 * dpr, 0, 7) : c.rect(g.X(vs) - 3 * dpr, g.Y(yAt(vs)) - 2.5 * dpr, 6 * dpr, 5 * dpr); c.fill(); }
+    if (s.role === 'stopped' && held && cfg.ex.fretter === 'slide' && vs !== l.x0) slideX = vs;
+    if (vs !== l.x0 && !l.symp && !(s.role === 'stopped' && cfg.ex.fretter === 'slide')) { c.fillStyle = s.role === 'stopped' ? '#f6d8b0' : '#d8c8a8'; c.beginPath(); s.role === 'stopped' ? c.arc(g.X(vs), g.Y(yAt(vs)), 3.2 * dpr, 0, 7) : c.rect(g.X(vs) - 3 * dpr, g.Y(yAt(vs)) - 2.5 * dpr, 6 * dpr, 5 * dpr); c.fill(); }
     // role tick at nut end
     if (!l.symp && !g.floating) { c.fillStyle = ROLE[s.role].c; c.beginPath(); c.arc(g.X(l.x0) - 9 * dpr, g.Y(l.y0), 2.4 * dpr, 0, 7); c.fill(); }
   });
+  if (slideX != null) { // the slide bar lies across every string
+    const sp = (g.np * (g.nutSp + (g.brSp - g.nutSp) * (slideX - g.nutX) / scale)) / 2 + .01, sm = { glass: 'rgba(190,230,235,.75)', brass: '#d8b45a', steel: '#c8ccd2' }[cfg.ex.slideMat] || '#c8ccd2';
+    c.fillStyle = sm; c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 1 * dpr; c.beginPath(); c.roundRect(g.X(slideX) - 5 * dpr, g.Y(-sp), 10 * dpr, sp * 2 * g.sc, 5 * dpr); c.fill(); c.stroke();
+    c.fillStyle = 'rgba(255,255,255,.5)'; c.fillRect(g.X(slideX) - 2.5 * dpr, g.Y(-sp) + 3 * dpr, 1.5 * dpr, sp * 2 * g.sc - 6 * dpr); }
   // exciter marker
   const ex = cfg.ex, exX = g.bridgeX - scale * ex.pos, spread = (g.np * (g.nutSp + (g.brSp - g.nutSp) * (exX - g.nutX) / scale)) / 2 + .01;
   c.save(); c.translate(g.X(exX), g.Y(0)); c.strokeStyle = c.fillStyle = '#f2c568'; c.lineWidth = 2 * dpr;
