@@ -32,7 +32,7 @@ const AMP_PRESETS = {
   'Bass amp':          { head: H('flat', 3, 1, .2, .1, 25, false, 6.5, 5, 5, 5, .5, .3, .2, 6), cab: C('8x10 bass', 'bass', 'cond', .4, .3) },
   'Acoustic DI':       { head: H('flat', 1, 1, 0, 0, 40, false, 5, 5, 5.5, 5, 0, 0, 0, 6), cab: C('1x12 open', 'fullrange', 'cond', .5, .4, false) },
 };
-const AMP_OUT = {"Clean American": -5.9, "British crunch": -6.7, "High-gain modern": -7.1, "Vintage tweed": -5.6, "Chime (top boost)": -7.8, "Bass amp": -0.8, "Acoustic DI": 6.6}; // per-preset output trim (dB) from the QA calibration: strummed chords peak near -3 dBFS
+const AMP_OUT = {"Clean American": -9.5, "British crunch": -4.2, "High-gain modern": -3.6, "Vintage tweed": -3.1, "Chime (top boost)": -6.9, "Bass amp": -4.1, "Acoustic DI": -6.6}; // per-preset output trim (dB) from the QA calibration: strummed chords peak near -3 dBFS
 let pedalUid = 1;
 function newPedal(type) {
   const d = PEDALS[type], p = {}, o = {};

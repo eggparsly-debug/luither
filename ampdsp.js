@@ -20,6 +20,10 @@ const tanhF = x => x < -3 ? -1 : x > 3 ? 1 : x * (27 + x * x) / (27 + 9 * x * x)
 const softClip = tanhF;
 const hardClip = x => x <= -1.5 ? -1 : x >= 1.5 ? 1 : x - x * x * x / 6.75;
 const dbToLin = d => Math.pow(10, d / 20);
+const REF = .3; // typical playing peak: drive settings are level-matched around this
+// measured loudness correction (dB) at knob 0, ¼, ½, ¾, full: heavier drive squashes and sustains, so it gets turned down to sit at the same mix level
+const DCORR = { od: [1.7, 4.2, 1.9, .7, -.8], dist: [.1, -6.9, -9.2, -10.5, -11], fuzz: [6.9, -1.7, -4.1, -5.3, -6.1], octave: [-4.6, -1.3, -3.2, -4.7, -5.6], amp: [12.5, 7.5, 3.5, .4, -.8] };
+const dcorr = (t, v) => { const c = DCORR[t], x = Math.max(0, Math.min(1, v)) * 4, i = Math.min(3, Math.floor(x)); return dbToLin(c[i] + (c[i + 1] - c[i]) * (x - i)); };
 
 class Pedal {
   constructor(fs, rack) { this.fs = fs; this.rack = rack; this.p = {}; this.o = {}; this.v = {}; this.mix = 0; this.on = true; this.init(); }
@@ -52,35 +56,36 @@ class Drive extends Pedal { // shared base for overdrive / distortion / fuzz / o
 }
 class Overdrive extends Drive { // mid-hump screamer: clip a high-passed copy, add it back to the clean signal
   makeCh() { return { hp: new Biq(), tone: new Biq(), out: new Biq() }; }
-  update() { const p = this.p, fs = this.fs; this.g = 1 + p.drive * 60; this.curveGain = this.g; this.lvl = dbToLin(p.level || 0) * .3; // near unity loudness at default settings
+  update() { const p = this.p, fs = this.fs; this.g = 1 + p.drive * 25; this.curveGain = this.g; this.nrm = 1 / tanhF(this.g * REF * .6); this.lvl = dbToLin(p.level || 0) * .42 * dcorr('od', p.drive);
     for (const c of this.ch) { c.hp.set('hp', 720, .7, 0, fs); c.tone.set('lp', 700 * Math.pow(10, p.tone * 1.05), .7, 0, fs); c.out.set('hp', 40, .7, 0, fs); } }
   one(x, k) { const c = this.ch[k], g = this.g, h = c.hp.run(x);
-    const os = this.os[k]; os.up(h); const y = os.down(tanhF(os.a * g), tanhF(os.b * g)) * .55 + x * .5;
+    const os = this.os[k]; os.up(h); const y = os.down(tanhF(os.a * g), tanhF(os.b * g)) * this.nrm * .35 + x * .6;
     return c.out.run(c.tone.run(y)) * this.lvl; }
 }
 class Distortion extends Drive { // op-amp gain into hard diodes; the filter knob darkens
-  makeCh() { return { op: new Biq(), filt: new Biq(), pre: new Biq() }; }
-  update() { const p = this.p, fs = this.fs; this.g = 1 + p.dist * 300; this.curveGain = this.g; this.lvl = dbToLin(p.level || 0) * .08;
-    for (const c of this.ch) { c.pre.set('hp', 60, .7, 0, fs); c.op.set('lp', Math.max(900, 90000 / this.g), .7, 0, fs); c.filt.set('lp', 15000 * Math.pow(600 / 15000, p.filter), .7, 0, fs); } }
-  one(x, k) { const c = this.ch[k], g = this.g, os = this.os[k]; os.up(c.op.run(c.pre.run(x))); const y = os.down(hardClip(os.a * g), hardClip(os.b * g)); return c.filt.run(y) * this.lvl; }
+  makeCh() { return { op: new Biq(), filt: new Biq(), pre: new Biq(), fizz: new Biq() }; }
+  update() { const p = this.p, fs = this.fs; this.g = 1 + p.dist * 80; this.curveGain = this.g; this.nrm = 1 / this.cl(this.g * REF); this.lvl = dbToLin(p.level || 0) * .26 * dcorr('dist', p.dist);
+    for (const c of this.ch) { c.pre.set('hp', 100, .7, 0, fs); c.fizz.set('lp', 7500, .6, 0, fs); c.op.set('lp', Math.max(900, 90000 / this.g), .7, 0, fs); c.filt.set('lp', 15000 * Math.pow(600 / 15000, p.filter), .7, 0, fs); } }
+  cl(v) { return .5 * tanhF(v) + .5 * hardClip(v); }
+  one(x, k) { const c = this.ch[k], g = this.g, os = this.os[k]; os.up(c.op.run(c.pre.run(x))); const y = os.down(this.cl(os.a * g), this.cl(os.b * g)); return c.fizz.run(c.filt.run(y)) * this.nrm * this.lvl; }
 }
 class Fuzz extends Drive { // two cascaded asymmetric stages, scooped tone blend
-  makeCh() { return { hp: new Biq(), lp: new Biq(), hp2: new Biq(), dc: new Biq() }; }
-  update() { const p = this.p, fs = this.fs; this.g1 = 1 + p.sustain * 50; this.curveGain = this.g1 * 8; this.lvl = dbToLin(p.level || 0) * .15;
-    for (const c of this.ch) { c.hp.set('hp', 90, .7, 0, fs); c.lp.set('lp', 500, .6, 0, fs); c.hp2.set('hp', 1200, .6, 0, fs); c.dc.set('hp', 25, .7, 0, fs); } }
-  nl(v) { v = tanhF(v * this.g1 + .15) - .149; return tanhF(v * 8 + .1) - .0997; }
+  makeCh() { return { hp: new Biq(), lp: new Biq(), hp2: new Biq(), dc: new Biq(), fizz: new Biq() }; }
+  update() { const p = this.p, fs = this.fs; this.g1 = 1 + p.sustain * 20; this.curveGain = this.g1 * 4; this.nrm = 1 / Math.max(.05, Math.abs(this.nl(REF))); this.lvl = dbToLin(p.level || 0) * .3 * dcorr('fuzz', p.sustain);
+    for (const c of this.ch) { c.fizz.set('lp', 7000, .6, 0, fs); c.hp.set('hp', 110, .7, 0, fs); c.lp.set('lp', 500, .6, 0, fs); c.hp2.set('hp', 1200, .6, 0, fs); c.dc.set('hp', 25, .7, 0, fs); } }
+  nl(v) { v = tanhF(v * this.g1 + .15) - .149; return tanhF(v * 4 + .1) - .0997; }
   one(x, k) { const c = this.ch[k], tn = this.p.tone;
     const os = this.os[k]; os.up(c.hp.run(x)); let y = os.down(this.nl(os.a), this.nl(os.b));
-    y = c.dc.run(y); return (c.lp.run(y) * (1 - tn) * 1.6 + c.hp2.run(y) * tn * 1.3) * this.lvl; }
+    y = c.fizz.run(c.dc.run(y)); return (c.lp.run(y) * (1 - tn) * 1.6 + c.hp2.run(y) * tn * 1.3) * this.nrm * this.lvl; }
 }
 class OctaveFuzz extends Drive { // full-wave rectification adds the octave up
   makeCh() { return { hp: new Biq(), dc: new Biq(), lp: new Biq() }; }
-  update() { const p = this.p, fs = this.fs; this.g = 1 + p.fuzz * 40; this.curveGain = this.g; this.lvl = dbToLin(p.level || 0) * .2;
+  update() { const p = this.p, fs = this.fs; this.g = 1 + p.fuzz * 20; this.curveGain = this.g; this.nrm = 1 / tanhF(this.g * REF); this.lvl = dbToLin(p.level || 0) * .32 * dcorr('octave', p.fuzz);
     for (const c of this.ch) { c.hp.set('hp', 150, .7, 0, fs); c.dc.set('hp', 40, .7, 0, fs); c.lp.set('lp', 5000, .7, 0, fs); } }
   nl(v, oc) { const f = tanhF(v); return f * (1 - oc) + (Math.abs(f) * 2 - .6) * oc; }
   one(x, k) { const c = this.ch[k], g = this.g, oc = this.p.octave, h = c.hp.run(x);
     const os = this.os[k]; os.up(h); const y = os.down(this.nl(os.a * g, oc), this.nl(os.b * g, oc));
-    return c.lp.run(c.dc.run(y)) * this.lvl; }
+    return c.lp.run(c.dc.run(y)) * this.nrm * this.lvl; }
 }
 class Crusher extends Pedal {
   init() { this.cnt = 0; this.hl = 0; this.hr = 0; }
@@ -180,10 +185,11 @@ class AmpHead {
     this.tone = [[], []]; this.sag = 0; this.pkIn = 0; this.pkOut = 0; this.v = {}; }
   set(h) {
     this.h = h; const fs = this.fs, f2 = fs * 2;
-    for (let k = 0; k < 2; k++) { this.inHP[k].set('hp', h.tight, .7, 0, fs); for (const s of this.stage[k]) { s.hp.set('hp', 25 + h.tight * .3, .7, 0, f2); s.lp.set('lp', 9000 - h.gain * 300, .7, 0, f2); }
+    for (let k = 0; k < 2; k++) { this.inHP[k].set('hp', h.tight, .7, 0, fs); for (const s of this.stage[k]) { s.hp.set('hp', 25 + h.tight * .3, .7, 0, f2); s.lp.set('lp', 7500 - h.gain * 250, .7, 0, f2); }
       const d = toneStackDesign(h), old = this.tone[k]; this.tone[k] = d.map((f, i) => (old[i] || new Biq()).set(f[0], f[1], f[2], f[3], fs)); }
-    this.G = .3 * Math.pow(10, h.gain / 10 * 3.2); this.n = Math.max(1, Math.min(4, Math.round(h.stages))); this.gs = Math.pow(this.G, 1 / this.n) * (this.n > 1 ? 1.6 : 1);
-    this.comp = 1 / Math.min(1, this.G * .6); this.bias = h.bias * .35; this.ch = h.character; this.b0 = (1 - this.ch) * tanhF(this.bias) + this.ch * hardClip(this.bias * 1.2);
+    this.G = .5 * Math.pow(10, h.gain / 10 * 2.3); this.n = Math.max(1, Math.min(4, Math.round(h.stages))); this.gs = Math.pow(this.G, 1 / this.n) * (this.n > 1 ? 1.25 : 1);
+    this.bias = h.bias * .35; this.ch = h.character; this.b0 = (1 - this.ch) * tanhF(this.bias) + this.ch * hardClip(this.bias * 1.2);
+    { let v = REF; for (let i = 0; i < this.n; i++) v = this.clip(v * this.gs); this.comp = .45 / Math.max(.02, Math.abs(v)); this.post = dcorr('amp', h.gain / 10); } // more gain = more grit, not more volume
     this.sagA = 1 - Math.exp(-1 / (.02 * fs)); this.sagR = 1 - Math.exp(-1 / (.25 * fs)); this.mv = Math.pow(h.master / 10, 1.5) * 1.8;
   }
   clip(v) { v += this.bias; return (1 - this.ch) * tanhF(v) + this.ch * hardClip(v * 1.2) - this.b0; }
@@ -194,7 +200,7 @@ class AmpHead {
     const os = this.os[k]; os.up(x); let y = os.down(this.pre(os.a), this.pre(os.b)) // both 2× samples, in order, through the same stages * this.comp;
     for (const t of this.tone[k]) y = t.run(y);
     const sg = 1 - h.sag * .55 * Math.min(1, this.sag * 1.5); // power-supply sag: loud playing squashes the output
-    const pd = 1 + h.pdrive * 5; y = tanhF(y * sg * pd * .8) / (.8 * (1 + h.pdrive * 1.2));
+    const pd = (1 + h.pdrive * 5) * .8; y = tanhF(y * sg * pd) / tanhF(.45 * pd) * .45 * this.post; // power amp: same level at any drive setting
     return y * this.mv;
   }
   run(l, r) { const x = (l + r) * .5, a = x < 0 ? -x : x; if (a > this.pkIn) this.pkIn = a; // a guitar amp is mono

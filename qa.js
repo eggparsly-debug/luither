@@ -112,3 +112,14 @@ if (which === 'rig') {
   for (const sr of [48000, 96000]) { const r = run(sr, 'Electric guitar', 'Chorus', 'chord', amp); console.log('full rig (amp + all 14 pedals + chorus)', sr, 'pk', r.pk, 'rms', r.rms, 'GR', r.gr, 'tail', r.tail, 'cpu', r.cpu, r.bad ? 'NaN!' : 'no NaN'); }
   for (const an of vm.runInContext('Object.keys(AMP_PRESETS)', ctx0)) { const a = vm.runInContext('ampPreset(' + JSON.stringify(an) + ')', ctx0); const r = run(48000, 'Electric guitar', 'Init (clean)', 'chord', JSON.parse(JSON.stringify(a))); console.log(an.padEnd(18), 'pk', r.pk, 'rms', r.rms, 'GR', r.gr); }
 }
+if (which === 'sweep') {
+  const specs = [['od', 'drive'], ['dist', 'dist'], ['fuzz', 'sustain'], ['octave', 'fuzz']];
+  for (const [t, k] of specs) { const row = [];
+    for (const v of [0, .25, .5, .75, 1]) { const amp = JSON.parse(vm.runInContext('(() => { const a = ampDefault(); const p = newPedal(' + JSON.stringify(t) + '); p.p.' + k + ' = ' + v + '; a.pre = [p]; return JSON.stringify(a); })()', ctx0));
+      const r = run(48000, 'Electric guitar', 'Init (clean)', 'chord', amp); row.push(`${v}: ${r.rms}/${r.pk}${+r.gr < -.05 ? ' GR' + r.gr : ''}`); }
+    console.log(t.padEnd(7), 'rms/peak →', row.join(' | ')); }
+  const rowA = [];
+  for (const g of [0, 2.5, 5, 7.5, 10]) { const amp = JSON.parse(vm.runInContext('(() => { const a = ampPreset("British crunch"); a.head.gain = ' + g + '; return JSON.stringify(a); })()', ctx0));
+    const r = run(48000, 'Electric guitar', 'Init (clean)', 'chord', amp); rowA.push(`${g}: ${r.rms}/${r.pk}${+r.gr < -.05 ? ' GR' + r.gr : ''}`); }
+  console.log('amp gain', 'rms/peak →', rowA.join(' | '));
+}

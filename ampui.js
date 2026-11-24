@@ -146,10 +146,10 @@ function ampFrame() {
     const cv = $('ps_' + p.uid); if (!cv) continue; const c = cv.getContext('2d'), W = cv.width, H = cv.height, v = av.pd[p.uid] || {}, q = p.p, col = '#9fe0c8';
     c.clearRect(0, 0, W, H); c.fillStyle = '#0c0a08'; c.fillRect(0, 0, W, H);
     switch (p.type) {
-      case 'od': { const g = 1 + q.drive * 60; curveTF(c, W, H, u => Math.tanh(u * .3 * g) * .55 + u * .3 * .5, col, (v.in || 0) / .7); break; }
-      case 'dist': { const g = 1 + q.dist * 300; curveTF(c, W, H, u => hcl(u * .02 * g), col, (v.in || 0) / .7); break; }
-      case 'fuzz': { const g = 1 + q.sustain * 50; curveTF(c, W, H, u => { let x = Math.tanh(u * .05 * g + .15) - .149; return Math.tanh(x * 8 + .1) - .0997; }, col, (v.in || 0) / .7); break; }
-      case 'octave': { const g = 1 + q.fuzz * 40; curveTF(c, W, H, u => { const f = Math.tanh(u * .05 * g); return f * (1 - q.octave) + (Math.abs(f) * 2 - .6) * q.octave; }, col, (v.in || 0) / .7); break; }
+      case 'od': { const g = 1 + q.drive * 25, n = 1 / Math.tanh(g * .18); curveTF(c, W, H, u => Math.max(-1, Math.min(1, (Math.tanh(u * .3 * g) * n * .35 + u * .3 * .6) * 1.4)), col, (v.in || 0) / .7); break; }
+      case 'dist': { const g = 1 + q.dist * 80, cl = x => .5 * Math.tanh(x) + .5 * hcl(x); curveTF(c, W, H, u => cl(u * .3 * g) / cl(g * .3), col, (v.in || 0) / .7); break; }
+      case 'fuzz': { const g = 1 + q.sustain * 20, nl = u => { const x = Math.tanh(u * g + .15) - .149; return Math.tanh(x * 4 + .1) - .0997; }; curveTF(c, W, H, u => nl(u * .3) / Math.max(.05, Math.abs(nl(.3))), col, (v.in || 0) / .7); break; }
+      case 'octave': { const g = 1 + q.fuzz * 20; curveTF(c, W, H, u => { const f = Math.tanh(u * .3 * g) / Math.tanh(g * .3); return f * (1 - q.octave) + (Math.abs(f) * 2 - .6) * q.octave; }, col, (v.in || 0) / .7); break; }
       case 'boost': curveTF(c, W, H, u => Math.max(-1, Math.min(1, u * Math.pow(10, q.gain / 20) * .5)), col); break;
       case 'comp': { const th = q.thresh, rt = q.ratio; curveTF(c, W, H, u => { const db = (u + 1) / 2 * 60 - 60, o = db > th ? th + (db - th) / rt : db; return (o + 60) / 60 * 2 - 1; }, col);
         const gr = Math.min(30, v.gr || 0); c.fillStyle = '#e0a040'; c.fillRect(W - 7 * d, 0, 6 * d, H * gr / 30); break; }
@@ -171,9 +171,10 @@ function ampFrame() {
   }
   // head: preamp transfer curve (left) + tone stack (right)
   const hc = $('cv_head'); if (hc) { const c = hc.getContext('2d'), W = hc.width, H = hc.height, h = cfg.amp.head, hv = av.head || {}; c.clearRect(0, 0, W, H); c.fillStyle = '#0c0a08'; c.fillRect(0, 0, W, H);
-    const G = .3 * Math.pow(10, h.gain / 10 * 3.2), n = Math.max(1, Math.round(h.stages)), gs = Math.pow(G, 1 / n) * (n > 1 ? 1.6 : 1), b = h.bias * .35, ch = h.character;
+    const G = .5 * Math.pow(10, h.gain / 10 * 2.3), n = Math.max(1, Math.round(h.stages)), gs = Math.pow(G, 1 / n) * (n > 1 ? 1.25 : 1), b = h.bias * .35, ch = h.character;
     const clip = x => { x += b; return (1 - ch) * tnh(x) + ch * hcl(x * 1.2) - ((1 - ch) * tnh(b) + ch * hcl(b * 1.2)); };
-    const tf = u => { let x = u * .5; for (let i = 0; i < n; i++) x = clip(x * gs); return Math.max(-1, Math.min(1, x / Math.max(1, G * .6) * Math.max(1, Math.min(1.6, 1 / (G * .6))))); };
+    let ref = .3; for (let i = 0; i < n; i++) ref = clip(ref * gs);
+    const tf = u => { let x = u * .3; for (let i = 0; i < n; i++) x = clip(x * gs); return Math.max(-1, Math.min(1, x / Math.max(.02, Math.abs(ref)) * .8)); };
     c.save(); c.beginPath(); c.rect(0, 0, W * .38, H); c.clip(); curveTF(c, W * .38, H, tf, '#f2c568', (hv.in || 0) / .5); c.restore();
     c.save(); c.translate(W * .42, 0); grid(c, W * .58, H); respCurve(c, W * .58, H, toneStackDesign(h), fs, '#7fc4b8', 20); c.restore();
     c.fillStyle = '#a8957b'; c.font = `${10 * d}px IBM Plex Sans`; c.fillText('PREAMP', 4 * d, 11 * d); c.fillText('TONE STACK', W * .42 + 4 * d, 11 * d);
