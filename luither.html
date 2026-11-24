@@ -838,7 +838,7 @@ class Str {
     const m = p.mat;
     let stiff = m.stiff * (0.4 + 1.6 * p.gauge * p.gauge); if (p.wound) stiff *= 0.35;
     this.apA = -0.75 * Math.min(1, stiff);
-    this.decay = m.decay * (1.2 - 0.4 * p.gauge) * (p.role === 'symp' ? 1.4 : 1);
+    this.decay = m.decay * (1.2 - 0.4 * p.gauge) * (p.role === 'symp' ? 1.4 : 1) * (p.sus || 1); // neck stiffness
     this.d = Math.pow(Math.min(0.9, m.bright + 0.12 * p.gauge + (p.wound ? 0.08 : 0)), SRK); // same cutoff in Hz at any sample rate
     this.tm = (1 - p.tension) * 0.12;
     this.mag = m.magnetic;
@@ -1242,6 +1242,132 @@ function parseNote(s) {
   const n = base + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (+m[3] + 1) * 12;
   return Math.max(12, Math.min(108, n));
 }
+// ───────────────────────── body outlines, necks, heads, pegs, frames ─────────────────────────
+// A body outline is a closed list of control points [x, y] in metres (x along the strings, 0 = neck joint; y across, negative = top of screen).
+// The drawn edge is a smooth curve through the midpoints of the control polygon, so any shape works: horns, cutaways, V's.
+function hwToOutline(b) { // old mirrored half-widths → free outline
+  const n = b.hw.length, L = b.length, top = b.hw.map((h, i) => [L * i / (n - 1), -h]);
+  return [[0, 0], [0, -b.hw[0] * .6], ...top, [L, 0], ...top.slice().reverse().map(([x, y]) => [x, -y]), [0, b.hw[0] * .6]];
+}
+const symOutline = top => [...top, ...top.slice().reverse().filter(p => Math.abs(p[1]) > 1e-6).map(([x, y]) => [x, -y])];
+const BODY_TEMPLATES = {
+  'Dreadnought': { len: .505, pts: () => hwToOutline({ length: .505, hw: [.07, .125, .142, .135, .12, .125, .16, .185, .19, .17, .08] }) },
+  'Classical': { len: .49, pts: () => hwToOutline({ length: .49, hw: [.07, .12, .14, .135, .12, .125, .15, .17, .18, .165, .08] }) },
+  'Violin family': { len: .355, pts: () => hwToOutline({ length: .355, hw: [.06, .085, .083, .075, .055, .058, .09, .103, .105, .09, .05] }) },
+  'Double-cut (horns)': { len: .45, pts: () => [[.025, -.034], [-.01, -.048], [-.055, -.08], [-.088, -.108], [-.092, -.122], [-.07, -.136], [-.02, -.142], [.06, -.136], [.12, -.116], [.2, -.126], [.3, -.16], [.39, -.166], [.45, -.124], [.472, -.04],
+      [.472, .04], [.445, .14], [.36, .172], [.26, .162], [.16, .122], [.09, .132], [.03, .138], [-.02, .128], [-.045, .112], [-.05, .098], [-.03, .078], [0, .055], [.025, .036]] },
+  'Single-cut': { len: .44, pts: () => [[0, -.035], [.025, -.06], [.015, -.10], [.06, -.125], [.13, -.12], [.19, -.11], [.27, -.142], [.36, -.162], [.43, -.13], [.455, -.06], [.46, 0],
+      [.455, .06], [.43, .13], [.36, .162], [.27, .148], [.17, .12], [.09, .13], [.03, .125], [-.005, .10], [-.02, .07], [0, .04]] },
+  'Offset bass': { len: .5, pts: () => [[.03, -.036], [-.01, -.052], [-.07, -.09], [-.12, -.122], [-.126, -.138], [-.1, -.152], [-.03, -.158], [.06, -.15], [.13, -.128], [.22, -.138], [.33, -.176], [.43, -.182], [.5, -.136], [.522, -.045],
+      [.522, .045], [.495, .155], [.4, .19], [.29, .178], [.18, .134], [.1, .146], [.03, .152], [-.025, .14], [-.05, .122], [-.055, .106], [-.032, .084], [0, .058], [.03, .038]] },
+  'Flying V': { len: .47, pts: () => [[0, -.04], [.40, -.25], [.47, -.21], [.24, -.03], [.24, .03], [.47, .21], [.40, .25], [0, .04]] },
+  'Round gourd': { len: .42, pts: () => { const p = []; for (let i = 0; i < 16; i++) { const a = Math.PI + i / 16 * Math.PI * 2; p.push([.21 + Math.cos(a) * .21, Math.sin(a) * .21]); } return p; } },
+  'Pear (lute / oud)': { len: .5, pts: () => hwToOutline({ length: .5, hw: [.05, .1, .135, .16, .175, .182, .18, .17, .15, .11, .04] }) },
+  'Box': { len: .6, pts: () => [[0, -.15], [.6, -.15], [.6, .15], [0, .15]] },
+  'Trapezoid': { len: .95, pts: () => [[0, -.36], [.95, -.16], [.95, .16], [0, .36]] },
+  'Harp soundbox': { len: .26, pts: () => [[0, -.52], [.26, -.52], [.21, 0], [.13, .52], [.02, .52], [-.01, 0]] },
+};
+function ensureOutline(b) { if (!b.outline) b.outline = hwToOutline(b); return b.outline; }
+const _polyCache = { key: '', v: null };
+function bodyPoly(b) {
+  const pts = ensureOutline(b), key = JSON.stringify(pts);
+  if (_polyCache.key === key) return _polyCache.v;
+  const n = pts.length, dense = [], mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  for (let i = 0; i < n; i++) { const p = pts[i], q = pts[(i + 1) % n], r = pts[(i + 2) % n], a = mid(p, q), c = mid(q, r);
+    for (let s = 0; s < 12; s++) { const t = s / 12, u = 1 - t; dense.push([u * u * a[0] + 2 * u * t * q[0] + t * t * c[0], u * u * a[1] + 2 * u * t * q[1] + t * t * c[1]]); } }
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, area = 0;
+  dense.forEach(([x, y], i) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); const q = dense[(i + 1) % dense.length]; area += x * q[1] - q[0] * y; });
+  const span = x => { let lo = 1e9, hi = -1e9; for (let i = 0; i < dense.length; i++) { const p = dense[i], q = dense[(i + 1) % dense.length];
+      if ((p[0] - x) * (q[0] - x) <= 0 && p[0] !== q[0]) { const y = p[1] + (q[1] - p[1]) * (x - p[0]) / (q[0] - p[0]); lo = Math.min(lo, y); hi = Math.max(hi, y); } }
+    return lo <= hi ? [lo, hi] : null; };
+  const v = { dense, bb: { x0, x1, y0, y1 }, area: Math.abs(area) / 2, mh: Math.max(-y0, y1), span };
+  _polyCache.key = key; _polyCache.v = v; return v;
+}
+function tracePoly(c, P, X, Y) { const d = P.dense; c.beginPath(); c.moveTo(X(d[0][0]), Y(d[0][1])); for (let i = 1; i < d.length; i++) c.lineTo(X(d[i][0]), Y(d[i][1])); c.closePath(); }
+
+// ── neck & head looks ──
+const NECKMATS = { // colour, and how much the neck helps the strings sustain
+  'Maple': { c: '#e6c48a', sus: 1 }, 'Mahogany': { c: '#7d4428', sus: .97 }, 'Walnut': { c: '#5c4030', sus: .98 }, 'Rosewood': { c: '#4a2618', sus: 1.01 },
+  'Ebony': { c: '#1c1612', sus: 1.03 }, 'Toon (tun)': { c: '#9a5a34', sus: .95 }, 'Roasted maple': { c: '#b0773e', sus: 1.01 }, 'Carbon fiber': { c: '#2e2f33', sus: 1.08 },
+  'Aluminum': { c: '#b7bcc3', sus: 1.12 }, '✦ Glass': { c: '#a6dbe4', sus: 1.15 }, '✦ Bone': { c: '#ece3cd', sus: 1.05 },
+};
+const HEADS = { paddle: 'Paddle, 3 + 3', inline: 'In-line (one side)', slotted: 'Slotted (classical)', scroll: 'Scroll & pegbox (violin)', bentback: 'Bent-back pegbox (lute/oud)', pegbox: 'Long pegbox (sitar)', headless: 'Headless (tuners at bridge)' };
+const PEGS = { machine: 'Guitar tuning machines', bass: 'Bass tuning machines', friction: 'Wooden friction pegs', planetary: 'Round knob tuners', pins: 'Zither / harp pins', tied: 'Tied (no pegs)' };
+const FRAMES = { none: 'None (strings over the body)', bar: 'Straight bar', harp: 'Harp neck & pillar' };
+const MARKERS = { none: 'None', dots: 'Dots', blocks: 'Blocks' };
+function lookDefault() { return { neckMat: 'Mahogany', boardMat: 'Rosewood', head: 'paddle', pegs: 'machine', markers: 'dots', neckWidth: 1, boardOver: .02, frame: 'none', spacing: 0 }; }
+
+// draw one tuning peg; side = -1 (top edge) or +1 (bottom edge); u = metres→pixels; back = seen from behind
+function drawPeg(c, x, y, side, style, u, back) {
+  const d = devicePixelRatio || 1;
+  c.save(); c.translate(x, y);
+  if (style === 'machine' || style === 'bass') { const big = style === 'bass' ? 1.6 : 1;
+    c.fillStyle = '#c9c4b8'; c.fillRect(-.006 * u * big, 0, .012 * u * big, side * .012 * u); // gear housing / post
+    c.fillStyle = back ? '#9a958a' : '#d8d3c6'; c.beginPath(); c.ellipse(0, side * .026 * u * big, .008 * u * big, .011 * u * big, 0, 0, 7); c.fill();
+    c.fillStyle = '#555'; c.beginPath(); c.arc(0, 0, Math.max(1.5 * d, .0025 * u), 0, 7); c.fill(); }
+  else if (style === 'friction') { c.fillStyle = '#2a1a10'; c.beginPath(); c.moveTo(-.003 * u, 0); c.lineTo(-.0045 * u, side * .02 * u); c.lineTo(.0045 * u, side * .02 * u); c.lineTo(.003 * u, 0); c.fill();
+    c.fillStyle = '#3b2416'; c.beginPath(); c.ellipse(0, side * .028 * u, .009 * u, .007 * u, 0, 0, 7); c.fill(); c.fillStyle = '#d9cfb8'; c.beginPath(); c.arc(0, side * .028 * u, .002 * u, 0, 7); c.fill(); }
+  else if (style === 'planetary') { c.fillStyle = '#d8d3c6'; c.beginPath(); c.arc(0, side * .014 * u, .008 * u, 0, 7); c.fill(); c.strokeStyle = '#777'; c.lineWidth = 1 * d; c.stroke(); }
+  else if (style === 'pins') { c.fillStyle = '#d8d3c6'; c.beginPath(); c.arc(0, 0, Math.max(1.8 * d, .003 * u), 0, 7); c.fill(); c.fillStyle = '#666'; c.beginPath(); c.arc(0, 0, Math.max(.8 * d, .0012 * u), 0, 7); c.fill(); }
+  else if (style === 'tied') { c.fillStyle = '#e8dfc8'; c.beginPath(); c.arc(0, 0, Math.max(1.5 * d, .002 * u), 0, 7); c.fill(); }
+  c.restore();
+}
+const shade = (hex, k) => { const h = hex.replace('#', ''), v = [0, 2, 4].map(i => Math.max(0, Math.min(255, parseInt(h.substr(i, 2), 16) * k | 0))); return `rgb(${v})`; };
+// neck, fingerboard, markers, head and pegs (front or back view; caller mirrors the canvas for the back)
+function drawNeckHead(g, c, look, back) {
+  const d = devicePixelRatio || 1, u = g.sc, nm = (NECKMATS[look.neckMat] || NECKMATS.Mahogany).c, bm = (NECKMATS[look.boardMat] || NECKMATS.Rosewood).c;
+  const nx = -g.neck, w0 = ((g.np * g.nutSp) / 2 + .006) * look.neckWidth, w1 = Math.max(w0 + .003, ((g.np * g.brSp) / 2 * .55 + .009) * look.neckWidth);
+  // neck
+  const ng = c.createLinearGradient(0, g.Y(-w1), 0, g.Y(w1)); ng.addColorStop(0, shade(nm, .65)); ng.addColorStop(.5, back ? shade(nm, 1.1) : nm); ng.addColorStop(1, shade(nm, .6));
+  c.fillStyle = ng; c.beginPath(); c.moveTo(g.X(nx), g.Y(-w0)); c.lineTo(g.X(.03), g.Y(-w1)); c.lineTo(g.X(.03), g.Y(w1)); c.lineTo(g.X(nx), g.Y(w0)); c.fill();
+  if (!back && look.boardMat !== 'none') { // fingerboard (may run out over the body)
+    const end = Math.min(g.bridgeX - .06, Math.max(0, look.boardOver)), wb = x => w0 + (w1 - w0) * (x - nx) / (.03 - nx);
+    c.fillStyle = bm; c.beginPath(); c.moveTo(g.X(nx), g.Y(-w0 * .95)); c.lineTo(g.X(end), g.Y(-wb(end) * .95)); c.lineTo(g.X(end), g.Y(wb(end) * .95)); c.lineTo(g.X(nx), g.Y(w0 * .95)); c.fill();
+    if (look.markers !== 'none' && cfg.nk.frets) { const scale = g.bridgeX - g.nutX; c.fillStyle = look.boardMat === 'Ebony' || look.boardMat === 'Rosewood' || look.boardMat === 'Carbon fiber' ? '#e8e2d2' : '#2a1d14';
+      for (const k of [3, 5, 7, 9, 12, 15, 17, 19, 21, 24]) { const xa = g.nutX + scale * (1 - Math.pow(2, -(k - 1) / 12)), xb = g.nutX + scale * (1 - Math.pow(2, -k / 12)), x = (xa + xb) / 2; if (x > end - .005) break;
+        const dbl = k === 12 || k === 24, w = wb(x);
+        if (look.markers === 'blocks') c.fillRect(g.X(x) - (xb - xa) * u * .3, g.Y(-w * .6), (xb - xa) * u * .6, w * 1.2 * u);
+        else for (const yy of dbl ? [-w * .45, w * .45] : [0]) { c.beginPath(); c.arc(g.X(x), g.Y(yy), Math.max(2 * d, .0035 * u), 0, 7); c.fill(); } } }
+  }
+  // head
+  const H = look.head, hl = { paddle: .17, inline: .19, slotted: .19, scroll: .13, bentback: .16, pegbox: .26, headless: .025 }[H] || .17, hx = nx - hl;
+  const hc = shade(nm, back ? .9 : .8), np = g.lines.filter(l => !l.symp).length;
+  const poly = pts => { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(g.X(x), g.Y(y)) : c.moveTo(g.X(x), g.Y(y))); c.closePath(); c.fill(); };
+  c.fillStyle = hc; let posts = [];
+  if (H === 'paddle') { poly([[nx, -w0], [nx - hl * .15, -w0 - .012], [hx, -w0 - .02], [hx, w0 + .02], [nx - hl * .15, w0 + .012], [nx, w0]]);
+    const half = Math.ceil(np / 2); for (let i = 0; i < np; i++) { const top = i < half, k = top ? i : i - half, cnt = top ? half : np - half; posts.push([nx - hl * (.25 + .62 * (k + .5) / cnt), top ? -1 : 1, top ? -w0 - .016 : w0 + .016]); } }
+  else if (H === 'inline') { poly([[nx, -w0], [nx - hl * .12, -w0 - .022], [nx - hl * .85, -w0 - .03], [hx, -w0 - .016], [hx, w0 - .006], [nx - hl * .55, w0 + .004], [nx - hl * .15, w0 + .012], [nx, w0]]);
+    for (let i = 0; i < np; i++) posts.push([nx - hl * (.18 + .74 * (i + .5) / np), -1, -w0 - .024]); }
+  else if (H === 'slotted') { poly([[nx, -w0 - .008], [hx, -w0 - .012], [hx, w0 + .012], [nx, w0 + .008]]); c.fillStyle = '#120c08';
+    for (const s of [-1, 1]) c.fillRect(g.X(nx - hl * .85), g.Y(s > 0 ? .004 : -w0 + .002), hl * .7 * u, (w0 - .006) * u);
+    const half = Math.ceil(np / 2); for (let i = 0; i < np; i++) { const top = i < half, k = top ? i : i - half, cnt = top ? half : np - half; posts.push([nx - hl * (.2 + .62 * (k + .5) / cnt), top ? -1 : 1, top ? -w0 - .012 : w0 + .012]); } }
+  else if (H === 'scroll' || H === 'bentback' || H === 'pegbox') { const wf = H === 'bentback' ? .6 : H === 'pegbox' ? .8 : .85;
+    poly([[nx, -w0], [hx + (H === 'scroll' ? .03 : 0), -w0 * wf], [hx + (H === 'scroll' ? .03 : 0), w0 * wf], [nx, w0]]);
+    if (!back) { c.fillStyle = '#100a06'; poly([[nx - .01, -w0 * .55], [hx + (H === 'scroll' ? .035 : .012), -w0 * wf * .5], [hx + (H === 'scroll' ? .035 : .012), w0 * wf * .5], [nx - .01, w0 * .55]]); }
+    if (H === 'scroll') { c.fillStyle = hc; c.beginPath(); c.arc(g.X(hx + .025), g.Y(0), w0 * 1.15 * u, 0, 7); c.fill(); c.strokeStyle = shade(nm, .45); c.lineWidth = 1.5 * d; c.beginPath();
+      for (let t = 0; t < 14; t += .2) { const r = w0 * 1.1 * u * (1 - t / 15), a = t; const px = g.X(hx + .025) + Math.cos(a) * r, py = g.Y(0) + Math.sin(a) * r; t ? c.lineTo(px, py) : c.moveTo(px, py); } c.stroke(); }
+    for (let i = 0; i < np; i++) { const s = i % 2 ? 1 : -1; posts.push([nx - .012 - (hl - .04) * (i + .5) / np, s, s * w0 * .9]); } }
+  else if (H === 'headless') { poly([[nx, -w0 - .004], [hx, -w0 - .004], [hx, w0 + .004], [nx, w0 + .004]]); }
+  // strings continue past the nut to their posts
+  if (!back && H !== 'headless') { const pl = g.lines.filter(l => !l.symp); c.strokeStyle = 'rgba(220,215,200,.55)'; c.lineWidth = 1 * d;
+    posts.forEach((p, i) => { const l = pl[i]; if (!l) return; c.beginPath(); c.moveTo(g.X(nx), g.Y(l.y0)); c.lineTo(g.X(p[0]), g.Y(p[2] * .55)); c.stroke(); }); }
+  const style = H === 'headless' ? 'machine' : look.pegs;
+  posts.forEach(p => drawPeg(c, g.X(p[0]), g.Y(p[2]), p[1], style, u, back));
+  if (H === 'headless' && !back) { const pl = g.lines.filter(l => !l.symp); pl.forEach(l => drawPeg(c, g.X(g.bridgeX + .03), g.Y(l.y1), 1, 'planetary', u * .6, back)); }
+}
+// floating strings: a frame holds their far ends (harp neck & pillar, or a straight bar)
+function drawFrame(g, c, look) {
+  const d = devicePixelRatio || 1, u = g.sc, pl = g.lines.filter(l => !l.symp); if (!pl.length || look.frame === 'none') return;
+  const nm = (NECKMATS[look.neckMat] || NECKMATS.Maple).c, P = bodyPoly(g.b);
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  if (look.frame === 'bar') { const x = Math.min(...pl.map(l => l.start)) - .015; c.strokeStyle = nm; c.lineWidth = .022 * u; c.beginPath(); c.moveTo(g.X(x), g.Y(pl[0].y0 - .02)); c.lineTo(g.X(x), g.Y(pl[pl.length - 1].y0 + .02)); c.stroke(); }
+  if (look.frame === 'harp') {
+    c.strokeStyle = nm; c.lineWidth = .03 * u; c.beginPath(); pl.forEach((l, i) => { const x = g.X(l.start - .015), y = g.Y(l.y0); i ? c.lineTo(x, y) : c.moveTo(x, y); }); // neck through the string ends
+    const first = pl[0], baseY = P.bb.y1 + .03; c.stroke();
+    c.lineWidth = .04 * u; c.strokeStyle = shade(nm, .85); c.beginPath(); c.moveTo(g.X(first.start - .02), g.Y(first.y0 - .02)); c.lineTo(g.X(first.start - .05), g.Y(baseY)); c.lineTo(g.X(P.bb.x0 + .05), g.Y(baseY)); c.stroke(); // pillar and base
+  }
+}
+
 const SMAT = {
   'Steel':        { decay: 9,   bright: .08, stiff: .35, magnetic: 1,  color: '#dfe3ea' },
   'Bronze-wound': { decay: 8,   bright: .14, stiff: .2,  magnetic: .4, color: '#cc9450' },
@@ -1440,6 +1566,29 @@ Object.assign(PRESETS, {
 // ── output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS ──
 const CAL = {"Acoustic guitar": 1.007, "Cello": 0.697, "Sitar": 1.043, "Koto": 1.328, "Violin": 0.809, "Double bass": 0.361, "Classical guitar": 0.65, "Electric guitar": 0.213, "Electric bass": 0.16, "Oud": 2.153, "Concert harp": 0.488, "Hammered dulcimer": 0.45, "Guzheng": 1.374, "Tanpura": 1.596, "Hurdy-gurdy": 0.857, "Alpine zither": 1.055, "Erhu": 0.326, "Aeolian harp": 0.996, "✦ Glass cello": 0.847, "✦ Crystal harp": 0.281};
 for (const k in CAL) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.pk.master = CAL[k]; return p; }; }
+// ── how each instrument looks: neck & board woods, head, pegs; some get their own body outline ──
+const LOOKS = {
+  'Acoustic guitar': { neckMat: 'Mahogany', boardMat: 'Rosewood', head: 'paddle', pegs: 'machine', markers: 'dots', boardOver: .02 },
+  'Classical guitar': { neckMat: 'Mahogany', boardMat: 'Ebony', head: 'slotted', pegs: 'machine', markers: 'none', neckWidth: 1.25, boardOver: .03 },
+  'Electric guitar': { neckMat: 'Maple', boardMat: 'Rosewood', head: 'inline', pegs: 'machine', markers: 'dots', boardOver: .07 },
+  'Electric bass': { neckMat: 'Maple', boardMat: 'Maple', head: 'inline', pegs: 'bass', markers: 'dots', neckWidth: 1.1, boardOver: .09 },
+  'Violin': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'friction', markers: 'none', neckWidth: .9, boardOver: .12 },
+  'Cello': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'friction', markers: 'none', boardOver: .22 },
+  'Double bass': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'bass', markers: 'none', neckWidth: 1.2, boardOver: .3 },
+  '✦ Glass cello': { neckMat: '✦ Glass', boardMat: '✦ Glass', head: 'scroll', pegs: 'friction', markers: 'none', boardOver: .22 },
+  'Sitar': { neckMat: 'Toon (tun)', boardMat: 'Toon (tun)', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: 1.3, boardOver: .04 },
+  'Tanpura': { neckMat: 'Toon (tun)', boardMat: 'Toon (tun)', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: 1.2, boardOver: .02 },
+  'Oud': { neckMat: 'Walnut', boardMat: 'Ebony', head: 'bentback', pegs: 'friction', markers: 'none', boardOver: .1 },
+  'Erhu': { neckMat: 'Rosewood', boardMat: 'none', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: .8, boardOver: 0 },
+  'Koto': { pegs: 'tied' }, 'Guzheng': { pegs: 'pins' }, 'Hammered dulcimer': { pegs: 'pins' }, 'Alpine zither': { pegs: 'pins' }, 'Aeolian harp': { pegs: 'pins' }, 'Hurdy-gurdy': { pegs: 'friction' },
+  'Concert harp': { frame: 'harp', neckMat: 'Maple', pegs: 'pins', spacing: .034 },
+  '✦ Crystal harp': { frame: 'harp', neckMat: '✦ Glass', pegs: 'pins', spacing: .04 },
+};
+const OUTLINE_OF = { 'Electric guitar': 'Double-cut (horns)', 'Electric bass': 'Offset bass', 'Concert harp': 'Harp soundbox', '✦ Crystal harp': 'Harp soundbox' };
+for (const k in PRESETS) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.look = { ...lookDefault(), ...(LOOKS[k] || {}) };
+  if (OUTLINE_OF[k]) { const t = BODY_TEMPLATES[OUTLINE_OF[k]]; p.body.outline = t.pts(); p.body.length = t.len; }
+  if (p.look.frame === 'harp') { p.body.bridgeX = .3; p.body.nutX = -5.3; p.body.backShape = 'bowl'; } // floating strings: anchored on the harp neck, far past the soundbox
+  return p; }; }
 
 // ───────────────────────── state ─────────────────────────
 let cfg = PRESETS['Acoustic guitar']();
@@ -1451,8 +1600,7 @@ let sustain = false;
 
 // ───────────────────────── body physics → modes ─────────────────────────
 function bodyGeom(b) {
-  const n = b.hw.length, dx = b.length / (n - 1);
-  let A = 0; for (let i = 0; i < n; i++) A += 2 * b.hw[i] * dx * (i === 0 || i === n - 1 ? .5 : 1);
+  const A = bodyPoly(b).area;
   // depth profile: centre → edge; volume = area × mean depth (weighted toward edge, where there is more area)
   let num = 0, den = 0; b.depth.forEach((d, i) => { const r = (i + .5) / b.depth.length; num += d * r; den += r; });
   const meanD = num / den;
@@ -1509,7 +1657,8 @@ function autoThr() {
 
 // ───────────────────────── audio ─────────────────────────
 function send(t, v) { if (node) node.port.postMessage({ t, v }); }
-function pushStrings() { send('strings', cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] || SMAT.Steel }))); }
+function pushStrings() { const L = cfg.look || lookDefault(), sus = cfg.body.neckLen >= .02 ? (NECKMATS[L.neckMat]?.sus || 1) * Math.sqrt(NECKMATS[L.boardMat]?.sus || 1) : 1;
+  send('strings', cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] || SMAT.Steel, sus }))); }
 function pushEx() { send('ex', cfg.ex); }
 function pushNk() { const nk = { ...cfg.nk }; if (nk.thrAuto) nk.thr = autoThr(); send('nk', nk); }
 function pushBody() { const m = computeBody(); send('modes', m.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan }))); renderInfo(); }
@@ -1771,7 +1920,25 @@ function buildNeck() {
   slider(p, 'Jawari (buzzing bridge)', 'nk.jawari', 0, 1, .01, fmt.pct, () => pushNk());
   noteP(p, 'Jawari is the curved sitar bridge the string grazes. Loud notes get bright and buzzy, then bloom as they fade.');
   slider(p, 'Neck length', 'body.neckLen', 0, 1.2, .01, fmt.m, () => { draw(); renderInfo(); });
-  if (cfg.body.neckLen < .02) slider(p, 'Nut position', 'body.nutX', 0, .4, .01, fmt.pct, () => draw());
+  if (cfg.body.neckLen < .02) { slider(p, 'Nut / anchors', 'body.nutX', -8, .45, .01, v => (v * cfg.body.length * 100).toFixed(0) + 'cm', () => draw());
+    noteP(p, 'Without a neck, move the anchor point past the body\'s edge (negative) and the strings float in the air. Pick a frame below to hold them.'); }
+  h3(p, 'Look');
+  const onL = () => { draw(); pushStrings(); };
+  if (cfg.body.neckLen >= .02) {
+    select(p, 'Neck wood', 'look.neckMat', Object.keys(NECKMATS).map(k => [k, k]), onL);
+    select(p, 'Fingerboard', 'look.boardMat', [['none', 'None (bare neck)'], ...Object.keys(NECKMATS).map(k => [k, k])], onL);
+    select(p, 'Fret markers', 'look.markers', Object.entries(MARKERS), onL);
+    select(p, 'Head', 'look.head', Object.entries(HEADS), () => { draw(); });
+    select(p, 'Tuning pegs', 'look.pegs', Object.entries(PEGS), () => draw());
+    slider(p, 'Neck width', 'look.neckWidth', .7, 1.6, .01, fmt.x, () => draw());
+    slider(p, 'Board over body', 'look.boardOver', 0, .4, .005, fmt.m, () => draw());
+    noteP(p, 'Stiffer, denser necks (ebony, carbon, aluminum) sustain a little longer; softer woods a little less.');
+  } else {
+    select(p, 'Frame', 'look.frame', Object.entries(FRAMES), () => draw());
+    select(p, 'Frame wood', 'look.neckMat', Object.keys(NECKMATS).map(k => [k, k]), () => draw());
+    select(p, 'String anchors', 'look.pegs', Object.entries(PEGS), () => draw());
+    slider(p, 'String spacing', 'look.spacing', 0, .06, .001, v => v ? (v * 1000).toFixed(0) + 'mm' : 'auto', () => draw());
+  }
   h3(p, 'Scale purity');
   const pc = el('input', { type: 'checkbox' }); pc.checked = purity.on; pc.onchange = () => setPurity({ on: pc.checked });
   p.append(el('label', { class: 'chk' }, pc, 'Lock the keyboard to a scale'));
@@ -1796,17 +1963,25 @@ function buildBody() {
   const p = $('p-body'); p.innerHTML = '';
   const onB = () => { pushBody(); draw(); };
   h3(p, 'Shape');
-  slider(p, 'Body length', 'body.length', .15, 2.2, .005, fmt.m, onB);
-  const wrow = el('div', { class: 'row' }, el('label', {}, 'Width (scale)'), el('input', { type: 'range', min: .5, max: 1.5, step: .01, value: 1 }), el('output', {}, '×1.00'));
-  const base = cfg.body.hw.slice(); wrow.children[1].oninput = e => { const k = +e.target.value; cfg.body.hw = base.map(v => Math.max(.01, v * k)); wrow.children[2].textContent = '×' + k.toFixed(2); onB(); };
-  p.append(wrow);
+  ensureOutline(cfg.body);
+  const tp = el('select'); tp.append(el('option', { value: '' }, 'Apply a body template…')); Object.keys(BODY_TEMPLATES).forEach(k => tp.append(el('option', { value: k }, k)));
+  tp.onchange = () => { const t = BODY_TEMPLATES[tp.value]; if (!t) return; cfg.body.outline = t.pts(); cfg.body.length = t.len; outlineChanged(); buildBody(); draw(); };
+  p.append(el('div', { class: 'row sel' }, el('label', {}, 'Template'), tp));
+  const scaleRow = (label, axis) => { const base = cfg.body.outline.map(q => q.slice()), len0 = cfg.body.length;
+    const r = el('div', { class: 'row' }, el('label', {}, label), el('input', { type: 'range', min: .5, max: 1.6, step: .01, value: 1 }), el('output', {}, '×1.00'));
+    r.children[1].oninput = e => { const k = +e.target.value; cfg.body.outline = base.map(([x, y]) => axis ? [x, y * k] : [x * k, y]); if (!axis) cfg.body.length = len0 * k;
+      r.children[2].textContent = '×' + k.toFixed(2) + (axis ? '' : ' (' + (cfg.body.length * 100).toFixed(0) + 'cm)'); outlineChanged(); draw(); };
+    p.append(r); };
+  scaleRow('Length (scale)', 0); scaleRow('Width (scale)', 1);
+  { const cb = el('input', { type: 'checkbox' }); cb.checked = mirrorEdit; cb.onchange = () => mirrorEdit = cb.checked; p.append(el('label', { class: 'chk' }, cb, 'Mirror outline edits (turn off for horns & cutaways)')); }
   const bs = select(p, 'Back shape', 'body.backShape', Object.entries(BACKS).map(([k, v]) => [k, v.label]), () => { applyBack(cfg.body.backShape); onB(); drawDepth(); });
   const drow = el('div', { class: 'row' }, el('label', {}, 'Depth'), el('input', { type: 'range', min: .02, max: .3, step: .002 }), el('output'));
   const dShow = () => { const D = Math.max(...cfg.body.depth); drow.children[1].value = D; drow.children[2].textContent = (D * 100).toFixed(1) + 'cm'; };
   drow.children[1].oninput = e => { const D = Math.max(...cfg.body.depth), k = +e.target.value / D; cfg.body.depth = cfg.body.depth.map(v => v * k); dShow(); onB(); drawDepth(); };
   p.append(drow); dShow(); ctlReg['body.depthMax'] = dShow;
   noteP(p, 'Curved backs are stiffer than flat ones and ring higher; ribbed staves are a touch more damped. Use ⟲ Back view to see it.');
-  noteP(p, 'Turn on ✎ Edit outline to drag the body\'s edge. Drag the points in the cross-section below the instrument to set depth: flat sides like a guitar, or a bulging bowl like a lute or gourd.');
+  noteP(p, 'Turn on ✎ Edit outline and drag the points anywhere: horns, cutaways and points are all possible. Double-click a point to add one after it; shift-click to delete. Template outlines are a starting point.');
+  noteP(p, 'Drag the points in the cross-section below the instrument to set depth: flat sides like a guitar, or a bulging bowl like a lute or gourd.');
   h3(p, 'Materials');
   const mats = Object.keys(BMAT).map(k => [k, k]);
   select(p, 'Top (soundboard)', 'body.top', mats, onB);
@@ -1874,44 +2049,39 @@ function fit() {
   draw(); drawDepth(); drawKb();
 }
 function geom() {
-  const b = cfg.body, W = cv.width, H = cv.height;
-  const neck = b.neckLen > .02 ? b.neckLen : 0, head = neck ? .13 : 0;
-  const maxHW = Math.max(...b.hw);
-  const worldW = head + neck + b.length + .04, worldH = maxHW * 2 + .06;
-  const sc = Math.min(W * .9 / worldW, (H - 70 * devicePixelRatio) / worldH);
-  const ox = (W - worldW * sc) / 2 + (head + neck) * sc, oy = H / 2 + 14 * devicePixelRatio;
-  const X = x => ox + x * sc, Y = y => oy + y * sc;
-  const nutX = neck ? -neck : b.nutX * b.length, bridgeX = b.bridgeX * b.length;
+  const b = cfg.body, W = cv.width, H = cv.height, look = cfg.look || lookDefault(), P = bodyPoly(b);
+  const neck = b.neckLen > .02 ? b.neckLen : 0, head = neck ? ({ paddle: .17, inline: .19, slotted: .19, scroll: .13, bentback: .16, pegbox: .26, headless: .025 }[look.head] || .17) : 0;
+  const nutX = neck ? -neck : b.nutX * b.length, bridgeX = b.bridgeX * b.length, floating = !neck && look.frame !== 'none';
   const play = cfg.strings.map((s, i) => ({ s, i })).filter(o => o.s.role !== 'symp');
   const symp = cfg.strings.map((s, i) => ({ s, i })).filter(o => o.s.role === 'symp');
   const np = play.length;
-  const hwAt = x => { const t = Math.max(0, Math.min(1, x / b.length)) * (b.hw.length - 1), i = Math.min(b.hw.length - 2, Math.floor(t)); return b.hw[i] + (b.hw[i + 1] - b.hw[i]) * (t - i); };
+  const hwAt = x => { const sp = P.span(x); return sp ? Math.max(.005, Math.min(-sp[0], sp[1])) : null; };
   let nutSp, brSp;
   if (neck) { nutSp = Math.min(.009, .05 / Math.max(1, np)); brSp = Math.min(.016, .09 / Math.max(1, np)); }
-  else { const lim = Math.min(hwAt(nutX), hwAt(bridgeX)) * 1.6 / Math.max(1, np); nutSp = brSp = Math.min(.02, lim); }
+  else if (look.spacing > 0) nutSp = brSp = look.spacing;
+  else { const hb = hwAt(bridgeX) ?? P.mh, hn = hwAt(nutX) ?? hb; nutSp = brSp = Math.min(.02, Math.min(hn, hb) * 1.6 / Math.max(1, np)); }
   const minNote = Math.min(...play.map(o => o.s.note), 999);
   const lines = [];
   play.forEach((o, k) => {
     const off = k - (np - 1) / 2, y0 = off * nutSp, y1 = off * brSp;
     let start = nutX;
-    if (!neck && o.s.role !== 'stopped') { // movable bridges (ji), koto style
+    if (!neck && o.s.role !== 'stopped') { // movable bridges (ji) or anchor points for floating strings
       const span = bridgeX - nutX; start = bridgeX - span * Math.max(.38, Math.pow(2, -(o.s.note - minNote) / 12)) * .95; }
-    lines.push({ ...o, x0: nutX, y0, x1: bridgeX, y1, start });
+    lines.push({ ...o, x0: floating ? start : nutX, y0, x1: bridgeX, y1, start });
   });
   const sStart = nutX + (bridgeX - nutX) * (neck ? .3 : .15);
   symp.forEach((o, k) => { const off = k - (symp.length - 1) / 2, sp = Math.min(.006, .04 / Math.max(1, symp.length)) * (neck ? 1 : 2.2);
-    lines.push({ ...o, x0: sStart, y0: off * sp * .7 + (neck ? 0 : 0), x1: bridgeX + .012, y1: off * sp, start: sStart, symp: true }); });
-  return { b, sc, X, Y, nutX, bridgeX, neck, head, lines, hwAt, nutSp, brSp, np };
+    lines.push({ ...o, x0: sStart, y0: off * sp * .7, x1: bridgeX + .012, y1: off * sp, start: sStart, symp: true }); });
+  // fit everything (body, horns, neck, head, floating strings, frame) on screen
+  const sy = Math.max(...lines.map(l => Math.abs(l.y0)), 0) + .05;
+  const left = Math.min(P.bb.x0, neck ? -(neck + head) - .02 : Math.min(...lines.map(l => l.x0), nutX) - .08), right = Math.max(P.bb.x1, bridgeX + .05) + .02;
+  const top = Math.min(P.bb.y0, -sy) - .03, bot = Math.max(P.bb.y1 + (floating ? .06 : 0), sy) + .05;
+  const sc = Math.min(W * .92 / (right - left), (H - 60 * devicePixelRatio) / (bot - top));
+  const ox = (W - (right - left) * sc) / 2 - left * sc, oy = (H + 26 * devicePixelRatio) / 2 - (top + bot) / 2 * sc;
+  const X = x => ox + x * sc, Y = y => oy + y * sc;
+  return { b, sc, X, Y, nutX, bridgeX, neck, head, lines, hwAt, nutSp, brSp, np, P, look, floating };
 }
-function outlinePath(g, c, k = 1) {
-  const b = g.b, n = b.hw.length, pts = [];
-  for (let i = 0; i < n; i++) pts.push([b.length * i / (n - 1), b.hw[i] * k]);
-  c.beginPath(); c.moveTo(g.X(0), g.Y(0));
-  const sm = (arr, sign) => { for (let i = 0; i < arr.length; i++) { const p = arr[i], q = arr[i + 1]; if (!q) { c.lineTo(g.X(p[0]), g.Y(sign * p[1])); break; }
-    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2; c.quadraticCurveTo(g.X(p[0]), g.Y(sign * p[1]), g.X(mx), g.Y(sign * my)); } };
-  c.lineTo(g.X(0), g.Y(-pts[0][1] * .6)); sm(pts, -1); c.lineTo(g.X(b.length), g.Y(0));
-  const rev = pts.slice().reverse(); c.lineTo(g.X(b.length), g.Y(rev[0][1] * .6)); sm(rev, 1); c.lineTo(g.X(0), g.Y(pts[0][1] * .6)); c.closePath();
-}
+function outlinePath(g, c) { tracePoly(c, g.P, g.X, g.Y); }
 let tAnim = 0, lastT = performance.now();
 function draw() {
   if (!cv.width) return;
@@ -1921,26 +2091,19 @@ function draw() {
   const bg = c.createRadialGradient(cv.width / 2, cv.height / 2, 50, cv.width / 2, cv.height / 2, cv.width * .7);
   bg.addColorStop(0, '#2a1f15'); bg.addColorStop(1, '#140f0a'); c.fillStyle = bg; c.fillRect(0, 0, cv.width, cv.height);
   if (backView) { drawBack(g); return; }
-  // neck + head
-  if (g.neck) {
-    const w0 = (g.np * g.nutSp) / 2 + .008, w1 = Math.max(w0 + .004, (g.np * g.brSp) / 2 * .6 + .01);
-    c.fillStyle = '#3b2616'; c.beginPath(); c.moveTo(g.X(-g.neck), g.Y(-w0)); c.lineTo(g.X(.02), g.Y(-w1)); c.lineTo(g.X(.02), g.Y(w1)); c.lineTo(g.X(-g.neck), g.Y(w0)); c.fill();
-    c.fillStyle = '#2c1c10'; c.fillRect(g.X(-g.neck - g.head), g.Y(-w0 - .01), g.head * g.sc, (w0 + .01) * 2 * g.sc);
-    // pegs
-    c.fillStyle = '#c9a35a'; g.lines.filter(l => !l.symp).forEach((l, k) => { const px = g.X(-g.neck - g.head * (.25 + .6 * (k / Math.max(1, g.np - 1)))); c.beginPath(); c.arc(px, g.Y(k % 2 ? w0 + .016 : -w0 - .016), 3.5 * dpr, 0, 7); c.fill(); });
-  }
+  if (g.floating) drawFrame(g, c, g.look);
   // body
   c.save(); outlinePath(g, c);
   const tm = BMAT[b.top] || BMAT.Spruce; c.fillStyle = tm.color; c.fill();
   c.clip();
   // wood grain
   c.globalAlpha = .13; c.strokeStyle = '#000'; c.lineWidth = 1 * dpr;
-  for (let y = -.4; y <= .4; y += .009) { c.beginPath(); for (let x = 0; x <= b.length; x += b.length / 30) c.lineTo(g.X(x), g.Y(y + Math.sin(x * 9 + y * 40) * .002)); c.stroke(); }
+  { const bb = g.P.bb; for (let y = bb.y0; y <= bb.y1; y += .009) { c.beginPath(); for (let x = bb.x0; x <= bb.x1; x += (bb.x1 - bb.x0) / 30) c.lineTo(g.X(x), g.Y(y + Math.sin(x * 9 + y * 40) * .002)); c.stroke(); } }
   c.globalAlpha = 1;
   // bracing (seen through the top)
   if (showBrace && b.bracing !== 'none') {
     c.strokeStyle = 'rgba(70,40,15,.35)'; c.lineWidth = Math.max(2, .008 * g.sc); c.setLineDash([6 * dpr, 5 * dpr]); c.beginPath();
-    const L = b.length, hx = b.hole.x * L, mh = Math.max(...b.hw);
+    const L = b.length, hx = b.hole.x * L, mh = g.P.mh;
     if (b.bracing === 'x') { c.moveTo(g.X(hx + .06), g.Y(-mh)); c.lineTo(g.X(L * .92), g.Y(mh)); c.moveTo(g.X(hx + .06), g.Y(mh)); c.lineTo(g.X(L * .92), g.Y(-mh)); c.moveTo(g.X(hx - .07), g.Y(-mh)); c.lineTo(g.X(hx - .07), g.Y(mh)); }
     if (b.bracing === 'ladder') for (let k = 1; k <= 4; k++) { c.moveTo(g.X(L * k / 5), g.Y(-mh)); c.lineTo(g.X(L * k / 5), g.Y(mh)); }
     if (b.bracing === 'fan') for (let k = -3; k <= 3; k++) { c.moveTo(g.X(L * .45), g.Y(k * .01)); c.lineTo(g.X(L * .97), g.Y(k * .045)); }
@@ -1957,12 +2120,13 @@ function draw() {
     c.strokeStyle = '#2a1a0d'; c.lineWidth = 3 * dpr; c.beginPath(); c.arc(hx, g.Y(0), r + 5 * dpr, 0, 7); c.stroke();
     if (b.hole.type === 'rose') { c.strokeStyle = tm.color; c.lineWidth = 1.5 * dpr; for (let a = 0; a < 12; a++) { c.beginPath(); c.arc(hx + Math.cos(a / 12 * 6.283) * r * .5, g.Y(0) + Math.sin(a / 12 * 6.283) * r * .5, r * .5, 0, 7); c.stroke(); } }
   } else if (b.hole.type === 'f') {
-    c.strokeStyle = '#0d0805'; c.lineWidth = Math.max(2, .006 * g.sc); c.lineCap = 'round'; const hh = Math.min(.04 + b.hole.size * .05, Math.max(...b.hw) * .55) * g.sc;
-    for (const sgn of [-1, 1]) { const cy = g.Y(sgn * Math.max(...b.hw) * .45); c.beginPath(); c.moveTo(hx - hh * .9, cy - sgn * hh * .25); c.bezierCurveTo(hx - hh * .2, cy + sgn * hh * .3, hx + hh * .2, cy - sgn * hh * .3, hx + hh * .9, cy + sgn * hh * .25); c.stroke();
+    c.strokeStyle = '#0d0805'; c.lineWidth = Math.max(2, .006 * g.sc); c.lineCap = 'round'; const hh = Math.min(.04 + b.hole.size * .05, g.P.mh * .55) * g.sc;
+    for (const sgn of [-1, 1]) { const cy = g.Y(sgn * g.P.mh * .45); c.beginPath(); c.moveTo(hx - hh * .9, cy - sgn * hh * .25); c.bezierCurveTo(hx - hh * .2, cy + sgn * hh * .3, hx + hh * .2, cy - sgn * hh * .3, hx + hh * .9, cy + sgn * hh * .25); c.stroke();
       c.fillStyle = '#0d0805'; c.beginPath(); c.arc(hx - hh * .9, cy - sgn * hh * .25, 2.5 * dpr, 0, 7); c.arc(hx + hh * .9, cy + sgn * hh * .25, 2.5 * dpr, 0, 7); c.fill(); }
   } else if (b.hole.type === 'under') {
     c.strokeStyle = 'rgba(0,0,0,.4)'; c.setLineDash([4 * dpr, 4 * dpr]); c.lineWidth = 1.5 * dpr; c.beginPath(); c.ellipse(hx, g.Y(0), r * 1.6, r * .8, 0, 0, 7); c.stroke(); c.setLineDash([]);
   }
+  if (g.neck) drawNeckHead(g, c, g.look, false);
   // bridge
   const bw = (g.np * g.brSp) / 2 + .012;
   c.fillStyle = '#20140b'; c.fillRect(g.X(g.bridgeX) - 4 * dpr, g.Y(-bw), 8 * dpr, bw * 2 * g.sc);
@@ -1974,8 +2138,9 @@ function draw() {
     c.strokeStyle = 'rgba(220,210,190,.55)'; c.lineWidth = 1.5 * dpr;
     for (let k = 1; k <= maxR; k++) { const x = g.nutX + scale * (1 - Math.pow(2, -k / 12)); if (x > g.bridgeX - .05) break; const w = .5 * (g.np * (g.nutSp + (g.brSp - g.nutSp) * (x - g.nutX) / scale)) + .006; c.beginPath(); c.moveTo(g.X(x), g.Y(-w)); c.lineTo(g.X(x), g.Y(w)); c.stroke(); }
   }
-  // nut
-  c.fillStyle = '#efe6d0'; const nw = g.neck ? (g.np * g.nutSp) / 2 + .006 : bw; c.fillRect(g.X(g.nutX) - 2 * dpr, g.Y(-nw), 4 * dpr, nw * 2 * g.sc);
+  // nut (or, without a neck, the pegs / pins that hold each string)
+  if (!g.floating) { c.fillStyle = '#efe6d0'; const nw = g.neck ? ((g.np * g.nutSp) / 2 + .006) * g.look.neckWidth : bw; c.fillRect(g.X(g.nutX) - 2 * dpr, g.Y(-nw), 4 * dpr, nw * 2 * g.sc); }
+  if (!g.neck) g.lines.filter(l => !l.symp).forEach(l => drawPeg(c, g.X(l.x0), g.Y(l.y0), -1, g.look.pegs === 'machine' || g.look.pegs === 'bass' ? 'planetary' : g.look.pegs, g.sc * .7, false));
   // strings
   const slow = +$('slow').value, exag = +$('exag').value;
   g.lines.forEach(l => {
@@ -2021,9 +2186,10 @@ function draw() {
     c.fillStyle = 'rgba(20,20,22,.9)'; c.strokeStyle = hover === 'mag' ? '#f2c568' : '#666'; c.lineWidth = 1.5 * dpr; c.fillRect(g.X(px) - 6 * dpr, g.Y(-sp), 12 * dpr, sp * 2 * g.sc); c.strokeRect(g.X(px) - 6 * dpr, g.Y(-sp), 12 * dpr, sp * 2 * g.sc);
     c.fillStyle = '#9aa'; for (let k = 0; k < g.np; k++) { const o = (k - (g.np - 1) / 2) * g.brSp; c.beginPath(); c.arc(g.X(px), g.Y(o), 2 * dpr, 0, 7); c.fill(); } }
   // mic
-  if (cfg.pk.mic > .01) { const mx = g.X(b.hole.x * b.length), my = g.Y(Math.max(...b.hw)) + 26 * dpr; c.fillStyle = '#888'; c.fillRect(mx - 3 * dpr, my, 6 * dpr, 16 * dpr); c.beginPath(); c.arc(mx, my, 6 * dpr, 0, 7); c.fillStyle = '#bbb'; c.fill(); }
+  if (cfg.pk.mic > .01) { const mx = g.X(b.hole.x * b.length), my = g.Y(g.P.bb.y1) + 26 * dpr; c.fillStyle = '#888'; c.fillRect(mx - 3 * dpr, my, 6 * dpr, 16 * dpr); c.beginPath(); c.arc(mx, my, 6 * dpr, 0, 7); c.fillStyle = '#bbb'; c.fill(); }
   // outline handles
-  if (editOutline) { c.fillStyle = '#f2c568'; b.hw.forEach((h, i) => { c.beginPath(); c.arc(g.X(b.length * i / (b.hw.length - 1)), g.Y(-h), (hover === 'hw' + i ? 7 : 5) * dpr, 0, 7); c.fill(); }); }
+  if (editOutline) { const o = ensureOutline(b); c.strokeStyle = 'rgba(242,197,104,.35)'; c.lineWidth = 1 * dpr; c.setLineDash([3 * dpr, 3 * dpr]); c.beginPath(); o.forEach(([x, y], i) => i ? c.lineTo(g.X(x), g.Y(y)) : c.moveTo(g.X(x), g.Y(y))); c.closePath(); c.stroke(); c.setLineDash([]);
+    o.forEach(([x, y], i) => { c.fillStyle = hover === 'op' + i ? '#fff' : '#f2c568'; c.beginPath(); c.arc(g.X(x), g.Y(y), (hover === 'op' + i ? 7 : 5) * dpr, 0, 7); c.fill(); }); }
   // labels
   c.fillStyle = 'rgba(239,228,210,.55)'; c.font = `${11 * dpr}px "IBM Plex Mono"`; c.textAlign = 'right';
   const lblX = g.neck ? g.X(-g.neck - g.head) - 8 * dpr : g.X(l0x(g)) - 15 * dpr, every = Math.max(1, Math.ceil(12 * dpr / Math.max(1, g.nutSp * g.sc)));
@@ -2043,8 +2209,8 @@ function drawHeat(g, c, list, off) {
     d[o] = 255; d[o + 1] = 90 + 80 * s; d[o + 2] = 20; d[o + 3] = 120 * s * s + 30 * s;
   }
   hctx.putImageData(img, 0, 0);
-  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; const mh = Math.max(...b.hw);
-  c.drawImage(heat, g.X(0), g.Y(-mh), b.length * g.sc, mh * 2 * g.sc);
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; const bb = g.P.bb;
+  c.drawImage(heat, g.X(bb.x0), g.Y(bb.y0), (bb.x1 - bb.x0) * g.sc, (bb.y1 - bb.y0) * g.sc);
 }
 // ── back view: a shaded relief of the back, lit from the upper left
 let backView = false, backCache = { key: '' };
@@ -2055,24 +2221,25 @@ function depthAt(b, r) { // Catmull-Rom through the depth points, so shading has
   return Math.max(0, p1 + .5 * f * (p2 - p0 + f * (2 * p0 - 5 * p1 + 4 * p2 - p3 + f * (3 * (p1 - p2) + p3 - p0)))); }
 function bulge(b) { return Math.max(0, 1 - b.depth[b.depth.length - 1] / Math.max(1e-4, b.depth[0])); }
 function backImage(g) {
-  const b = g.b, mh = Math.max(...b.hw);
-  const key = JSON.stringify([b.length, b.hw, b.depth, b.back, b.backShape, Math.round(g.sc)]);
+  const b = g.b, P = g.P, bb = P.bb, mh = P.mh;
+  const key = JSON.stringify([b.outline, b.depth, b.back, b.backShape, Math.round(g.sc)]);
   if (backCache.key === key) return backCache.cv;
-  const pxW = b.length * g.sc, k = Math.min(1, 600 / pxW), w = Math.max(8, Math.round(pxW * k)), h = Math.max(8, Math.round(2 * mh * g.sc * k));
+  const pxW = (bb.x1 - bb.x0) * g.sc, k = Math.min(1, 600 / pxW), w = Math.max(8, Math.round(pxW * k)), h = Math.max(8, Math.round((bb.y1 - bb.y0) * g.sc * k));
   const H = new Float32Array(w * h), Yn = new Float32Array(w * h), Rr = new Float32Array(w * h), bl = bulge(b);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const wx = (x + .5) / w * b.length, yy = ((y + .5) / h * 2 - 1) * mh, hw = Math.max(.004, g.hwAt(wx)), r = Math.abs(yy) / hw, i = y * w + x;
-    const taper = 1 - bl + bl * Math.sqrt(hw / mh); // curved backs get shallower toward the narrow ends
-    H[i] = depthAt(b, r) * taper * (r > 1 ? Math.max(0, 1 - (r - 1) * 6) : 1); Yn[i] = Math.max(-1, Math.min(1, yy / hw)); Rr[i] = r;
+  for (let x = 0; x < w; x++) {
+    const wx = bb.x0 + (x + .5) / w * (bb.x1 - bb.x0), sp = P.span(wx) || [0, 0], cy = (sp[0] + sp[1]) / 2, hw = Math.max(.004, (sp[1] - sp[0]) / 2);
+    const taper = 1 - bl + bl * Math.sqrt(Math.min(1, hw / mh)); // curved backs get shallower toward the narrow ends
+    for (let y = 0; y < h; y++) { const yy = bb.y0 + (y + .5) / h * (bb.y1 - bb.y0), r = Math.abs(yy - cy) / hw, i = y * w + x;
+      H[i] = depthAt(b, r) * taper * (r > 1 ? Math.max(0, 1 - (r - 1) * 6) : 1); Yn[i] = Math.max(-1, Math.min(1, (yy - cy) / hw)); Rr[i] = r; }
   }
   const oc = document.createElement('canvas'); oc.width = w; oc.height = h;
   const ic = oc.getContext('2d'), img = ic.createImageData(w, h), d = img.data;
-  const base = hexRgb((BMAT[b.back] || BMAT.Rosewood).color), dx = b.length / w, dy = 2 * mh / h;
+  const base = hexRgb((BMAT[b.back] || BMAT.Rosewood).color), dx = (bb.x1 - bb.x0) / w, dy = (bb.y1 - bb.y0) / h;
   const L = [-.45, -.55, .7], ln = Math.hypot(...L); L.forEach((v, i) => L[i] = v / ln);
   const Hh = [L[0], L[1], L[2] + 1], hn = Math.hypot(...Hh); Hh.forEach((v, i) => Hh[i] = v / hn);
   const shape = b.backShape || 'custom', ribs = (BACKS[shape] || {}).ribs || 0;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const i = y * w + x, wx = (x + .5) / w * b.length, yy = ((y + .5) / h * 2 - 1) * mh;
+    const i = y * w + x, wx = bb.x0 + (x + .5) / w * (bb.x1 - bb.x0), yy = bb.y0 + (y + .5) / h * (bb.y1 - bb.y0);
     const hx = (H[y * w + Math.min(w - 1, x + 1)] - H[y * w + Math.max(0, x - 1)]) / (2 * dx);
     const hy = (H[Math.min(h - 1, y + 1) * w + x] - H[Math.max(0, y - 1) * w + x]) / (2 * dy);
     let nx = -hx * .9, ny = -hy * .9, nz = 1; const nl = Math.hypot(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
@@ -2088,21 +2255,12 @@ function backImage(g) {
   backCache = { key, cv: oc }; return oc;
 }
 function drawBack(g) {
-  const b = g.b, c = ctx, dpr = devicePixelRatio || 1, mh = Math.max(...b.hw);
+  const b = g.b, c = ctx, dpr = devicePixelRatio || 1, bb = g.P.bb;
   c.save(); c.translate(cv.width, 0); c.scale(-1, 1); // seen from behind: mirror left/right
-  if (g.neck) {
-    const w0 = (g.np * g.nutSp) / 2 + .008, w1 = Math.max(w0 + .004, (g.np * g.brSp) / 2 * .6 + .01);
-    const gr = c.createLinearGradient(0, g.Y(-w1), 0, g.Y(w1)); gr.addColorStop(0, '#2a180c'); gr.addColorStop(.35, '#7a4f2c'); gr.addColorStop(.6, '#5b3a20'); gr.addColorStop(1, '#1e1209');
-    c.fillStyle = gr; c.beginPath(); c.moveTo(g.X(-g.neck), g.Y(-w0)); c.lineTo(g.X(.04), g.Y(-w1)); c.lineTo(g.X(.04), g.Y(w1)); c.lineTo(g.X(-g.neck), g.Y(w0)); c.fill();
-    // heel where the neck meets the body
-    c.fillStyle = '#4a2e18'; c.beginPath(); c.ellipse(g.X(.01), g.Y(0), .03 * g.sc, w1 * g.sc, 0, 0, 7); c.fill();
-    const hg = c.createLinearGradient(0, g.Y(-w0 - .01), 0, g.Y(w0 + .01)); hg.addColorStop(0, '#24160b'); hg.addColorStop(.5, '#5a391f'); hg.addColorStop(1, '#1b1008');
-    c.fillStyle = hg; c.fillRect(g.X(-g.neck - g.head), g.Y(-w0 - .01), g.head * g.sc, (w0 + .01) * 2 * g.sc);
-    c.fillStyle = '#c9a35a'; g.lines.filter(l => !l.symp).forEach((l, k) => { const px = g.X(-g.neck - g.head * (.25 + .6 * (k / Math.max(1, g.np - 1)))), sg = k % 2 ? 1 : -1;
-      c.fillRect(px - 2.5 * dpr, g.Y(sg * (w0 + .01)) - (sg < 0 ? 12 * dpr : 0), 5 * dpr, 12 * dpr); c.beginPath(); c.ellipse(px, g.Y(sg * (w0 + .01)) + sg * 14 * dpr, 6 * dpr, 4 * dpr, 0, 0, 7); c.fill(); });
-  }
+  if (g.floating) drawFrame(g, c, g.look);
+  if (g.neck) drawNeckHead(g, c, g.look, true);
   c.save(); outlinePath(g, c); c.clip();
-  c.imageSmoothingEnabled = true; c.drawImage(backImage(g), g.X(0), g.Y(-mh), b.length * g.sc, 2 * mh * g.sc);
+  c.imageSmoothingEnabled = true; c.drawImage(backImage(g), g.X(bb.x0), g.Y(bb.y0), (bb.x1 - bb.x0) * g.sc, (bb.y1 - bb.y0) * g.sc);
   if (b.hole.type === 'under') { const hx = g.X(b.hole.x * b.length), r = (.015 + b.hole.size * .045) * g.sc;
     for (const px of [hx, g.X(b.length * .14)]) { c.fillStyle = '#0d0805'; c.beginPath(); c.ellipse(px, g.Y(0), r * 1.6, r * .8, 0, 0, 7); c.fill(); } }
   const n0 = modesInfo.top.length; c.globalAlpha = .45; drawHeat(g, c, modesInfo.back || [], n0); c.globalAlpha = 1;
@@ -2144,24 +2302,38 @@ function frame(now) {
 function evPos(e, c) { const r = c.getBoundingClientRect(), d = devicePixelRatio || 1; return [(e.clientX - r.left) * d, (e.clientY - r.top) * d]; }
 function hitTest(x, y) {
   const g = G; if (!g || backView) return null; const d = devicePixelRatio || 1, scale = g.bridgeX - g.nutX, b = g.b;
-  if (editOutline) for (let i = 0; i < b.hw.length; i++) if (Math.hypot(x - g.X(b.length * i / (b.hw.length - 1)), y - g.Y(-b.hw[i])) < 10 * d) return 'hw' + i;
+  if (editOutline) { const o = ensureOutline(b); for (let i = 0; i < o.length; i++) if (Math.hypot(x - g.X(o[i][0]), y - g.Y(o[i][1])) < 10 * d) return 'op' + i; }
   const exX = g.X(g.bridgeX - scale * cfg.ex.pos); const sp = (g.np * g.brSp / 2 + .03) * g.sc + 40 * d;
   if (Math.abs(x - exX) < 10 * d && Math.abs(y - g.Y(0)) < sp) return 'ex';
   if (cfg.pk.mag > .01 && Math.abs(x - g.X(g.bridgeX - scale * cfg.pk.magPos)) < 9 * d && Math.abs(y - g.Y(0)) < sp) return 'mag';
   if (Math.abs(x - g.X(g.bridgeX)) < 8 * d && Math.abs(y - g.Y(0)) < sp) return 'bridge';
-  if (b.hole.type !== 'none' && Math.abs(x - g.X(b.hole.x * b.length)) < 22 * d && Math.abs(y - g.Y(0)) < (b.hole.type === 'f' ? Math.max(...b.hw) * g.sc : 30 * d)) return 'hole';
+  if (b.hole.type !== 'none' && Math.abs(x - g.X(b.hole.x * b.length)) < 22 * d && Math.abs(y - g.Y(0)) < (b.hole.type === 'f' ? g.P.mh * g.sc : 30 * d)) return 'hole';
   return null;
 }
-cv.addEventListener('pointerdown', e => { const [x, y] = evPos(e, cv); dragging = hitTest(x, y); if (dragging) cv.setPointerCapture(e.pointerId); });
+// outline editing: drag points (mirrored partner follows when "Mirror edits" is on); double-click a point to add one after it; shift-click to delete
+let mirrorEdit = true, partner = -1;
+function findPartner(o, i) { const [x, y] = o[i]; if (Math.abs(y) < .003) return i; let best = -1, bd = .006; o.forEach(([x2, y2], j) => { if (j !== i) { const dd = Math.hypot(x2 - x, y2 + y); if (dd < bd) { bd = dd; best = j; } } }); return best; }
+function outlineChanged() { backCache.key = ''; pushBody(); drawDepth(); }
+cv.addEventListener('pointerdown', e => { const [x, y] = evPos(e, cv); dragging = hitTest(x, y); if (!dragging) return;
+  if (dragging.startsWith('op')) { const o = cfg.body.outline, i = +dragging.slice(2);
+    if (e.shiftKey) { if (o.length > 4) { const j = mirrorEdit ? findPartner(o, i) : -1; [i, j].filter(k => k >= 0).sort((a, b2) => b2 - a).filter((k, n, arr) => arr.indexOf(k) === n).forEach(k => o.length > 4 && o.splice(k, 1)); outlineChanged(); } dragging = null; return; }
+    partner = mirrorEdit ? findPartner(o, i) : -1; }
+  cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('dblclick', e => { if (!editOutline) return; const [x, y] = evPos(e, cv), h = hitTest(x, y); if (!h || !h.startsWith('op')) return;
+  const o = cfg.body.outline, i = +h.slice(2), n = o.length, j = mirrorEdit ? findPartner(o, i) : -1, mid = (a, b2) => [(a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2];
+  const ins = [[i + 1, mid(o[i], o[(i + 1) % n])]]; if (j >= 0 && j !== i) ins.push([j, mid(o[(j - 1 + n) % n], o[j])]);
+  ins.sort((a, b2) => b2[0] - a[0]).forEach(([k, p]) => o.splice(k, 0, p)); outlineChanged(); });
 cv.addEventListener('pointermove', e => {
   const [x, y] = evPos(e, cv), g = G; if (!g) return;
-  if (!dragging) { hover = hitTest(x, y); cv.style.cursor = hover ? (hover.startsWith('hw') ? 'ns-resize' : 'ew-resize') : 'default'; return; }
+  if (!dragging) { hover = hitTest(x, y); cv.style.cursor = hover ? (hover.startsWith('op') ? 'move' : 'ew-resize') : 'default'; return; }
   const wx = (x - g.X(0)) / g.sc, wy = (y - g.Y(0)) / g.sc, b = cfg.body, scale = g.bridgeX - g.nutX;
   if (dragging === 'ex') { cfg.ex.pos = Math.max(.02, Math.min(.5, (g.bridgeX - wx) / scale)); pushEx(); syncCtl('ex.pos'); }
   else if (dragging === 'mag') { cfg.pk.magPos = Math.max(.02, Math.min(.5, (g.bridgeX - wx) / scale)); pushPk(); syncCtl('pk.magPos'); }
   else if (dragging === 'bridge') { b.bridgeX = Math.max(.3, Math.min(.97, wx / b.length)); syncCtl('body.bridgeX'); renderInfo(); }
   else if (dragging === 'hole') { b.hole.x = Math.max(.05, Math.min(.95, wx / b.length)); syncCtl('hole.x'); pushBody(); }
-  else if (dragging.startsWith('hw')) { const i = +dragging.slice(2); b.hw[i] = Math.max(.01, Math.min(.6, -wy)); pushBody(); }
+  else if (dragging.startsWith('op')) { const o = b.outline, i = +dragging.slice(2), nx = Math.max(-.6, Math.min(2.5, wx)), ny = Math.max(-1, Math.min(1, wy));
+    if (partner === i) o[i] = [nx, 0]; else { o[i] = [nx, ny]; if (partner >= 0) o[partner] = [nx, -ny]; }
+    outlineChanged(); }
 });
 cv.addEventListener('pointerup', () => { dragging = null; });
 dcv.addEventListener('pointerdown', e => { const i = depthHit(...evPos(e, dcv)); if (i >= 0) { dragD = i; dcv.setPointerCapture(e.pointerId); } });
@@ -2227,6 +2399,8 @@ function loadCfg(c) {
   if (c.body && !c.body.backShape) c = { ...c, body: { ...c.body, backShape: 'custom' } };
   cfg = { ...d, ...c, ex: { ...exDefault(), ...c.ex }, nk: { ...nkDefault(), ...c.nk }, body: { ...d.body, ...c.body, hole: { ...d.body.hole, ...(c.body?.hole || {}) } }, pk: { ...d.pk, ...c.pk } };
   cfg.strings = (c.strings || d.strings).slice(0, 24);
+  cfg.look = { ...lookDefault(), ...(c.look || {}) };
+  if (!c.body || (!c.body.outline && c.body.hw)) delete cfg.body.outline; ensureOutline(cfg.body); backCache.key = '';
   cfg.synth = c.synth ? { ...synthDefault(), ...c.synth, p: { ...synthDefault().p, ...c.synth.p }, o: { ...SOPT(), ...c.synth.o } } : (prevSynth || synthDefault());
   // amp: a saved instrument brings its own rig; factory presets keep your pedals, and electric ones switch on a matching amp
   if (c.amp) cfg.amp = { ...ampDefault(), ...c.amp, head: { ...ampDefault().head, ...c.amp.head }, cab: { ...ampDefault().cab, ...c.amp.cab } };
@@ -2893,7 +3067,7 @@ $('startBtn').onclick = async () => {
   catch (e) { $('startBtn').textContent = 'Audio failed: ' + e.message; }
 };
 window.addEventListener('resize', fit);
-cfg.synth = synthDefault(); cfg.amp = ampDefault();
+cfg.synth = synthDefault(); cfg.amp = ampDefault(); cfg.look = { ...lookDefault(), ...(cfg.look || {}) }; ensureOutline(cfg.body);
 document.querySelectorAll('.faces button[data-face]').forEach(b => b.onclick = () => setFace(b.dataset.face));
 fillPresets('f:Acoustic guitar');
 buildAll(); setPurity({}); renderInfo();

@@ -6,7 +6,7 @@ function makeCtx(sr) {
   ctx.sampleRate = sr; ctx.globalThis = ctx; vm.createContext(ctx);
   vm.runInContext(`class AudioWorkletProcessor { constructor(){ this.port = { postMessage: m => { if (m.lim < __lim.v) __lim.v = m.lim; } }; } }
     var __lim = { v: 1 }; var P; function registerProcessor(n, c) { P = c; }`, ctx);
-  vm.runInContext(fs.readFileSync(__dirname + '/instdefs.js', 'utf8'), ctx);
+  vm.runInContext(fs.readFileSync(__dirname + '/bodygeo.js', 'utf8') + fs.readFileSync(__dirname + '/instdefs.js', 'utf8'), ctx);
   vm.runInContext('let cfg, quality = "med", actx = { sampleRate: ' + sr + ' }, modesInfo; function bulge(b){ return Math.max(0, 1 - b.depth[b.depth.length-1] / Math.max(1e-4, b.depth[0])); }\n' + grab('function bodyGeom', '// ───────────────────────── audio'), ctx);
   vm.runInContext(fs.readFileSync(__dirname + '/synthdefs.js', 'utf8'), ctx);
   vm.runInContext(fs.readFileSync(__dirname + '/ampdefs.js', 'utf8'), ctx);

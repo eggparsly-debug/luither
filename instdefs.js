@@ -196,3 +196,26 @@ Object.assign(PRESETS, {
 // ── output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS ──
 const CAL = {"Acoustic guitar": 1.007, "Cello": 0.697, "Sitar": 1.043, "Koto": 1.328, "Violin": 0.809, "Double bass": 0.361, "Classical guitar": 0.65, "Electric guitar": 0.213, "Electric bass": 0.16, "Oud": 2.153, "Concert harp": 0.488, "Hammered dulcimer": 0.45, "Guzheng": 1.374, "Tanpura": 1.596, "Hurdy-gurdy": 0.857, "Alpine zither": 1.055, "Erhu": 0.326, "Aeolian harp": 0.996, "✦ Glass cello": 0.847, "✦ Crystal harp": 0.281};
 for (const k in CAL) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.pk.master = CAL[k]; return p; }; }
+// ── how each instrument looks: neck & board woods, head, pegs; some get their own body outline ──
+const LOOKS = {
+  'Acoustic guitar': { neckMat: 'Mahogany', boardMat: 'Rosewood', head: 'paddle', pegs: 'machine', markers: 'dots', boardOver: .02 },
+  'Classical guitar': { neckMat: 'Mahogany', boardMat: 'Ebony', head: 'slotted', pegs: 'machine', markers: 'none', neckWidth: 1.25, boardOver: .03 },
+  'Electric guitar': { neckMat: 'Maple', boardMat: 'Rosewood', head: 'inline', pegs: 'machine', markers: 'dots', boardOver: .07 },
+  'Electric bass': { neckMat: 'Maple', boardMat: 'Maple', head: 'inline', pegs: 'bass', markers: 'dots', neckWidth: 1.1, boardOver: .09 },
+  'Violin': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'friction', markers: 'none', neckWidth: .9, boardOver: .12 },
+  'Cello': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'friction', markers: 'none', boardOver: .22 },
+  'Double bass': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'bass', markers: 'none', neckWidth: 1.2, boardOver: .3 },
+  '✦ Glass cello': { neckMat: '✦ Glass', boardMat: '✦ Glass', head: 'scroll', pegs: 'friction', markers: 'none', boardOver: .22 },
+  'Sitar': { neckMat: 'Toon (tun)', boardMat: 'Toon (tun)', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: 1.3, boardOver: .04 },
+  'Tanpura': { neckMat: 'Toon (tun)', boardMat: 'Toon (tun)', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: 1.2, boardOver: .02 },
+  'Oud': { neckMat: 'Walnut', boardMat: 'Ebony', head: 'bentback', pegs: 'friction', markers: 'none', boardOver: .1 },
+  'Erhu': { neckMat: 'Rosewood', boardMat: 'none', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: .8, boardOver: 0 },
+  'Koto': { pegs: 'tied' }, 'Guzheng': { pegs: 'pins' }, 'Hammered dulcimer': { pegs: 'pins' }, 'Alpine zither': { pegs: 'pins' }, 'Aeolian harp': { pegs: 'pins' }, 'Hurdy-gurdy': { pegs: 'friction' },
+  'Concert harp': { frame: 'harp', neckMat: 'Maple', pegs: 'pins', spacing: .034 },
+  '✦ Crystal harp': { frame: 'harp', neckMat: '✦ Glass', pegs: 'pins', spacing: .04 },
+};
+const OUTLINE_OF = { 'Electric guitar': 'Double-cut (horns)', 'Electric bass': 'Offset bass', 'Concert harp': 'Harp soundbox', '✦ Crystal harp': 'Harp soundbox' };
+for (const k in PRESETS) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.look = { ...lookDefault(), ...(LOOKS[k] || {}) };
+  if (OUTLINE_OF[k]) { const t = BODY_TEMPLATES[OUTLINE_OF[k]]; p.body.outline = t.pts(); p.body.length = t.len; }
+  if (p.look.frame === 'harp') { p.body.bridgeX = .3; p.body.nutX = -5.3; p.body.backShape = 'bowl'; } // floating strings: anchored on the harp neck, far past the soundbox
+  return p; }; }

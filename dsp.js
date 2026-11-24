@@ -38,7 +38,7 @@ class Str {
     const m = p.mat;
     let stiff = m.stiff * (0.4 + 1.6 * p.gauge * p.gauge); if (p.wound) stiff *= 0.35;
     this.apA = -0.75 * Math.min(1, stiff);
-    this.decay = m.decay * (1.2 - 0.4 * p.gauge) * (p.role === 'symp' ? 1.4 : 1);
+    this.decay = m.decay * (1.2 - 0.4 * p.gauge) * (p.role === 'symp' ? 1.4 : 1) * (p.sus || 1); // neck stiffness
     this.d = Math.pow(Math.min(0.9, m.bright + 0.12 * p.gauge + (p.wound ? 0.08 : 0)), SRK); // same cutoff in Hz at any sample rate
     this.tm = (1 - p.tension) * 0.12;
     this.mag = m.magnetic;
