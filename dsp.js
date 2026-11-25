@@ -3,6 +3,9 @@ const DMAX = 8192, DM = DMAX - 1;
 const mtof = n => 440 * Math.pow(2, (n - 69) / 12);
 const CONT = { bow: 1, ebow: 1, wind: 1 };
 const OSC_G = 0.3, RING_G = 0.5;
+// phase delays (samples) at ω of a one-pole lowpass (1-d)/(1-d z⁻¹) and of a first-order allpass (a+z⁻¹)/(1+a z⁻¹)
+const lpDelay = (d, w) => Math.atan2(d * Math.sin(w), 1 - d * Math.cos(w)) / w;
+const apDelay = (a, w) => -(Math.atan2(-Math.sin(w), a + Math.cos(w)) - Math.atan2(-a * Math.sin(w), 1 + a * Math.cos(w))) / w;
 const SRR = sampleRate / 48000, SRK = 48000 / sampleRate; // keep the sound identical at 44.1 / 48 / 96 kHz
 const GHOST = 20 / 127; // plucks softer than this are ghost notes
 const TRIM = { pick: 3, finger: 9, hammer: 5, bow: 0.5, ebow: 2, wind: 0.5 };
@@ -10,9 +13,10 @@ const TRIM = { pick: 3, finger: 9, hammer: 5, bow: 0.5, ebow: 2, wind: 0.5 };
 class Delay {
   constructor() { this.b = new Float32Array(DMAX); this.w = 0; this.last = 0; }
   tick(x, len) {
-    const rp = this.w - len, i = Math.floor(rp), f = rp - i;
-    const a = this.b[i & DM], c = this.b[(i + 1) & DM];
-    this.last = a + (c - a) * f;
+    // 3rd-order Lagrange read: flat to ~8 kHz, so loss doesn't depend on the delay's fractional part (linear interp dulled some notes)
+    const rp = this.w - len, i = Math.floor(rp), f = rp - i, B = this.b;
+    const y0 = B[(i - 1) & DM], y1 = B[i & DM], y2 = B[(i + 1) & DM], y3 = B[(i + 2) & DM], fm1 = f - 1, fm2 = f - 2, fp1 = f + 1;
+    this.last = -y0 * f * fm1 * fm2 / 6 + y1 * fp1 * fm1 * fm2 / 2 - y2 * fp1 * f * fm2 / 2 + y3 * fp1 * f * fm1 / 6;
     this.b[this.w] = x; this.w = (this.w + 1) & DM;
     return this.last;
   }
@@ -36,7 +40,7 @@ class Str {
   constructor(E) {
     this.E = E; this.neck = new Delay(); this.br = new Delay();
     this.hist = new Float32Array(DMAX); this.hw = 0; this.magD = 10;
-    this.lp = 0; this.a1x = 0; this.a1y = 0; this.a2x = 0; this.a2y = 0;
+    this.lp = 0; this.apx = new Float64Array(4); this.apy = new Float64Array(4); this.Bo = 0; this.hf = 25; this.fOpen = 110; this.mw = 0; this.jpk = 0; this.jy = 0; this.jm = 0;
     this.freq = 110; this.target = 110; this.gc = 1; this.note = 45; this.g = 0.99;
     this.stack = []; this.held = false; this.pend = false; this.lastUse = 0;
     this.pulse = null; this.pi = 0; this.cont = 0; this.contT = 0; this.bowDir = 1; this.bowAmp = 1;
@@ -50,16 +54,33 @@ class Str {
     const roleChanged = this.role !== p.role;
     this.role = p.role; this.open = p.note; this.range = p.range;
     const m = p.mat;
-    let stiff = m.stiff * (0.4 + 1.6 * p.gauge * p.gauge); if (p.wound) stiff *= 0.35;
-    this.apA = -0.75 * Math.min(1, stiff);
+    // inharmonicity B of the open string (measured guitars: ~5e-5 plain trebles … 1–3e-4 wound basses); fretting raises it ∝ (f/f_open)²
+    this.Bo = Math.min(4e-3, m.stiff * 4.2e-4 * (p.wound ? .5 + 1.6 * p.gauge * p.gauge : .25 + 1.2 * p.gauge));
+    this.fOpen = mtof(p.note);
+    // high-frequency loss in dB/s per kHz (internal friction + air): real strings sit around 20–35 whatever their pitch
+    this.hf = (m.hf ?? (6 + 60 * Math.pow(m.bright, 1.5))) * (p.wound ? 1 + .9 * p.gauge : 1); // windings rub: wound strings lose their highs faster (measured E2/A2 vs trebles)
     this.decay = m.decay * (1.2 - 0.4 * p.gauge) * (p.role === 'symp' ? 1.4 : 1) * (p.sus || 1); // neck stiffness
-    this.d = Math.pow(Math.min(0.9, m.bright + 0.12 * p.gauge + (p.wound ? 0.08 : 0)), SRK); // same cutoff in Hz at any sample rate
     this.tm = (1 - p.tension) * 0.12;
     this.mag = m.magnetic; this.wound = !!p.wound;
-    this.comp = 2 + this.d / (1 - this.d) + 2 * (1 - this.apA) / (1 + this.apA);
+    this.setAperture(this.E.pk.scale || .65, this.E.fs);
     if (!this.held || roleChanged) this.setNote(this.open, 0); else this.calcG();
   }
-  calcG() { const f = this.target; const T60 = this.decay * Math.pow(110 / f, 0.4); this.g = Math.pow(10, -3 / (T60 * f)); }
+  calcG() {
+    const f = this.target, fs = this.E.fs, T60 = this.decay * Math.pow(110 / f, 0.4), R0 = 60 / T60;
+    this.g = Math.pow(10, -R0 / (20 * f));
+    // loss filter: one-pole whose extra loss at fh gives R(fh) = R0 + hf·fh/1000 dB/s, so highs die in seconds (not cycles) at every pitch
+    const fh = Math.min(2500, fs * .4), w = 2 * Math.PI * fh / fs, r = Math.pow(10, -(this.hf * fh / 1000) / (20 * f)), r2 = r * r, c = Math.cos(w);
+    let d = 0; if (r2 < .999999) { const A = 1 - r2, Bq = 1 - r2 * c; d = (Bq - Math.sqrt(Math.max(0, Bq * Bq - A * A))) / A; }
+    this.d = Math.min(.97, Math.max(0, d));
+    // dispersion: 4 first-order allpasses fitted so partial k lands at k·f0·√(1+Bk²)
+    const B = this.role === 'stopped' ? this.Bo * Math.pow(f / this.fOpen, 2) : this.Bo, w0 = 2 * Math.PI * f / fs, N0 = fs / f;
+    const k = Math.max(2, Math.min(12, Math.floor(5000 / f))), wk = w0 * k * Math.sqrt(1 + B * k * k), need = (N0 - N0 / Math.sqrt(1 + B * k * k));
+    let best = 0, be = Infinity;
+    if (B > 1e-7) for (let i = 1; i <= 48; i++) { const a = -1 + Math.pow(i / 49, 1.6) * .999, D1 = apDelay(a, w0), got = 4 * (D1 - apDelay(a, wk)), e = Math.abs(got - need);
+      if (e < be && 4 * D1 < N0 * .45) { be = e; best = a; } }
+    this.apA = best;
+    this.comp = 2 + lpDelay(this.d, w0) + 4 * apDelay(best, w0);
+  }
   setNote(n, glide) {
     this.note = n; this.target = mtof(n);
     if (glide <= 0) { this.freq = this.target; this.gc = 1; }
@@ -71,15 +92,27 @@ class Str {
     const ex = this.E.ex, type = ex.type;
     let L, noise = 0;
     if (type === 'pick') { L = 4 + Math.round((1 - ex.pickStiff) * 30); noise = 48; } // 0.1–0.7 ms contact, like a real pick
-    else if (type === 'finger') L = 6 + Math.round(ex.fingerSoft * 70);
+    else if (type === 'finger') L = 4 + Math.round(ex.fingerSoft * 24); // the release slip is quick even from a soft fingertip (0.1–0.6 ms)
     else L = 2 + Math.round((1 - ex.hammerHard) * 30);
     L = Math.max(1, Math.round(L * (1.4 - 0.7 * Math.min(1, vel)) * SRR));
     if (click) noise = Math.max(noise, 90); noise = Math.round(noise * SRR);
     const arr = new Float32Array(L + noise), k = v * Math.PI / (2 * L) * SRR; // pulses are in per-sample velocity units
     for (let i = 0; i < L; i++) arr[i] = k * Math.sin(Math.PI * (i + 0.5) / L);
-    for (let i = 0; i < noise; i++) arr[i] += (Math.random() - 0.5) * (v * 0.06 * ex.pickStiff + click) * (1 - i / noise);
-    if (type === 'hammer') for (let i = 0; i < L; i++) arr[i] *= 1.4; // hammers hit hard
-    this.pulse = arr; this.pi = 0;
+    let out = arr;
+    if (type !== 'hammer') {
+      // a pluck releases a displaced string; a strike gives it velocity. Released displacement means the velocity waves carry
+      // a 1/k spectrum (−6 dB/oct above the fundamental) instead of the flat spectrum of a strike, which made plucks sound
+      // too zingy next to recordings. A leaky integrator with its corner near f0 gives that slope; the fundamental keeps its level.
+      const fs = this.E.fs, f0 = Math.max(20, this.target), fc = f0 * .8, rho = Math.exp(-2 * Math.PI * fc / fs);
+      const tail = Math.min(4096, Math.ceil(4 * fs / (2 * Math.PI * fc))), gn = (1 - rho) * Math.sqrt(1 + (f0 / fc) ** 2) * (f0 < 300 ? Math.pow(300 / f0, .45) : 1); // low notes keep their old loudness
+      out = new Float32Array(L + tail); let y = 0;
+      for (let i = 0; i < out.length; i++) { y = (i < L ? arr[i] : 0) + rho * y; out[i] = y * gn; }
+      // the residue left in the integrator is tiny (e^-4); fade it so nothing is left hanging
+      for (let i = Math.max(0, out.length - 64); i < out.length; i++) out[i] *= (out.length - i) / 64;
+    }
+    for (let i = 0; i < noise; i++) out[i] += (Math.random() - 0.5) * (v * 0.06 * ex.pickStiff + click) * (1 - i / noise);
+    if (type === 'hammer') for (let i = 0; i < L; i++) out[i] *= 1.4; // hammers hit hard
+    this.pulse = out; this.pi = 0;
   }
   excite(v) {
     if (CONT[this.E.ex.type]) {
@@ -192,7 +225,7 @@ class Str {
     // a string that has fully died away goes to sleep (no CPU) until something excites it
     this.awake -= n; // never sleep while a wave is still travelling toward the ends
     const quiet = this.awake <= 0 && this.env < 2e-6 && this.rms < 1e-6 && !this.pulse && this.cont === 0 && this.contT === 0;
-    if (quiet && !this.idle) { this.idle = true; this.neck.b.fill(0); this.br.b.fill(0); this.neck.last = this.br.last = 0; this.lp = this.a1x = this.a1y = this.a2x = this.a2y = 0; this.env = 0; this.oenv = 0; }
+    if (quiet && !this.idle) { this.idle = true; this.neck.b.fill(0); this.br.b.fill(0); this.neck.last = this.br.last = 0; this.lp = 0; this.apx.fill(0); this.apy.fill(0); this.env = 0; this.oenv = 0; }
     else if (!quiet) this.idle = false;
     const N = fs / this.freq - this.comp;
     this.magD = Math.max(1, Math.round(E.pk.magPos * N));
@@ -211,11 +244,16 @@ class Str {
     this.lp = (1 - d) * this.br.last + d * this.lp;
     let x = this.lp * this.g * this.damp;
     // stiffness (dispersion)
-    const a = this.apA;
-    let y = a * x + this.a1x - a * this.a1y; this.a1x = x; this.a1y = y; x = y;
-    y = a * x + this.a2x - a * this.a2y; this.a2x = x; this.a2y = y; x = y;
+    const a = this.apA, ax = this.apx, ay = this.apy;
+    for (let q = 0; q < 4; q++) { const y = a * x + ax[q] - a * ay[q]; ax[q] = x; ay[q] = y; x = y; }
     // jawari: one-sided grazing of a curved bridge
-    if (E.jaw > 0) { const th = 0.12 * (1.05 - E.jaw); if (x > th) x = th + (x - th) * 0.25; }
+    // jawari: one-sided grazing of a curved bridge. The contact point rides on the wave's own peak level (not a fixed
+    // threshold), so the buzz stays bright all the way through the decay as on a real sitar, and opens up ('blooms') as it fades
+    if (E.jaw > 0) { // the bridge acts on displacement, so integrate the velocity wave and push back where it penetrates
+      const y = this.jy = this.jy * this.E.jLeak + x; this.jm += (y - this.jm) * this.E.jMean; const yc = y - this.jm; // displacement about its mean
+      this.jpk = yc > this.jpk ? yc : this.jpk * this.E.jRel;
+      const th = this.jm + this.jpk * (1 - .8 * E.jaw), pen = y - th;
+      if (pen > 0) { const push = pen * .9 * E.jaw; x -= push; this.jy -= push; } }
     // fret buzz on fretted held strings
     if (E.buzz > 0 && this.role === 'stopped' && this.held) {
       const th = 0.35 * (1.05 - E.buzz);
@@ -258,10 +296,17 @@ class Str {
   }
   magOut(o) {
     this.hist[this.hw] = o;
-    const v = o - this.hist[(this.hw - this.magD) & DM];
+    let v = o - this.hist[(this.hw - this.magD) & DM];
     this.hw = (this.hw + 1) & DM;
+    // the pickup's magnetic window is ~2.5 cm wide: it averages the string over that span (two boxcars ≈ a soft triangle),
+    // which dulls the highs of slow, heavy strings far more than thin trebles — why a bass E is so much darker than a high E
+    const W = this.mw; if (W > 1) { const r1 = this.mr1, r2 = this.mr2, j = this.mj;
+      this.ms1 += v - r1[(j - W) & 63]; r1[j & 63] = v; const u = this.ms1 / W;
+      this.ms2 += u - r2[(j - W) & 63]; r2[j & 63] = u; v = this.ms2 / W; this.mj = (j + 1) & 0x3fffffff; }
     return v * this.mag;
   }
+  setAperture(scale, fs) { const c = 2 * Math.max(.1, scale) * this.fOpen, W = Math.round(fs * .025 / c / 2); // two boxcars of half the window each
+    if (W !== this.mw) { this.mw = Math.max(1, Math.min(60, W)); this.mr1 = new Float32Array(64); this.mr2 = new Float32Array(64); this.ms1 = this.ms2 = 0; this.mj = 64; } }
 }
 
 class LuitherProc extends AudioWorkletProcessor {
@@ -276,7 +321,7 @@ class LuitherProc extends AudioWorkletProcessor {
     this.pk = { mag: 0, magPos: 0.12, piezo: 0.3, mic: 0.8, master: 0.8 };
     this.held = []; this.map = new Map(); this.sus = false; this.bendSemis = 0; this.bendMul = 1; this.clock = 0;
     this.sympFeed = 0; this.dc = [0, 0, 0, 0, 0, 0, 0, 0]; this.lim = 1; this.limMin = 1; this.dcA = 1 - 2 * Math.PI * 5 / sampleRate; this.dcB = 1 - 2 * Math.PI * 3 / sampleRate; this.frame = 0; this.lastOn = -1e9; this.bin1 = 0; this.bin2 = 0; this.fn = []; this.pa = 0; this.pb = 0;
-    { const g = Math.tan(Math.PI * Math.min(4500, sampleRate * .45) / sampleRate), k = 1 / 1.6; this.pa1 = 1 / (1 + g * (g + k)); this.pa2 = g * this.pa1; this.pa3 = g * this.pa2; } this.limRel = 1 - Math.exp(-1 / (0.12 * sampleRate)); this.blk = 0; this.seed = 22222; this.gustV = 0; this.gustT = 0;
+    { const g = Math.tan(Math.PI * Math.min(3800, sampleRate * .45) / sampleRate), k = 1 / 1.6; this.pa1 = 1 / (1 + g * (g + k)); this.pa2 = g * this.pa1; this.pa3 = g * this.pa2; } this.limRel = 1 - Math.exp(-1 / (0.12 * sampleRate)); this.blk = 0; this.seed = 22222; this.gustV = 0; this.gustT = 0;
     this.exBase = { ...this.ex }; this.nkBase = { ...this.nk }; this.syn = new Synth(this); this.rack = new AmpRack(sampleRate);
     this.derive();
     this.port.onmessage = e => this.msg(e.data);
@@ -298,7 +343,7 @@ class LuitherProc extends AudioWorkletProcessor {
     this.atkC = 1 - Math.exp(-1 / (Math.max(0.002, ex.attack) * fs));
     this.relC = 1 - Math.exp(-1 / (Math.max(0.005, ex.release) * fs));
     this.beta = Math.min(0.5, Math.max(0.02, ex.pos));
-    this.jaw = nk.jawari; this.tune = ex.type === 'bow' ? 0.9855 : ex.type === 'ebow' ? 0.99 : 1; this.buzz = nk.frets ? nk.buzz : 0;
+    this.jRel = Math.exp(-1 / (.03 * this.fs)); this.jLeak = 1 - 2 * Math.PI * 15 / this.fs; this.jMean = 1 - Math.exp(-2 * Math.PI * 8 / this.fs); this.jaw = nk.jawari; this.tune = ex.type === 'bow' ? 0.9855 : ex.type === 'ebow' ? 0.99 : 1; this.buzz = nk.frets ? nk.buzz : 0;
   }
   msg(d) {
     switch (d.t) {
@@ -308,7 +353,7 @@ class LuitherProc extends AudioWorkletProcessor {
       case 'synth': this.syn.set(d.v); break;
       case 'mw': this.syn.src.mw = d.v; break;
       case 'amp': this.rack.set(d.v); break;
-      case 'pk': Object.assign(this.pk, d.v); break;
+      case 'pk': Object.assign(this.pk, d.v); for (const s of this.S) s.setAperture(this.pk.scale || .65, this.fs); break;
       case 'strings': this.setStrings(d.v); break;
       case 'modes': this.setModes(d.v); break;
       case 'on': this.noteOn(d.n, d.v); break;
@@ -452,7 +497,7 @@ class LuitherProc extends AudioWorkletProcessor {
         m.y2 = m.y1; m.y1 = y; bl += y * m.aL; br += y * m.aR; m.e += y * y;
       }
       const bs = bm + bsy, p = bs * 0.5 + (bl + br) * 0.04, direct = bs * 0.06;
-      // magnetic pickup coil: resonant low-pass around 4.5 kHz, like a real single-coil's inductance
+      // magnetic pickup coil + cable: resonant low-pass around 3.8 kHz, like a real single-coil's inductance
       { const v3 = mgs - this.pb, v1 = this.pa1 * this.pa + this.pa2 * v3, v2 = this.pb + this.pa2 * this.pa + this.pa3 * v3; this.pa = 2 * v1 - this.pa; this.pb = 2 * v2 - this.pb; mgs = v2 * 1.6; }
       const nzo = nz * (mic * .45 + pz * .35 + mg * .5); // the hand is near the pickups and the player's ear
       let l = mgs * mg + p * pz + (bl + direct) * mic + nzo;

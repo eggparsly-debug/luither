@@ -333,7 +333,7 @@ function pushStrings() { const L = cfg.look || lookDefault(), sus = cfg.body.nec
 function pushEx() { send('ex', cfg.ex); }
 function pushNk() { const nk = { ...cfg.nk }; if (nk.thrAuto) nk.thr = autoThr(); send('nk', nk); }
 function pushBody() { const m = computeBody(); send('modes', m.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan }))); renderInfo(); }
-function pushPk() { send('pk', { ...cfg.pk, master: cfg.pk.master * +$('vol').value }); }
+function pushPk() { send('pk', { ...cfg.pk, scale: scaleLen(), master: cfg.pk.master * +$('vol').value }); }
 function pushAll() { pushStrings(); pushEx(); pushNk(); pushBody(); pushPk(); if (cfg.synth) pushSynth(); if (cfg.amp) pushAmp(); }
 async function startAudio() {
   actx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });

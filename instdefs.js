@@ -1,16 +1,16 @@
 const SMAT = {
-  'Steel':        { decay: 9,   bright: .08, stiff: .35, magnetic: 1,  color: '#dfe3ea' },
-  'Bronze-wound': { decay: 8,   bright: .14, stiff: .2,  magnetic: .4, color: '#cc9450' },
-  'Nickel-wound': { decay: 8,   bright: .12, stiff: .22, magnetic: 1,  color: '#bfc2c6' },
-  'Nylon':        { decay: 4.5, bright: .38, stiff: .08, magnetic: 0,  color: '#f2efe6' },
-  'Gut':          { decay: 3.5, bright: .42, stiff: .12, magnetic: 0,  color: '#e3cf98' },
-  'Silk':         { decay: 3,   bright: .48, stiff: .06, magnetic: 0,  color: '#f7f1de' },
-  'Tetron':       { decay: 4,   bright: .35, stiff: .1,  magnetic: 0,  color: '#efe6cf' },
-  'Carbon':       { decay: 6,   bright: .25, stiff: .25, magnetic: 0,  color: '#8a8a8a' },
-  '✦ Glass fiber':{ decay: 14,  bright: .03, stiff: .7,  magnetic: 0,  color: '#aee8f0' },
-  '✦ Spider silk':{ decay: 12,  bright: .2,  stiff: .05, magnetic: 0,  color: '#ffffff' },
-  '✦ Light beam': { decay: 30,  bright: 0,   stiff: 0,   magnetic: 1,  color: '#ffe66b' },
-  '✦ Mud':        { decay: .6,  bright: .85, stiff: 0,   magnetic: 0,  color: '#7a5530' },
+  'Steel':        { decay: 9,   bright: .08, hf: 10, stiff: .35, magnetic: 1,  color: '#dfe3ea' },
+  'Bronze-wound': { decay: 8,   bright: .14, hf: 12, stiff: .2,  magnetic: .4, color: '#cc9450' },
+  'Nickel-wound': { decay: 8,   bright: .12, hf: 11, stiff: .22, magnetic: 1,  color: '#bfc2c6' },
+  'Nylon':        { decay: 7,   bright: .38, hf: 17, stiff: .08, magnetic: 0,  color: '#f2efe6' },
+  'Gut':          { decay: 6.5, bright: .42, hf: 19, stiff: .12, magnetic: 0,  color: '#e3cf98' },
+  'Silk':         { decay: 3,   bright: .48, hf: 30, stiff: .06, magnetic: 0,  color: '#f7f1de' },
+  'Tetron':       { decay: 4.5,  bright: .35, hf: 12, stiff: .1,  magnetic: 0,  color: '#efe6cf' },
+  'Carbon':       { decay: 6,   bright: .25, hf: 9, stiff: .25, magnetic: 0,  color: '#8a8a8a' },
+  '✦ Glass fiber':{ decay: 14,  bright: .03, hf: 3, stiff: .7,  magnetic: 0,  color: '#aee8f0' },
+  '✦ Spider silk':{ decay: 12,  bright: .2,  hf: 8, stiff: .05, magnetic: 0,  color: '#ffffff' },
+  '✦ Light beam': { decay: 30,  bright: 0,   hf: 0.3, stiff: 0,   magnetic: 1,  color: '#ffe66b' },
+  '✦ Mud':        { decay: .6,  bright: .85, hf: 300, stiff: 0,   magnetic: 0,  color: '#7a5530' },
 };
 // E in GPa (effective, across both grain directions), density kg/m³, Q = how long it rings
 const BMAT = {
@@ -83,7 +83,7 @@ const PRESETS = {
     strings: [S('stopped',53,'Steel',.25,{range:26}), S('stopped',48,'Bronze-wound',.45,{range:12,wound:1}),
       S('drone',36,'Bronze-wound',.6,{wound:1}), S('drone',43,'Bronze-wound',.5,{wound:1}), S('drone',60,'Steel',.2), S('drone',72,'Steel',.15),
       ...[60,62,64,65,67,69,71,72,74,76,77].map(n => S('symp', n, 'Steel', .1))],
-    ex: { ...exDefault(), type: 'pick', pos: .08, pickStiff: .82, drone: .12, vibDepth: 0 },
+    ex: { ...exDefault(), type: 'pick', pos: .08, pickStiff: .95, drone: .12, vibDepth: 0 },
     nk: { ...nkDefault(), frets: true, jawari: .75, glide: .12, sympC: .8, thr: 4 },
     body: { length: .42, hw: [.06,.13,.17,.195,.207,.21,.207,.195,.17,.13,.06], depth: [.2,.195,.18,.16,.13,.09,.04],
       top: 'Toon (tun)', back: 'Calabash gourd', topT: 4, backT: 6, bracing: 'none', braceS: .5, hole: { type: 'none', x: .5, size: .4 }, bridgeX: .62, neckLen: .62, nutX: .05 , backShape: 'gourd' },
@@ -91,7 +91,7 @@ const PRESETS = {
   }),
   'Koto': () => ({
     strings: [50,43,45,46,50,51,55,57,58,62,63,67,69].map(n => S('open', n, 'Tetron', .35, { tension: .4 })),
-    ex: { ...exDefault(), type: 'pick', pos: .1, pickStiff: .72 },
+    ex: { ...exDefault(), type: 'pick', pos: .1, pickStiff: .9 },
     nk: { ...nkDefault(), frets: false, glide: .12, pressBend: 2 },
     body: { length: 1.82, hw: [.11,.12,.12,.12,.12,.12,.12,.12,.12,.12,.11], depth: [.07,.07,.068,.065,.06,.05,.035],
       top: 'Paulownia', back: 'Paulownia', topT: 10, backT: 10, bracing: 'none', braceS: .5, hole: { type: 'under', x: .6, size: .6 }, bridgeX: .93, neckLen: 0, nutX: .06 , backShape: 'arched' },
@@ -119,7 +119,7 @@ Object.assign(PRESETS, {
   'Classical guitar': pre({
     strings: () => [S('stopped',40,'Nylon',.8,{range:19,wound:1}), S('stopped',45,'Nylon',.7,{range:19,wound:1}), S('stopped',50,'Nylon',.6,{range:19,wound:1}),
       S('stopped',55,'Nylon',.5,{range:19}), S('stopped',59,'Nylon',.4,{range:19}), S('stopped',64,'Nylon',.3,{range:19})],
-    ex: { type: 'finger', pos: .18, fingerSoft: .45 }, nk: { frets: true, glide: .01 },
+    ex: { type: 'finger', pos: .18, fingerSoft: .18 }, nk: { frets: true, glide: .01 },
     body: { length: .49, hw: [.07,.12,.14,.135,.12,.125,.15,.17,.18,.165,.08], depth: [.095,.095,.095,.095,.095,.095,.095], top: 'Cedar', back: 'Rosewood', topT: 2.5, backT: 2.4,
       bracing: 'fan', hole: { type: 'round', x: .3, size: .75 }, bridgeX: .63, neckLen: .34 } }),
   'Electric guitar': pre({
@@ -201,7 +201,7 @@ Object.assign(PRESETS, {
 });
 
 // ── output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS ──
-const CAL = {"Acoustic guitar": 1.007, "Cello": 0.697, "Sitar": 1.043, "Koto": 1.328, "Violin": 0.809, "Double bass": 0.361, "Classical guitar": 0.65, "Electric guitar": 0.213, "Electric bass": 0.16, "Oud": 2.153, "Concert harp": 0.488, "Hammered dulcimer": 0.45, "Guzheng": 1.374, "Tanpura": 1.596, "Hurdy-gurdy": 0.857, "Alpine zither": 1.055, "Erhu": 0.326, "Aeolian harp": 0.996, "✦ Glass cello": 0.847, "✦ Crystal harp": 0.281, "Slide guitar (resonator)": 2.307};
+const CAL = {"Acoustic guitar": 1.422, "Cello": 0.541, "Sitar": 3.078, "Koto": 1.344, "Violin": 1.104, "Double bass": 0.277, "Classical guitar": 0.392, "Electric guitar": 0.868, "Electric bass": 0.667, "Oud": 2.649, "Concert harp": 0.35, "Hammered dulcimer": 0.425, "Guzheng": 1.691, "Tanpura": 2.388, "Hurdy-gurdy": 0.681, "Alpine zither": 0.828, "Erhu": 1.328, "Aeolian harp": 0.747, "✦ Glass cello": 2.28, "✦ Crystal harp": 0.256, "Slide guitar (resonator)": 2.649};
 for (const k in CAL) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.pk.master = CAL[k]; return p; }; }
 // ── how each instrument looks: neck & board woods, head, pegs; some get their own body outline ──
 const LOOKS = {
