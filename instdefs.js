@@ -76,7 +76,7 @@ const PRESETS = {
     ex: { ...exDefault(), type: 'bow', pos: .12, pressure: .5, speed: .5, attack: .09, release: .22, vibDepth: 18, vibDelay: .35, vibRate: 5.6 },
     nk: { ...nkDefault(), frets: false, glide: .09, thr: 5 },
     body: { length: .75, hw: [.09,.16,.17,.15,.115,.12,.18,.215,.22,.19,.09], depth: [.13,.128,.125,.12,.115,.11,.1],
-      top: 'Spruce', back: 'Maple', topT: 3.5, backT: 4, bracing: 'bassbar', braceS: .5, hole: { type: 'f', x: .55, size: .55 }, bridgeX: .55, neckLen: .28, nutX: .05 , backShape: 'arched' },
+      top: 'Spruce', back: 'Maple', topT: 2.6, backT: 3, bracing: 'bassbar', braceS: .5, hole: { type: 'f', x: .55, size: .55 }, bridgeX: .55, neckLen: .28, nutX: .05 , backShape: 'arched' },
     pk: { mag: 0, magPos: .12, piezo: .15, mic: 1, master: .8 },
   }),
   'Sitar': () => ({
@@ -201,7 +201,7 @@ Object.assign(PRESETS, {
 });
 
 // ── output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS ──
-const CAL = {"Acoustic guitar": 1.422, "Cello": 0.541, "Sitar": 3.078, "Koto": 1.344, "Violin": 1.104, "Double bass": 0.277, "Classical guitar": 0.392, "Electric guitar": 0.868, "Electric bass": 0.667, "Oud": 2.649, "Concert harp": 0.35, "Hammered dulcimer": 0.425, "Guzheng": 1.691, "Tanpura": 2.388, "Hurdy-gurdy": 0.681, "Alpine zither": 0.828, "Erhu": 1.328, "Aeolian harp": 0.747, "✦ Glass cello": 2.28, "✦ Crystal harp": 0.256, "Slide guitar (resonator)": 2.649};
+const CAL = {"Acoustic guitar": 1.405, "Cello": 0.511, "Sitar": 1.254, "Koto": 1.424, "Violin": 1.117, "Double bass": 0.113, "Classical guitar": 0.397, "Electric guitar": 0.811, "Electric bass": 0.659, "Oud": 2.649, "Concert harp": 0.35, "Hammered dulcimer": 0.425, "Guzheng": 1.771, "Tanpura": 2.307, "Hurdy-gurdy": 0.867, "Alpine zither": 0.8, "Erhu": 0.401, "Aeolian harp": 0.681, "✦ Glass cello": 1.092, "✦ Crystal harp": 0.256, "Slide guitar (resonator)": 2.649};
 for (const k in CAL) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.pk.master = CAL[k]; return p; }; }
 // ── how each instrument looks: neck & board woods, head, pegs; some get their own body outline ──
 const LOOKS = {

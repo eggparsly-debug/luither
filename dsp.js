@@ -40,7 +40,7 @@ class Str {
   constructor(E) {
     this.E = E; this.neck = new Delay(); this.br = new Delay();
     this.hist = new Float32Array(DMAX); this.hw = 0; this.magD = 10;
-    this.lp = 0; this.apx = new Float64Array(4); this.apy = new Float64Array(4); this.Bo = 0; this.hf = 25; this.fOpen = 110; this.mw = 0; this.jpk = 0; this.jy = 0; this.jm = 0;
+    this.lp = 0; this.apx = new Float64Array(4); this.apy = new Float64Array(4); this.Bo = 0; this.hf = 25; this.fOpen = 110; this.mw = 0; this.jpk = 0; this.jy = 0; this.jm = 0; this.jPi = 0; this.jPo = 0;
     this.freq = 110; this.target = 110; this.gc = 1; this.note = 45; this.g = 0.99;
     this.stack = []; this.held = false; this.pend = false; this.lastUse = 0;
     this.pulse = null; this.pi = 0; this.cont = 0; this.contT = 0; this.bowDir = 1; this.bowAmp = 1;
@@ -69,11 +69,12 @@ class Str {
     const f = this.target, fs = this.E.fs, T60 = this.decay * Math.pow(110 / f, 0.4), R0 = 60 / T60;
     this.g = Math.pow(10, -R0 / (20 * f));
     // loss filter: one-pole whose extra loss at fh gives R(fh) = R0 + hf·fh/1000 dB/s, so highs die in seconds (not cycles) at every pitch
-    const fh = Math.min(2500, fs * .4), w = 2 * Math.PI * fh / fs, r = Math.pow(10, -(this.hf * fh / 1000) / (20 * f)), r2 = r * r, c = Math.cos(w);
+    const fh = Math.min(2500, fs * .4), w = 2 * Math.PI * fh / fs, r = Math.pow(10, -(this.hf * (1 - .7 * (this.E.jaw || 0)) * fh / 1000) / (20 * f)) /* a jawari bridge is hard bone: it soaks up far less treble */, r2 = r * r, c = Math.cos(w);
     let d = 0; if (r2 < .999999) { const A = 1 - r2, Bq = 1 - r2 * c; d = (Bq - Math.sqrt(Math.max(0, Bq * Bq - A * A))) / A; }
     this.d = Math.min(.97, Math.max(0, d));
     // dispersion: 4 first-order allpasses fitted so partial k lands at k·f0·√(1+Bk²)
-    const B = this.role === 'stopped' ? this.Bo * Math.pow(f / this.fOpen, 2) : this.Bo, w0 = 2 * Math.PI * f / fs, N0 = fs / f;
+    // a bow (or e-bow / wind) mode-locks the partials into a harmonic series, so a sustained string barely shows its stiffness
+    const B = (this.role === 'stopped' ? this.Bo * Math.pow(f / this.fOpen, 2) : this.Bo) * (CONT[this.E.ex.type] ? .08 : 1), w0 = 2 * Math.PI * f / fs, N0 = fs / f;
     const k = Math.max(2, Math.min(12, Math.floor(5000 / f))), wk = w0 * k * Math.sqrt(1 + B * k * k), need = (N0 - N0 / Math.sqrt(1 + B * k * k));
     let best = 0, be = Infinity;
     if (B > 1e-7) for (let i = 1; i <= 48; i++) { const a = -1 + Math.pow(i / 49, 1.6) * .999, D1 = apDelay(a, w0), got = 4 * (D1 - apDelay(a, wk)), e = Math.abs(got - need);
@@ -153,7 +154,7 @@ class Str {
   }
   start(n, v, h = 0) {
     this.idle = false; this.wake();
-    this.lastUse = this.E.clock; this.held = true; this.pend = false;
+    this.lastUse = this.E.clock; this.held = true; this.pend = false; this.sliding = this.E.ex.fretter === 'slide';
     this.damp = 1; this.wantDamp = 0; this.t = 0; this.harm = false; this.touch = n;
     const type = this.E.ex.type, plucked = type === 'pick' || type === 'finger';
     this.bj = CONT[type] ? 0 : (Math.random() - 0.5) * 0.03 * this.E.ex.humanize; // hands never hit the exact same spot
@@ -170,16 +171,18 @@ class Str {
     const E = this.E, nk = E.nk, fr = E.ex.fretter || 'fingers', from = this.note;
     this.lastUse = E.clock; this.damp = 1; this.wantDamp = 0; this.held = true; this.harm = false; this.touch = n;
     const jump = Math.abs(n - from), fretSlide = fr === 'fingers' && nk.frets && jump > 2.5 && kind === 'on';
-    this.slideSteps = null;
+    // fretless fingers: a soft legato (velocity under 70) slides the finger smoothly; a firm one hammers on / pulls off
+    const fretless = fr === 'fingers' && !nk.frets && this.role === 'stopped', flSlide = fretless && v < 70 / 127;
+    this.slideSteps = null; this.sliding = fr === 'slide' || flSlide;
     if (fretSlide) { // a fingered slide on frets steps through each fret on the way
       const dir = Math.sign(n - from); this.slideSteps = { to: n, cur: Math.round(from) + dir, dir, per: Math.max(.012, (E.ex.slideTime || .12) / jump) * E.fs, cnt: 0 };
       this.setNote(this.slideSteps.cur, .002);
-    } else this.setNote(n, fr === 'slide' ? (E.ex.slideTime || .12) * (.55 + .22 * Math.sqrt(jump)) : fr === 'keys' ? .002 : nk.frets ? Math.max(0.004, nk.glide * 0.25) : nk.glide);
+    } else this.setNote(n, this.sliding ? (E.ex.slideTime || .12) * (.55 + .22 * Math.sqrt(jump)) / 3 /* time constant: arrives in about the slide time */ : fr === 'keys' || fretless ? .002 : nk.frets ? Math.max(0.004, nk.glide * 0.25) : nk.glide);
     if (CONT[E.ex.type]) { if (this.contT === 0) this.excite(v); }
-    else if (fr === 'slide' || fretSlide) { /* sliding doesn't re-pluck */ }
-    else if (nk.frets || fr === 'keys') this.pluckPulse(v * (kind === 'off' ? 0.42 : 0.35));
+    else if (this.sliding || fretSlide) { /* sliding doesn't re-pluck */ }
+    else if (nk.frets || fr === 'keys' || fretless) this.pluckPulse(v * (kind === 'off' ? 0.42 : 0.35));
     else this.pluckPulse(v * 0.08);
-    if (this.role === 'stopped' && !fretSlide) E.fretNoise(fr === 'fingers' ? (kind === 'off' ? 'pull' : (nk.frets ? 'hammer' : 'press')) : fr === 'keys' ? 'clack' : '', kind === 'off' ? .6 : v, this);
+    if (this.role === 'stopped' && !fretSlide && !flSlide) E.fretNoise(fr === 'fingers' ? (kind === 'off' ? 'pull' : 'hammer') : fr === 'keys' ? 'clack' : '', kind === 'off' ? Math.min(.8, v) : v, this);
   }
   wake() { this.awake = Math.round(3 * this.E.fs / Math.max(20, Math.min(this.freq, this.target))) + 1024; }
   release() {
@@ -215,7 +218,7 @@ class Str {
       const rate = Math.abs(Math.log2(this.freq / (this.pf || this.freq))) * fs / n; this.pf = this.freq;
       if (this.slideSteps) { const st = this.slideSteps; st.cnt += n; while (st.cnt >= st.per && this.slideSteps) { st.cnt -= st.per; if (st.cur === st.to) { this.slideSteps = null; break; } st.cur += st.dir; this.setNote(st.cur, .002); } }
       const fr = ex.fretter || 'fingers', amt = ex.fretNoise ?? .5; let lvl = 0, f = 1500, q = 6;
-      const sliding = fr === 'slide' || !this.E.nk.frets || this.slideSteps; // hammer-ons don't squeak; only hands sliding along the string do
+      const sliding = this.sliding || this.slideSteps; // hammer-ons don't squeak; only hands sliding along the string do
       if (this.held && this.role === 'stopped' && fr !== 'keys' && sliding && rate > .03 && amt > 0) {
         if (fr === 'slide') { const sl = SLIDES[ex.slideMat] || SLIDES.steel; lvl = Math.min(1, rate / 2.5) * (this.wound ? 1 : .3) * sl.g * amt * .3; f = sl.f * (.8 + Math.min(.6, rate * .15)); q = sl.q; }
         else { lvl = Math.min(1, rate / 3) * (this.wound ? 1 : .1) * amt * .56; f = 1200 + Math.min(4200, rate * 700); q = 7; } }
@@ -246,14 +249,18 @@ class Str {
     // stiffness (dispersion)
     const a = this.apA, ax = this.apx, ay = this.apy;
     for (let q = 0; q < 4; q++) { const y = a * x + ax[q] - a * ay[q]; ax[q] = x; ay[q] = y; x = y; }
-    // jawari: one-sided grazing of a curved bridge
     // jawari: one-sided grazing of a curved bridge. The contact point rides on the wave's own peak level (not a fixed
     // threshold), so the buzz stays bright all the way through the decay as on a real sitar, and opens up ('blooms') as it fades
     if (E.jaw > 0) { // the bridge acts on displacement, so integrate the velocity wave and push back where it penetrates
       const y = this.jy = this.jy * this.E.jLeak + x; this.jm += (y - this.jm) * this.E.jMean; const yc = y - this.jm; // displacement about its mean
       this.jpk = yc > this.jpk ? yc : this.jpk * this.E.jRel;
       const th = this.jm + this.jpk * (1 - .8 * E.jaw), pen = y - th;
-      if (pen > 0) { const push = pen * .9 * E.jaw; x -= push; this.jy -= push; } }
+      // a light push where the string lies on the bridge; most of the old treble loss is gone (bone bridge), so the buzz sustains
+      const xin = x; if (pen > 0) { const push = pen * 1.75 * E.jaw * this.cf * 6.2832 / this.E.fs; /* displacement → velocity units, so every pitch feels the same contact */ x -= push; this.jy -= push; }
+      // the bridge reshapes the wave but barely absorbs it: put back the energy the push took, so jawari moves energy up the
+      // spectrum (the buzz) without shortening the note
+      const k = this.E.jEn; this.jPi += (xin * xin - this.jPi) * k; this.jPo += (x * x - this.jPo) * k;
+      if (this.jPo > 1e-12) { let gc = Math.sqrt(this.jPi / this.jPo); if (gc > 1.03) gc = 1.03; else if (gc < 1) gc = 1; x *= gc; this.jy += x - x / gc; } }
     // fret buzz on fretted held strings
     if (E.buzz > 0 && this.role === 'stopped' && this.held) {
       const th = 0.35 * (1.05 - E.buzz);
@@ -319,7 +326,7 @@ class LuitherProc extends AudioWorkletProcessor {
     this.nk = { frets: true, buzz: 0, jawari: 0, legato: 'smart', thr: 4, glide: 0.01, pbRange: 2, pressBend: 2,
       dampOpen: false, mute: 0.25, coupling: 0.5, sympC: 0.3 };
     this.pk = { mag: 0, magPos: 0.12, piezo: 0.3, mic: 0.8, master: 0.8 };
-    this.held = []; this.map = new Map(); this.sus = false; this.bendSemis = 0; this.bendMul = 1; this.clock = 0;
+    this.held = []; this.map = new Map(); this.nvel = new Map(); this.sus = false; this.bendSemis = 0; this.bendMul = 1; this.clock = 0;
     this.sympFeed = 0; this.dc = [0, 0, 0, 0, 0, 0, 0, 0]; this.lim = 1; this.limMin = 1; this.dcA = 1 - 2 * Math.PI * 5 / sampleRate; this.dcB = 1 - 2 * Math.PI * 3 / sampleRate; this.frame = 0; this.lastOn = -1e9; this.bin1 = 0; this.bin2 = 0; this.fn = []; this.pa = 0; this.pb = 0;
     { const g = Math.tan(Math.PI * Math.min(3800, sampleRate * .45) / sampleRate), k = 1 / 1.6; this.pa1 = 1 / (1 + g * (g + k)); this.pa2 = g * this.pa1; this.pa3 = g * this.pa2; } this.limRel = 1 - Math.exp(-1 / (0.12 * sampleRate)); this.blk = 0; this.seed = 22222; this.gustV = 0; this.gustT = 0;
     this.exBase = { ...this.ex }; this.nkBase = { ...this.nk }; this.syn = new Synth(this); this.rack = new AmpRack(sampleRate);
@@ -343,12 +350,12 @@ class LuitherProc extends AudioWorkletProcessor {
     this.atkC = 1 - Math.exp(-1 / (Math.max(0.002, ex.attack) * fs));
     this.relC = 1 - Math.exp(-1 / (Math.max(0.005, ex.release) * fs));
     this.beta = Math.min(0.5, Math.max(0.02, ex.pos));
-    this.jRel = Math.exp(-1 / (.03 * this.fs)); this.jLeak = 1 - 2 * Math.PI * 15 / this.fs; this.jMean = 1 - Math.exp(-2 * Math.PI * 8 / this.fs); this.jaw = nk.jawari; this.tune = ex.type === 'bow' ? 0.9855 : ex.type === 'ebow' ? 0.99 : 1; this.buzz = nk.frets ? nk.buzz : 0;
+    this.jRel = Math.exp(-1 / (.03 * this.fs)); this.jLeak = 1 - 2 * Math.PI * 15 / this.fs; this.jMean = 1 - Math.exp(-2 * Math.PI * 8 / this.fs); this.jEn = 1 - Math.exp(-1 / (.04 * this.fs)); this.jaw = nk.jawari; this.tune = ex.type === 'bow' ? 0.9855 : ex.type === 'ebow' ? 0.99 : 1; this.buzz = nk.frets ? nk.buzz : 0;
   }
   msg(d) {
     switch (d.t) {
-      case 'ex': Object.assign(this.ex, d.v); Object.assign(this.exBase, d.v); this.derive(); break;
-      case 'nk': Object.assign(this.nk, d.v); Object.assign(this.nkBase, d.v); this.derive(); break;
+      case 'ex': { const was = CONT[this.ex.type]; Object.assign(this.ex, d.v); Object.assign(this.exBase, d.v); this.derive(); if (!was !== !CONT[this.ex.type]) for (const s of this.S) s.calcG(); break; }
+      case 'nk': Object.assign(this.nk, d.v); Object.assign(this.nkBase, d.v); this.derive(); for (const s of this.S) s.calcG(); break;
       case 'sdefs': this.syn.setDefs(d.v); break;
       case 'synth': this.syn.set(d.v); break;
       case 'mw': this.syn.src.mw = d.v; break;
@@ -416,7 +423,7 @@ class LuitherProc extends AudioWorkletProcessor {
     if (this.map.has(n)) this.noteOff(n);
     this.syn.noteOn(n, v, this.held.length === 0);
     const nk = this.nk, S = this.S;
-    const together = this.frame - this.lastOn < 0.035 * this.fs; this.lastOn = this.frame;
+    const together = this.frame - this.lastOn < 0.035 * this.fs; this.lastOn = this.frame; this.nvel.set(n, v);
     if (nk.legato !== 'poly' && this.held.length && (!together || nk.legato === 'legato')) {
       const last = this.held[this.held.length - 1], si = this.map.get(last), s = S[si];
       if (s && s.role === 'stopped' && this.reach(s, n) && (nk.legato === 'legato' || Math.abs(n - last) <= nk.thr)) {
@@ -443,7 +450,8 @@ class LuitherProc extends AudioWorkletProcessor {
     this.map.delete(n);
     const s = this.S[si]; if (!s) return;
     const idx = s.stack.lastIndexOf(n); if (idx >= 0) s.stack.splice(idx, 1);
-    if (s.stack.length) { if (idx === s.stack.length) s.slur(s.stack[s.stack.length - 1], 0.6, 'off'); }
+    const rv = this.nvel.get(n) ?? .6; this.nvel.delete(n);
+    if (s.stack.length) { if (idx === s.stack.length) s.slur(s.stack[s.stack.length - 1], rv, 'off'); }
     else if (this.sus) s.pend = true; else s.release();
     if (!this.held.length && !this.sus) { for (const d of this.S) if (d.role === 'drone' && d.held) d.release(); this.syn.allOff(); }
   }

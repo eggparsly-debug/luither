@@ -323,6 +323,7 @@ function autoThr() {
   const hasStop = cfg.strings.some(s => s.role === 'stopped');
   if (!hasStop) return 2;
   if (cfg.ex.fretter === 'slide') return 12; // a slide glides across big jumps on one string
+  if (!cfg.nk.frets && (cfg.ex.fretter || 'fingers') === 'fingers') return 12; // fretless: soft legato slides, firm legato hammers, up to an octave on one string
   return cfg.nk.frets ? 4 : 5;
 }
 
@@ -575,7 +576,7 @@ function buildExciter() {
   { const fr = cfg.ex.fretter || 'fingers', g2 = el('div', { class: 'exc' });
     [['fingers', 'Fingers', '☝'], ['keys', 'Keys (tangents)', '▤'], ['slide', 'Slide', '▬']].forEach(([k, l, ic]) => g2.append(el('button', { class: fr === k ? 'on' : '', onclick: () => { cfg.ex.fretter = k; pushEx(); pushNk(); buildExciter(); buildNeck(); draw(); } }, el('span', {}, ic), l)));
     p.append(g2);
-    noteP(p, { fingers: 'Fingertips thump on hammer-ons, snap on pull-offs, squeak when they slide along wound strings, and thud softly when they lift.', keys: 'Keys or tangents stop the string mechanically, like a hurdy-gurdy or nyckelharpa: a wooden clack, no squeak.', slide: 'A bar rests on the strings: pitch glides freely, it scrapes as it moves (most on wound strings), and it clanks when it lands. Legato jumps up to an octave glide on one string.' }[fr]);
+    noteP(p, { fingers: cfg.nk.frets ? 'Fingertips thump on hammer-ons, snap on pull-offs, squeak when they slide along wound strings, and thud softly when they lift.' : 'Fretless: play legato softly (velocity under 70) and the finger slides smoothly to the new note; play it firmly and it hammers on, or pulls off when you let go. Slide speed sets how long a slide takes.', keys: 'Keys or tangents stop the string mechanically, like a hurdy-gurdy or nyckelharpa: a wooden clack, no squeak.', slide: 'A bar rests on the strings: pitch glides freely, it scrapes as it moves (most on wound strings), and it clanks when it lands. Legato jumps up to an octave glide on one string.' }[fr]);
     slider(p, 'Fret-hand noise', 'ex.fretNoise', 0, 1, .01, fmt.pct, on);
     if (fr === 'slide') { select(p, 'Slide', 'ex.slideMat', [['glass', 'Glass (smooth, quiet)'], ['steel', 'Steel'], ['brass', 'Brass (bright, loud)']], on); slider(p, 'Slide speed', 'ex.slideTime', .03, .5, .005, fmt.s, on); }
     if (fr === 'fingers') slider(p, 'Slide speed', 'ex.slideTime', .03, .5, .005, fmt.s, on); }
