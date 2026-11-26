@@ -40,7 +40,7 @@ class Str {
   constructor(E) {
     this.E = E; this.neck = new Delay(); this.br = new Delay();
     this.hist = new Float32Array(DMAX); this.hw = 0; this.magD = 10;
-    this.lp = 0; this.apx = new Float64Array(4); this.apy = new Float64Array(4); this.Bo = 0; this.hf = 25; this.fOpen = 110; this.mw = 0; this.jpk = 0; this.jy = 0; this.jm = 0; this.jPi = 0; this.jPo = 0;
+    this.lp = 0; this.apx = new Float64Array(4); this.apy = new Float64Array(4); this.Bo = 0; this.hf = 25; this.fOpen = 110; this.mw = 0; this.jpk = 0; this.jy = 0; this.jm = 0; this.jPi = 0; this.jPo = 0; this.rn = 0; this.xa = 0;
     this.freq = 110; this.target = 110; this.gc = 1; this.note = 45; this.g = 0.99;
     this.stack = []; this.held = false; this.pend = false; this.lastUse = 0;
     this.pulse = null; this.pi = 0; this.cont = 0; this.contT = 0; this.bowDir = 1; this.bowAmp = 1;
@@ -66,7 +66,8 @@ class Str {
     if (!this.held || roleChanged) this.setNote(this.open, 0); else this.calcG();
   }
   calcG() {
-    const f = this.target, fs = this.E.fs, T60 = this.decay * Math.pow(110 / f, 0.4), R0 = 60 / T60;
+    // a jawari bridge is a broad, hard bone plate that hardly takes energy from the string: sitars and tanpuras ring on and on
+    const f = this.target, fs = this.E.fs, T60 = this.decay * Math.pow(110 / f, 0.4) * (1 + 1.6 * (this.E.jaw || 0)), R0 = 60 / T60;
     this.g = Math.pow(10, -R0 / (20 * f));
     // loss filter: one-pole whose extra loss at fh gives R(fh) = R0 + hf·fh/1000 dB/s, so highs die in seconds (not cycles) at every pitch
     const fh = Math.min(2500, fs * .4), w = 2 * Math.PI * fh / fs, r = Math.pow(10, -(this.hf * (1 - .7 * (this.E.jaw || 0)) * fh / 1000) / (20 * f)) /* a jawari bridge is hard bone: it soaks up far less treble */, r2 = r * r, c = Math.cos(w);
@@ -248,15 +249,15 @@ class Str {
     let x = this.lp * this.g * this.damp;
     // stiffness (dispersion)
     const a = this.apA, ax = this.apx, ay = this.apy;
-    for (let q = 0; q < 4; q++) { const y = a * x + ax[q] - a * ay[q]; ax[q] = x; ay[q] = y; x = y; }
+    if (a !== 0) for (let q = 0; q < 4; q++) { const y = a * x + ax[q] - a * ay[q]; ax[q] = x; ay[q] = y; x = y; }
     // jawari: one-sided grazing of a curved bridge. The contact point rides on the wave's own peak level (not a fixed
     // threshold), so the buzz stays bright all the way through the decay as on a real sitar, and opens up ('blooms') as it fades
     if (E.jaw > 0) { // the bridge acts on displacement, so integrate the velocity wave and push back where it penetrates
       const y = this.jy = this.jy * this.E.jLeak + x; this.jm += (y - this.jm) * this.E.jMean; const yc = y - this.jm; // displacement about its mean
       this.jpk = yc > this.jpk ? yc : this.jpk * this.E.jRel;
-      const th = this.jm + this.jpk * (1 - .8 * E.jaw), pen = y - th;
+      const th = this.jm + this.jpk * (1 - .8 * E.jaw), pen = Math.min(y - th, this.jpk * .8 * E.jaw); /* never more than the wave itself, even as it fades */
       // a light push where the string lies on the bridge; most of the old treble loss is gone (bone bridge), so the buzz sustains
-      const xin = x; if (pen > 0) { const push = pen * 1.75 * E.jaw * this.cf * 6.2832 / this.E.fs; /* displacement → velocity units, so every pitch feels the same contact */ x -= push; this.jy -= push; }
+      const xin = x; if (pen > 0) { const push = pen * 1.75 * E.jaw * this.cf * 6.2832 / this.E.fs * Math.min(1, this.env * 25); /* a faint string barely touches the bridge */ /* displacement → velocity units, so every pitch feels the same contact */ x -= push; this.jy -= push; }
       // the bridge reshapes the wave but barely absorbs it: put back the energy the push took, so jawari moves energy up the
       // spectrum (the buzz) without shortening the note
       const k = this.E.jEn; this.jPi += (xin * xin - this.jPi) * k; this.jPo += (x * x - this.jPo) * k;
@@ -277,7 +278,7 @@ class Str {
       if (type === 'bow') {
         this.drift += E.noise() * 0.004 - this.drift * 0.0004;
         let vb = c * E.bowMax * this.bowAmp * this.bowDir * (1 + this.drift * E.ex.humanize);
-        vb += E.noise() * (E.grit + 0.004) * c; // rosin noise
+        this.rn += (E.noise() - this.rn) * .35; vb += this.rn * 1.6 * (E.grit + 0.004) * c; // rosin noise: grainy, but hair and rosin soften its top end
         const dv = vb - sv;
         let s = dv * E.bowSlope; s = (s < 0 ? -s : s) + 0.75; s = s * s; s = 1 / (s * s); if (s > 1) s = 1;
         if (c > 0.003) nv += dv * s;

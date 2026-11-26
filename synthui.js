@@ -24,7 +24,7 @@ function sFmt(id, v) {
   if (u === 'shape') return ['Sine', 'Tri', 'Saw', 'Square'][Math.min(3, Math.round(v * 3))];
   return v.toFixed(2);
 }
-function pushSynth() { send('synth', { p: cfg.synth.p, o: cfg.synth.o, mods: cfg.synth.mods }); }
+function pushSynth() { send('synth', { p: cfg.synth.p, o: cfg.synth.o, mods: cfg.synth.mods }); try { markEdit(); } catch (e) {} }
 function pushMods() { send('synth', { mods: cfg.synth.mods }); }
 function setOpt(k, v, rebuild) { cfg.synth.o[k] = v; send('synth', { o: { [k]: v } }); if (rebuild) buildSynth(); else drawSynthStatic(); }
 

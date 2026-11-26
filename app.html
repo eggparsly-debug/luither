@@ -15,7 +15,7 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.35 "IBM Plex Sans",system-ui,sans-serif;overflow:hidden}
 button,select,input{font:inherit;color:inherit}
 #app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
-header{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);background:linear-gradient(#21180f,#1a130d);flex-wrap:wrap}
+header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:linear-gradient(#21180f,#1a130d);flex-wrap:wrap}
 .logo{font-family:Fraunces,serif;font-size:22px;font-weight:700;letter-spacing:.5px;color:var(--brass2)}
 .logo small{font:500 11px "IBM Plex Mono",monospace;color:var(--dim);letter-spacing:2px;margin-left:8px;text-transform:uppercase}
 .faces{display:flex;gap:2px;background:#120d09;border:1px solid var(--line);border-radius:8px;padding:2px}
@@ -24,12 +24,14 @@ header{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1
 .faces button:disabled{opacity:.45;cursor:default}
 .sp{flex:1}
 .hbtn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+.hbtn.ic{padding:5px 7px;margin-right:-4px}.hbtn:disabled{opacity:.4;cursor:default}
 .hbtn:hover{border-color:var(--brass)}
 .hbtn.on{border-color:var(--brass);color:var(--brass2);background:#33261a}
 select{background:#120d09;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
 .pill{font:500 11px "IBM Plex Mono",monospace;color:var(--dim);border:1px solid var(--line);border-radius:20px;padding:3px 9px}
 .pill.ok{color:#9fd49a;border-color:#3f5f3a}
-#meter{width:70px;height:8px;background:#0d0906;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+#preset{max-width:210px}
+#meter{width:50px;height:8px;background:#0d0906;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
 #meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6fb36a,#e0c050 70%,#e0603a)}
 main{display:grid;grid-template-columns:1fr 390px;min-height:0}
 #stage{position:relative;display:grid;grid-template-rows:1fr 150px;min-height:0;border-right:1px solid var(--line)}
@@ -55,6 +57,9 @@ h3{font:600 11px "IBM Plex Sans";letter-spacing:1.6px;text-transform:uppercase;c
 h3:first-child{margin-top:2px}
 .row{display:grid;grid-template-columns:118px 1fr 58px;align-items:center;gap:8px;margin:5px 0}
 .row label{color:var(--dim);font-size:12px}
+.row .cc{color:var(--brass2);font-family:ui-monospace,monospace;font-size:10px}
+body.learning .row:has(input[type=range]){outline:1px dashed rgba(242,197,104,.35);outline-offset:1px;cursor:crosshair}
+body.learning .row.armed{outline:2px solid var(--brass2);background:rgba(242,197,104,.08)}
 .row output{font:12px "IBM Plex Mono",monospace;text-align:right;color:var(--ink)}
 .row.sel{grid-template-columns:118px 1fr}
 .row.dis{opacity:.4;pointer-events:none}
@@ -90,6 +95,7 @@ footer{border-top:1px solid var(--line);background:#120d09;display:flex;align-it
 #modal{position:fixed;inset:0;background:rgba(12,9,6,.8);display:none;align-items:center;justify-content:center;z-index:9}
 #modal .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;width:min(620px,92vw)}
 #modal textarea{width:100%;height:260px;background:#0e0a07;color:var(--ink);border:1px solid var(--line);border-radius:6px;font:11px "IBM Plex Mono",monospace;padding:8px}
+#modal .help{font-size:13px;line-height:1.45;color:var(--ink);max-height:68vh;overflow:auto}#modal .help h4{margin:10px 0 4px;color:var(--brass2)}#modal .help ul{margin:0;padding-left:18px}#modal .help li{margin:3px 0}
 #modal .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 #modal input:not([type=checkbox]){background:#0e0a07;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
 main.synthOn #stage, main.synthOn aside, main.ampOn #stage, main.ampOn aside{display:none}
@@ -192,15 +198,18 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
     <button data-face="amp">Amp &amp; Pedals</button>
   </div>
   <select id="preset"></select>
+  <button class="hbtn ic" id="undoBtn" title="Undo (Ctrl+Z)" disabled>↶</button><button class="hbtn ic" id="redoBtn" title="Redo (Ctrl+Shift+Z)" disabled>↷</button>
   <button class="hbtn" id="saveBtn">Save</button>
   <button class="hbtn" id="jsonBtn">JSON</button>
   <div class="sp"></div>
   <span class="pill" id="midiPill">MIDI: —</span>
-  <span class="pill" id="susPill">Sustain off</span>
+  <button class="hbtn" id="learnBtn" title="Map any knob or fader on your controller to any slider">Learn</button>
+  <span class="pill" id="susPill" title="Sustain (pedal or Space)">Sus: off</span>
   <div id="meter"><i></i></div>
-  <label style="display:flex;gap:6px;align-items:center;color:var(--dim)">Vol <input type="range" id="vol" min="0" max="1" step="0.01" value="0.7" style="width:80px"></label>
-  <button class="hbtn" id="purBtn" title="Lock the keyboard to one scale">Scale purity: off</button>
+  <label style="display:flex;gap:6px;align-items:center;color:var(--dim)">Vol <input type="range" id="vol" min="0" max="1" step="0.01" value="0.7" style="width:52px"></label>
+  <button class="hbtn" id="purBtn" title="Lock the keyboard to one scale">Purity: off</button>
   <button class="hbtn" id="panic" title="Stop all sound">Panic</button>
+  <button class="hbtn" id="helpBtn" title="How to play and edit">?</button>
 </header>
 <main>
   <section id="stage">
@@ -318,7 +327,12 @@ function computeBody() {
     out.sort((x, y) => x.f - y.f); return { list: out.slice(0, nKeep), f11: out[0]?.f || 0 };
   }
   const top = BMAT[b.top]?.skin ? membrane(b.top, b.topT, count[0] * 3) : plate(b.top, b.topT, 1, count[0], true);
-  const back = plate(b.back, b.backT, .45, count[1], false);
+  const openBack = !!BMAT[b.back]?.open;
+  // open back: no back plate and no air cavity; the head radiates from both faces, so its lowest, pumping modes partly cancel
+  // (mellower, plunkier — the clawhammer banjo sound)
+  // and with no resonator to throw the treble forward, the highs are softer too
+  if (openBack) top.list.forEach(m => { if (m.f < 700) m.amp *= .55 + .45 * m.f / 700; else if (m.f > 1200) m.amp *= Math.max(.35, 1 - .45 * (m.f - 1200) / 1500); });
+  const back = openBack ? { list: [], f11: 0 } : plate(b.back, b.backT, .45, count[1], false);
   // Helmholtz air resonance from cavity volume and soundhole
   const S = holeArea(b.hole);
   let air, airAmp;
@@ -326,8 +340,8 @@ function computeBody() {
     air = 343 / (2 * Math.PI) * Math.sqrt(S / (g.V * Leff)); airAmp = 1.3 * Math.min(1, S / .006) * (b.hole.type === 'under' ? .7 : 1); }
   else { air = 343 / (2 * b.length); airAmp = .12; }
   const modes = [...top.list, ...back.list];
-  if (air > 25 && air < fs * .4) modes.push({ f: air, q: 25, amp: airAmp, pan: 0, air: true });
-  modesInfo = { modes, top: top.list, back: back.list, info: { area: g.A, vol: g.V, air, f11: top.list[0]?.f || top.f11, back: back.list[0]?.f, n: modes.length } };
+  if (air > 25 && air < fs * .4 && !openBack) modes.push({ f: air, q: 25, amp: airAmp, pan: 0, air: true });
+  modesInfo = { modes, top: top.list, back: back.list, info: { area: g.A, vol: g.V, air: openBack ? 0 : air, f11: top.list[0]?.f || top.f11, back: back.list[0]?.f, n: modes.length } };
   return modes;
 }
 // how long strings ring as set by what holds them: a stiff neck keeps energy in the string; a light drum head drinks it fast
@@ -346,11 +360,11 @@ function autoThr() {
 
 // ───────────────────────── audio ─────────────────────────
 function send(t, v) { if (node) node.port.postMessage({ t, v }); }
-function pushStrings() { const sus = stringSus(); send('strings', cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] || SMAT.Steel, sus }))); }
-function pushEx() { send('ex', cfg.ex); }
-function pushNk() { const nk = { ...cfg.nk }; if (nk.thrAuto) nk.thr = autoThr(); send('nk', nk); }
-function pushBody() { const m = computeBody(); send('modes', m.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan }))); renderInfo(); }
-function pushPk() { send('pk', { ...cfg.pk, scale: scaleLen(), master: cfg.pk.master * +$('vol').value }); }
+function pushStrings() { const sus = stringSus(); send('strings', cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] || SMAT.Steel, sus }))); markEdit(); }
+function pushEx() { send('ex', cfg.ex); markEdit(); }
+function pushNk() { const nk = { ...cfg.nk }; if (nk.thrAuto) nk.thr = autoThr(); send('nk', nk); markEdit(); }
+function pushBody() { const m = computeBody(); send('modes', m.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan }))); renderInfo(); markEdit(); }
+function pushPk() { markEdit(); send('pk', { ...cfg.pk, scale: scaleLen(), master: cfg.pk.master * +$('vol').value }); }
 function pushAll() { pushStrings(); pushEx(); pushNk(); pushBody(); pushPk(); if (cfg.synth) pushSynth(); if (cfg.amp) pushAmp(); }
 async function startAudio() {
   actx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
@@ -372,7 +386,7 @@ try { Object.assign(purity, JSON.parse(localStorage.getItem('luither.purity') ||
 const inScale = n => (SCALES[purity.scale] || SCALES.Chromatic).includes((((n - purity.root) % 12) + 12) % 12);
 function snap(n) { if (!purity.on) return n; for (let d = 0; d < 12; d++) { if (inScale(n + d)) return n + d; if (inScale(n - d)) return n - d; } return n; }
 function setPurity(p) { Object.assign(purity, p); try { localStorage.setItem('luither.purity', JSON.stringify(purity)); } catch (e) {}
-  $('purBtn').textContent = purity.on ? `Purity: ${PC[purity.root]} ${purity.scale.split(' (')[0]}` : 'Scale purity: off'; $('purBtn').classList.toggle('on', purity.on); drawKb(); if (Object.keys(p).length) buildNeck(); }
+  $('purBtn').textContent = purity.on ? `Purity: ${PC[purity.root]} ${purity.scale.split(' (')[0]}` : 'Purity: off'; $('purBtn').classList.toggle('on', purity.on); drawKb(); if (Object.keys(p).length) buildNeck(); }
 const keyMap = new Map(), refs = new Map();
 function noteOn(k, v = .8) {
   if (k < 0 || k > 127 || !node) return;
@@ -385,7 +399,7 @@ function noteOff(k) {
   const c = (refs.get(n) || 1) - 1; if (c <= 0) { refs.delete(n); node && node.port.postMessage({ t: 'off', n }); } else refs.set(n, c);
   drawKb();
 }
-function setSus(v) { sustain = v; node && node.port.postMessage({ t: 'sus', v }); $('susPill').textContent = v ? 'Sustain ON' : 'Sustain off'; $('susPill').classList.toggle('ok', v); }
+function setSus(v) { sustain = v; node && node.port.postMessage({ t: 'sus', v }); $('susPill').textContent = v ? 'Sus: ON' : 'Sus: off'; $('susPill').classList.toggle('ok', v); }
 
 // ───────────────────────── MIDI ─────────────────────────
 let learnCC = false, posCC = 74;
@@ -407,18 +421,40 @@ function onMidi(e) {
     if (a === 64) setSus(b >= 64);
     else if (a === 123 || a === 120) node.port.postMessage({ t: 'panic' });
     else if (learnCC && a !== 1) { posCC = a; learnCC = false; try { localStorage.setItem('luither.posCC', a); } catch (err) {} buildExciter(); }
+    else if (learn.armed) bindCC(a);
+    else if (ccMap[a] && ctlInfo[ccMap[a]]) driveCC(ccMap[a], b / 127);
     else if (a === 1) modWheel(b / 127);
     else if (a === posCC) { cfg.ex.pos = .02 + .48 * (b / 127); pushEx(); syncCtl('ex.pos'); }
   }
 }
-// The mod wheel drives the exciter's main expressive control
+// The mod wheel is the main expressive control for a keyboard without MPE: on plucked and struck instruments it's
+// finger vibrato (0–35 cents, straight away); on a bow it's bow pressure; on an e-bow or wind, their strength
 function modWheel(v) {
-  const t = cfg.ex.type;
-  const key = t === 'bow' ? 'pressure' : t === 'ebow' ? 'ebow' : t === 'wind' ? 'wind' : 'pos';
-  cfg.ex[key] = key === 'pos' ? .02 + .48 * v : v; pushEx(); syncCtl('ex.' + key);
-  send('mw', v); if (face === 'synth') renderKnob('ph_' + (key === 'pos' ? 'pos' : key));
+  const t = cfg.ex.type, plucked = t === 'pick' || t === 'finger' || t === 'hammer';
+  const key = t === 'bow' ? 'pressure' : t === 'ebow' ? 'ebow' : t === 'wind' ? 'wind' : 'vibDepth';
+  if (plucked) { cfg.ex.vibDepth = Math.round(35 * v); cfg.ex.vibDelay = 0; } else cfg.ex[key] = v;
+  pushEx(); syncCtl('ex.' + key); syncCtl('ex.vibDelay');
+  send('mw', v); if (face === 'synth' && !plucked) renderKnob('ph_' + key);
+}
+// ── MIDI learn: click "MIDI learn", click any slider, move a knob. Mappings are kept in this browser.
+const ctlInfo = {}, learn = { on: false, armed: null };
+let ccMap = {}; try { ccMap = JSON.parse(localStorage.getItem('luither.ccMap') || '{}'); } catch (e) {}
+const saveCC = () => { try { localStorage.setItem('luither.ccMap', JSON.stringify(ccMap)); } catch (e) {} };
+const ccOf = path => { for (const c in ccMap) if (ccMap[c] === path) return +c; return null; };
+function driveCC(path, v) { const ci = ctlInfo[path], [sec, key] = path.split('.'); let x = ci.min + (ci.max - ci.min) * v;
+  x = Math.round(x / ci.step) * ci.step; cfg[sec][key] = +x.toFixed(6); ci.show(); ci.onch(); }
+function bindCC(cc) { const path = learn.armed; for (const c in ccMap) if (ccMap[c] === path) delete ccMap[c]; ccMap[cc] = path; saveCC();
+  learn.armed = null; markLearn(); }
+function markLearn() {
+  document.body.classList.toggle('learning', learn.on); $('learnBtn').classList.toggle('on', learn.on);
+  $('learnBtn').textContent = learn.on ? (learn.armed ? 'Move a knob…' : 'Click a slider · Esc') : 'Learn';
+  for (const p in ctlInfo) { const ci = ctlInfo[p], cc = ccOf(p); ci.row.classList.toggle('armed', learn.armed === p);
+    let tag = ci.row.querySelector('.cc'); if (cc != null) { if (!tag) { tag = el('span', { class: 'cc' }); ci.row.querySelector('label').append(tag); } tag.textContent = ' CC' + cc; } else if (tag) tag.remove(); }
 }
 
+// older Firefox / Safari: canvas roundRect arrived in Firefox 112 and Safari 16
+if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+  r = Math.min(+r || 0, Math.abs(w) / 2, Math.abs(h) / 2); this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); };
 // ───────────────────────── UI helpers ─────────────────────────
 const $ = id => document.getElementById(id);
 const ctlReg = {};
@@ -430,7 +466,11 @@ function slider(parent, label, path, min, max, step, fmt, onch) {
   const show = () => { inp.value = obj()[key]; out.textContent = fmt ? fmt(+obj()[key]) : (+obj()[key]).toFixed(2); };
   inp.oninput = () => { obj()[key] = +inp.value; show(); onch(); };
   const row = el('div', { class: 'row' }, el('label', {}, label), inp, out);
-  parent.append(row); ctlReg[path] = show; show(); return row;
+  row.addEventListener('pointerdown', e => { if (!learn.on) return; e.preventDefault(); e.stopPropagation();
+    if (e.altKey || e.button === 2) { const c = ccOf(path); if (c != null) { delete ccMap[c]; saveCC(); } learn.armed = null; } else learn.armed = path; markLearn(); }, true);
+  row.addEventListener('contextmenu', e => { if (learn.on) e.preventDefault(); });
+  ctlInfo[path] = { min: +min, max: +max, step: +step, show, onch, row };
+  parent.append(row); ctlReg[path] = show; show(); if (ccOf(path) != null) queueMicrotask(markLearn); return row;
 }
 function select(parent, label, path, options, onch) {
   const [sec, key] = path.split('.');
@@ -679,7 +719,7 @@ function buildBody() {
   noteP(p, 'Turn on ✎ Edit outline and drag the points anywhere: horns, cutaways and points are all possible. Double-click a point to add one after it; right-click a point to delete it. Hold Shift while dragging, adding or deleting to touch one side only (asymmetric). Template outlines are a starting point.');
   noteP(p, 'Drag the points in the cross-section below the instrument to set depth: flat sides like a guitar, or a bulging bowl like a lute or gourd.');
   h3(p, 'Materials');
-  const mats = Object.keys(BMAT).map(k => [k, k]);
+  const mats = Object.keys(BMAT).filter(k => !BMAT[k].open).map(k => [k, k]), backMats = Object.keys(BMAT).filter(k => !BMAT[k].skin).map(k => [k, k]);
   const skin = !!BMAT[cfg.body.top]?.skin;
   select(p, 'Top (soundboard)', 'body.top', mats, () => { const nowSkin = !!BMAT[cfg.body.top]?.skin;
     if (nowSkin && !skin) { cfg.body.topT = .19; cfg.body.bracing = 'none'; } else if (!nowSkin && skin) cfg.body.topT = 3;
@@ -690,8 +730,8 @@ function buildBody() {
     slider(p, 'Head tension', 'body.headT', 0, 1, .01, fmt.pct, onB);
     noteP(p, (BMAT[cfg.body.top].note || '') + '. Tighter heads ring higher and snappier; slack heads go deep and plunky (the head\'s lowest mode is shown below the instrument).');
   } else slider(p, 'Top thickness', 'body.topT', .5, 25, .1, fmt.mm, onB);
-  select(p, 'Back & sides', 'body.back', mats, onB);
-  slider(p, 'Back thickness', 'body.backT', .5, 25, .1, fmt.mm, onB);
+  select(p, 'Back & sides', 'body.back', backMats, () => { onB(); buildBody(); });
+  if (!BMAT[cfg.body.back]?.open) slider(p, 'Back thickness', 'body.backT', .5, 25, .1, fmt.mm, onB);
   h3(p, 'Bracing');
   select(p, 'Pattern', 'body.bracing', Object.entries(BRACING).map(([k, v]) => [k, v.label]), onB);
   slider(p, 'Strength', 'body.braceS', 0, 1, .01, fmt.pct, onB);
@@ -771,7 +811,9 @@ function geom() {
     let start = nutX;
     if (!neck && o.s.role !== 'stopped') { // movable bridges (ji) or anchor points for floating strings
       const span = bridgeX - nutX; start = bridgeX - span * Math.max(floating ? .14 : .38, Math.pow(2, -(o.s.note - minNote) / 12)) * .95; }
-    lines.push({ ...o, x0: floating ? start : nutX, y0, x1: bridgeX, y1, start });
+    if (neck && o.s.from > 0) start = nutX + (bridgeX - nutX) * (1 - Math.pow(2, -o.s.from / 12)); // a short string that starts up the neck
+    const y0s = neck && o.s.from > 0 ? y0 + (y1 - y0) * (start - nutX) / (bridgeX - nutX) : y0;
+    lines.push({ ...o, x0: floating || (neck && o.s.from > 0) ? start : nutX, y0: y0s, x1: bridgeX, y1, start });
   });
   const sStart = nutX + (bridgeX - nutX) * (neck ? .3 : .15);
   symp.forEach((o, k) => { const off = k - (symp.length - 1) / 2, sp = Math.min(.006, .04 / Math.max(1, symp.length)) * (neck ? 1 : 2.2);
@@ -1119,12 +1161,25 @@ function fillPresets(sel) {
   const up = userPresets(); if (Object.keys(up).length) { const g2 = el('optgroup', { label: 'My instruments' }); Object.keys(up).forEach(k => g2.append(el('option', { value: 'u:' + k }, k))); p.append(g2); }
   if (sel) p.value = sel;
 }
-function loadCfg(c) {
+// ── undo / redo: every edit ends up in one of the push functions; snapshots are taken once things settle
+const hist = { list: [], i: -1, mute: 0, t: 0 };
+const snapCfg = () => JSON.stringify(cfg);
+function markEdit() { if (hist.mute || !cfg) return; clearTimeout(hist.t); hist.t = setTimeout(recordEdit, 350); }
+function recordEdit() { const s = snapCfg(); if (hist.list[hist.i] === s) return; hist.list.length = hist.i + 1; hist.list.push(s); if (hist.list.length > 120) hist.list.shift(); hist.i = hist.list.length - 1; undoUI(); }
+function undoUI() { $('undoBtn').disabled = hist.i <= 0; $('redoBtn').disabled = hist.i >= hist.list.length - 1; }
+function stepHist(d) { clearTimeout(hist.t); recordEdit(); const j = hist.i + d; if (j < 0 || j >= hist.list.length) return; hist.i = j;
+  hist.mute++; const keepFace = face; loadCfg(JSON.parse(hist.list[j]), true); hist.mute--; undoUI(); if (face !== keepFace) setFace(keepFace); }
+function loadCfg(c, fromHistory) {
   const d = PRESETS['Acoustic guitar']();
   const prevSynth = cfg.synth, prevAmp = cfg.amp;
   if (c.body && !c.body.backShape) c = { ...c, body: { ...c.body, backShape: 'custom' } };
   cfg = { ...d, ...c, ex: { ...exDefault(), ...c.ex }, nk: { ...nkDefault(), ...c.nk }, body: { ...d.body, ...c.body, hole: { ...d.body.hole, ...(c.body?.hole || {}) } }, pk: { ...d.pk, ...c.pk } };
-  cfg.strings = (c.strings || d.strings).slice(0, 24);
+  // older saves: fill in fields that didn't exist yet, and fall back from materials that no longer exist
+  cfg.strings = (c.strings || d.strings).slice(0, 24).map(s => ({ role: 'stopped', note: 52, range: 12, gauge: .3, wound: false, tension: .5, ...s, mat: SMAT[s.mat] ? s.mat : 'Steel' }));
+  if (!BMAT[cfg.body.top] || BMAT[cfg.body.top].open) cfg.body.top = 'Spruce';
+  if (!BMAT[cfg.body.back] || BMAT[cfg.body.back].skin) cfg.body.back = 'Rosewood';
+  if (!BRACING[cfg.body.bracing]) cfg.body.bracing = 'none';
+  if (!['fingers', 'keys', 'slide'].includes(cfg.ex.fretter)) cfg.ex.fretter = 'fingers';
   cfg.look = { ...lookDefault(), ...(c.look || {}) };
   if (!c.body || (!c.body.outline && c.body.hw)) delete cfg.body.outline; ensureOutline(cfg.body); backCache.key = '';
   cfg.synth = c.synth ? { ...synthDefault(), ...c.synth, p: { ...synthDefault().p, ...c.synth.p }, o: { ...SOPT(), ...c.synth.o } } : (prevSynth || synthDefault());
@@ -1135,7 +1190,8 @@ function loadCfg(c) {
   if (face === 'synth') buildSynth();
   if (face === 'amp') buildAmp();
   if (node) node.port.postMessage({ t: 'panic' });
-  pushAll(); buildAll(); renderInfo(); drawDepth(); draw();
+  hist.mute++; pushAll(); buildAll(); renderInfo(); drawDepth(); draw(); hist.mute--;
+  if (!fromHistory) { clearTimeout(hist.t); recordEdit(); }
 }
 $('preset').onchange = () => { const v = $('preset').value; if (v.startsWith('f:')) loadCfg(PRESETS[v.slice(2)]()); else loadCfg(JSON.parse(JSON.stringify(userPresets()[v.slice(2)]))); };
 function modal(html, wire) { $('modalCard').innerHTML = html; $('modal').style.display = 'flex'; wire(); }
@@ -1166,6 +1222,26 @@ $('backTog').onclick = () => { backView = !backView; $('backTog').classList.togg
 $('editTog').onclick = () => { editOutline = !editOutline; $('editTog').classList.toggle('on', editOutline); };
 $('vol').oninput = pushPk;
 $('purBtn').onclick = () => setPurity({ on: !purity.on });
+$('undoBtn').onclick = () => stepHist(-1); $('redoBtn').onclick = () => stepHist(1);
+window.addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || typing()) return; const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { stepHist(-1); e.preventDefault(); } else if ((k === 'z' && e.shiftKey) || k === 'y') { stepHist(1); e.preventDefault(); } });
+$('helpBtn').onclick = () => modal(HELP, () => { $('helpClose').onclick = () => $('modal').style.display = 'none'; });
+const HELP = `<h2 style="margin:0 0 8px">Playing &amp; editing Luither</h2><div class="help">
+<h4>Playing</h4><ul>
+<li><b>Keyboard:</b> A–; play, Z / X shift octave, Space = sustain. Click near the top of a key on screen for the softest touch.</li>
+<li><b>Velocity:</b> under 20 is a ghost note (the fretting hand only rests on the string); very soft (under ~12) on a natural-harmonic pitch rings the harmonic. Shift + key plays a ghost note.</li>
+<li><b>Legato</b> (play the next note before letting go): on frets it's a hammer-on, and lifting it is a pull-off. On <b>fretless</b> instruments, velocity under 70 <b>slides</b> to the note; 70 and up hammers on and pulls off. With the Slide fretter every legato glides.</li>
+<li><b>Mod wheel:</b> finger vibrato on plucked and struck instruments, bow pressure on bowed ones, strength on e-bow and wind. Pitch bend bends; the sustain pedal holds.</li>
+<li><b>MIDI learn:</b> click <i>MIDI learn</i>, click any slider, move a knob or fader. Alt-click (or right-click) a slider in learn mode to clear its knob. Esc finishes.</li></ul>
+<h4>Building</h4><ul>
+<li><b>Drag</b> the bridge, soundhole, pick/bow marker and pickup on the instrument.</li>
+<li><b>✎ Edit outline:</b> drag points; double-click a point to add one; right-click to delete; hold <b>Shift</b> to change one side only.</li>
+<li><b>Cross-section</b> (bottom left): drag the points to set the body depth.</li>
+<li><b>Undo / redo:</b> ↶ ↷ or Ctrl+Z / Ctrl+Shift+Z.</li>
+<li><b>Save</b> keeps your instrument in this browser; <b>JSON</b> copies or loads it as text.</li></ul></div>
+<div class="btns"><button class="hbtn" id="helpClose">Close</button></div>`;
+$('learnBtn').onclick = () => { learn.on = !learn.on; learn.armed = null; markLearn(); };
+window.addEventListener('keydown', e => { if (learn.on && e.key === 'Escape') { learn.on = false; learn.armed = null; markLearn(); } });
 $('panic').onclick = () => { node && node.port.postMessage({ t: 'panic' }); heldKeys.clear(); keyMap.clear(); refs.clear(); setSus(false); drawKb(); };
 $('octDn').onclick = () => { baseOct = Math.max(12, baseOct - 12); drawKb(); };
 $('octUp').onclick = () => { baseOct = Math.min(84, baseOct + 12); drawKb(); };

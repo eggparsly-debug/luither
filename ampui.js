@@ -1,5 +1,5 @@
 // ───────────────────────── amp face UI ─────────────────────────
-function pushAmp() { send('amp', cfg.amp); }
+function pushAmp() { send('amp', cfg.amp); try { markEdit(); } catch (e) {} }
 let ampSendQ = false;
 function pushAmpSoon() { if (ampSendQ) return; ampSendQ = true; requestAnimationFrame(() => { ampSendQ = false; pushAmp(); }); }
 // generic knob (same look as the synth face, not a modulation target)

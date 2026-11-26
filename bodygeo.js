@@ -88,7 +88,7 @@ function drawNeckHead(g, c, look, back) {
   }
   // head
   const H = look.head, hl = { paddle: .17, inline: .19, slotted: .19, scroll: .13, bentback: .16, pegbox: .26, headless: .025 }[H] || .17, hx = nx - hl;
-  const hc = shade(nm, back ? .9 : .8), np = g.lines.filter(l => !l.symp).length;
+  const hc = shade(nm, back ? .9 : .8), np = g.lines.filter(l => !l.symp && !l.s.from).length;
   const poly = pts => { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(g.X(x), g.Y(y)) : c.moveTo(g.X(x), g.Y(y))); c.closePath(); c.fill(); };
   c.fillStyle = hc; let posts = [];
   if (H === 'paddle') { poly([[nx, -w0], [nx - hl * .15, -w0 - .012], [hx, -w0 - .02], [hx, w0 + .02], [nx - hl * .15, w0 + .012], [nx, w0]]);
@@ -106,10 +106,14 @@ function drawNeckHead(g, c, look, back) {
     for (let i = 0; i < np; i++) { const s = i % 2 ? 1 : -1; posts.push([nx - .012 - (hl - .04) * (i + .5) / np, s, s * w0 * .9]); } }
   else if (H === 'headless') { poly([[nx, -w0 - .004], [hx, -w0 - .004], [hx, w0 + .004], [nx, w0 + .004]]); }
   // strings continue past the nut to their posts
-  if (!back && H !== 'headless') { const pl = g.lines.filter(l => !l.symp); c.strokeStyle = 'rgba(220,215,200,.55)'; c.lineWidth = 1 * d;
+  if (!back && H !== 'headless') { const pl = g.lines.filter(l => !l.symp && !l.s.from); c.strokeStyle = 'rgba(220,215,200,.55)'; c.lineWidth = 1 * d;
     posts.forEach((p, i) => { const l = pl[i]; if (!l) return; c.beginPath(); c.moveTo(g.X(nx), g.Y(l.y0)); c.lineTo(g.X(p[0]), g.Y(p[2] * .55)); c.stroke(); }); }
   const style = H === 'headless' ? 'machine' : look.pegs;
   posts.forEach(p => drawPeg(c, g.X(p[0]), g.Y(p[2]), p[1], style, u, back));
+  // short strings that start up the neck (a banjo's 5th string) get their own peg on the side of the neck
+  if (!back) g.lines.filter(l => l.s.from && !l.symp).forEach(l => { const wAt = w0 + (w1 - w0) * (l.x0 - nx) / (.03 - nx), side = l.y0 < 0 ? -1 : 1;
+    c.strokeStyle = 'rgba(220,215,200,.55)'; c.lineWidth = 1 * d; c.beginPath(); c.moveTo(g.X(l.x0), g.Y(l.y0)); c.lineTo(g.X(l.x0 - .012), g.Y(side * (wAt + .004))); c.stroke();
+    drawPeg(c, g.X(l.x0 - .012), g.Y(side * (wAt + .012)), side, look.pegs === 'machine' || look.pegs === 'bass' ? 'planetary' : look.pegs, u * .8, back); });
   if (H === 'headless' && !back) { const pl = g.lines.filter(l => !l.symp); pl.forEach(l => drawPeg(c, g.X(g.bridgeX + .03), g.Y(l.y1), 1, 'planetary', u * .6, back)); }
 }
 // floating strings: a frame holds their far ends (harp neck & pillar, or a straight bar)
