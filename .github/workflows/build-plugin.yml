@@ -1,0 +1,59 @@
+name: Build Luither VST3
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - name: Build the web UI (luither.html)
+        run: python build.py
+
+      - name: Get the WebView2 SDK (the plugin window is a web view)
+        shell: pwsh
+        run: nuget install Microsoft.Web.WebView2 -Version 1.0.1901.177 -OutputDirectory "$env:RUNNER_TEMP\webview2"
+
+      - name: Configure
+        shell: pwsh
+        run: cmake -S plugin -B build -G "Visual Studio 17 2022" -A x64 "-DJUCE_WEBVIEW2_PACKAGE_LOCATION=$env:RUNNER_TEMP\webview2"
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake --build build --config Release --target Luither_VST3 Luither_Standalone --parallel 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) {
+            # surface compiler errors as annotations (readable without signing in)
+            Select-String -Path build.log -Pattern ' error |error C|error LNK|fatal error' | Select-Object -First 10 | ForEach-Object { Write-Output "::error::$($_.Line.Trim())" }
+            exit 1
+          }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          Copy-Item -Recurse build/Luither_artefacts/Release/VST3/Luither.vst3 out/
+          Copy-Item build/Luither_artefacts/Release/Standalone/Luither.exe out/
+          @"
+          Luither VST3 for Windows (64-bit)
+
+          Install: copy the whole Luither.vst3 folder to  C:\Program Files\Common Files\VST3\
+          then in Cakewalk: Utilities > Cakewalk Plug-in Manager > Scan VST Plug-ins (or restart Cakewalk).
+          Insert it as a soft synth (Insert > Soft Synth > Luither) and play it from a MIDI track.
+
+          Luither.exe is the same instrument as a standalone app (pick your MIDI keyboard and audio device under Options).
+
+          The window uses Microsoft Edge WebView2, which Windows 10/11 already include.
+          "@ | Out-File -Encoding utf8 out/README.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Luither-Windows-VST3
+          path: out/

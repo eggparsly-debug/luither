@@ -27,7 +27,7 @@ header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1p
 .hbtn.ic{padding:5px 7px;margin-right:-4px}.hbtn:disabled{opacity:.4;cursor:default}
 .hbtn:hover{border-color:var(--brass)}
 .hbtn.on{border-color:var(--brass);color:var(--brass2);background:#33261a}
-select{background:#120d09;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+select{background:#120d09 url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23a8957b%27/%3E%3C/svg%3E") no-repeat right 7px center;border:1px solid var(--line);border-radius:6px;padding:4px 22px 4px 6px;color:var(--ink);-webkit-appearance:none;appearance:none}
 .pill{font:500 11px "IBM Plex Mono",monospace;color:var(--dim);border:1px solid var(--line);border-radius:20px;padding:3px 9px}
 .pill.ok{color:#9fd49a;border-color:#3f5f3a}
 #preset{max-width:210px}
@@ -386,6 +386,7 @@ try { Object.assign(purity, JSON.parse(localStorage.getItem('luither.purity') ||
 const inScale = n => (SCALES[purity.scale] || SCALES.Chromatic).includes((((n - purity.root) % 12) + 12) % 12);
 function snap(n) { if (!purity.on) return n; for (let d = 0; d < 12; d++) { if (inScale(n + d)) return n + d; if (inScale(n - d)) return n - d; } return n; }
 function setPurity(p) { Object.assign(purity, p); try { localStorage.setItem('luither.purity', JSON.stringify(purity)); } catch (e) {}
+  if (node) node.port.postMessage({ t: 'purity', v: { on: purity.on, root: purity.root, set: SCALES[purity.scale] || SCALES.Chromatic } }); // the plugin snaps host notes too
   $('purBtn').textContent = purity.on ? `Purity: ${PC[purity.root]} ${purity.scale.split(' (')[0]}` : 'Purity: off'; $('purBtn').classList.toggle('on', purity.on); drawKb(); if (Object.keys(p).length) buildNeck(); }
 const keyMap = new Map(), refs = new Map();
 function noteOn(k, v = .8) {
@@ -1165,7 +1166,7 @@ function fillPresets(sel) {
 const hist = { list: [], i: -1, mute: 0, t: 0 };
 const snapCfg = () => JSON.stringify(cfg);
 function markEdit() { if (hist.mute || !cfg) return; clearTimeout(hist.t); hist.t = setTimeout(recordEdit, 350); }
-function recordEdit() { const s = snapCfg(); if (hist.list[hist.i] === s) return; hist.list.length = hist.i + 1; hist.list.push(s); if (hist.list.length > 120) hist.list.shift(); hist.i = hist.list.length - 1; undoUI(); }
+function recordEdit() { const s = snapCfg(); if (window.__JUCE__?.backend) window.__JUCE__.backend.emitEvent('cfg', s); if (hist.list[hist.i] === s) return; hist.list.length = hist.i + 1; hist.list.push(s); if (hist.list.length > 120) hist.list.shift(); hist.i = hist.list.length - 1; undoUI(); }
 function undoUI() { $('undoBtn').disabled = hist.i <= 0; $('redoBtn').disabled = hist.i >= hist.list.length - 1; }
 function stepHist(d) { clearTimeout(hist.t); recordEdit(); const j = hist.i + d; if (j < 0 || j >= hist.list.length) return; hist.i = j;
   hist.mute++; const keepFace = face; loadCfg(JSON.parse(hist.list[j]), true); hist.mute--; undoUI(); if (face !== keepFace) setFace(keepFace); }
@@ -1189,7 +1190,7 @@ function loadCfg(c, fromHistory) {
   else cfg.amp = { ...(prevAmp || ampDefault()), on: false };
   if (face === 'synth') buildSynth();
   if (face === 'amp') buildAmp();
-  if (node) node.port.postMessage({ t: 'panic' });
+  if (node && !pluginBoot) node.port.postMessage({ t: 'panic' });
   hist.mute++; pushAll(); buildAll(); renderInfo(); drawDepth(); draw(); hist.mute--;
   if (!fromHistory) { clearTimeout(hist.t); recordEdit(); }
 }
@@ -1256,6 +1257,28 @@ document.querySelectorAll('.faces button[data-face]').forEach(b => b.onclick = (
 fillPresets('f:Acoustic guitar');
 buildAll(); setPurity({}); renderInfo();
 requestAnimationFrame(() => { fit(); requestAnimationFrame(frame); });
+// ── inside the Luither plugin (VST3): the C++ engine plays; this page is its editor. Same messages as the AudioWorklet.
+var pluginBoot = false;
+if (window.__JUCE__ && window.__JUCE__.backend) {
+  const be = window.__JUCE__.backend;
+  $('overlay').style.display = 'none'; $('midiPill').textContent = 'MIDI: from host'; $('midiPill').classList.add('ok');
+  be.addEventListener('init', d => {
+    actx = { sampleRate: d.sr || 48000 };
+    node = { port: { postMessage: m => be.emitEvent('msg', m), onmessage: null }, connect() {} };
+    send('sdefs', synthDefs());
+    pluginBoot = true;
+    let loaded = false; if (d.cfg) { try { loadCfg(JSON.parse(d.cfg)); loaded = true; } catch (e) {} }
+    if (!loaded) { pushAll(); clearTimeout(hist.t); recordEdit(); }
+    pluginBoot = false; setPurity({});
+  });
+  be.addEventListener('viz', v => Object.assign(viz, v));
+  // host MIDI: [kind, a, b] — 0 note on, 1 note off (for the on-screen keyboard), 2 controller (mod wheel, learned knobs)
+  be.addEventListener('midi', list => { let kb = false;
+    for (const [k, x, y] of list) { if (k === 0) { heldKeys.add(x); kb = true; } else if (k === 1) { heldKeys.delete(x); kb = true; } else if (k === 2) onMidi({ data: [0xB0, x, Math.round(y)] }); }
+    if (kb) drawKb(); });
+  be.addEventListener('load', d => { if (!d.cfg) return; pluginBoot = true; try { loadCfg(JSON.parse(d.cfg)); } catch (e) {} pluginBoot = false; });
+  be.emitEvent('hello', {});
+}
 </script>
 </body>
 </html>

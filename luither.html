@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Luither — Builder</title>
+<title>Luither &#x2014; Builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -27,7 +27,7 @@ header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1p
 .hbtn.ic{padding:5px 7px;margin-right:-4px}.hbtn:disabled{opacity:.4;cursor:default}
 .hbtn:hover{border-color:var(--brass)}
 .hbtn.on{border-color:var(--brass);color:var(--brass2);background:#33261a}
-select{background:#120d09;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+select{background:#120d09 url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%276%27%3E%3Cpath d=%27M0 0l5 6 5-6z%27 fill=%27%23a8957b%27/%3E%3C/svg%3E") no-repeat right 7px center;border:1px solid var(--line);border-radius:6px;padding:4px 22px 4px 6px;color:var(--ink);-webkit-appearance:none;appearance:none}
 .pill{font:500 11px "IBM Plex Mono",monospace;color:var(--dim);border:1px solid var(--line);border-radius:20px;padding:3px 9px}
 .pill.ok{color:#9fd49a;border-color:#3f5f3a}
 #preset{max-width:210px}
@@ -198,11 +198,11 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
     <button data-face="amp">Amp &amp; Pedals</button>
   </div>
   <select id="preset"></select>
-  <button class="hbtn ic" id="undoBtn" title="Undo (Ctrl+Z)" disabled>↶</button><button class="hbtn ic" id="redoBtn" title="Redo (Ctrl+Shift+Z)" disabled>↷</button>
+  <button class="hbtn ic" id="undoBtn" title="Undo (Ctrl+Z)" disabled>&#x21b6;</button><button class="hbtn ic" id="redoBtn" title="Redo (Ctrl+Shift+Z)" disabled>&#x21b7;</button>
   <button class="hbtn" id="saveBtn">Save</button>
   <button class="hbtn" id="jsonBtn">JSON</button>
   <div class="sp"></div>
-  <span class="pill" id="midiPill">MIDI: —</span>
+  <span class="pill" id="midiPill">MIDI: &#x2014;</span>
   <button class="hbtn" id="learnBtn" title="Map any knob or fader on your controller to any slider">Learn</button>
   <span class="pill" id="susPill" title="Sustain (pedal or Space)">Sus: off</span>
   <div id="meter"><i></i></div>
@@ -218,10 +218,10 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
       <label>Slow-mo <input type="range" id="slow" min="0.05" max="1" step="0.01" value="0.35"></label>
       <label>Exaggerate <input type="range" id="exag" min="0.2" max="4" step="0.05" value="1.4"></label>
       <button class="tog on" id="brTog">Bracing</button>
-      <button class="tog" id="editTog">✎ Edit outline</button>
-      <button class="tog" id="backTog">⟲ Back view</button>
+      <button class="tog" id="editTog">&#x270e; Edit outline</button>
+      <button class="tog" id="backTog">&#x27f2; Back view</button>
     </div>
-    <div id="hint">Drag the bridge, soundhole, exciter and pickup on the instrument. Turn on ✎ to reshape the body.</div>
+    <div id="hint">Drag the bridge, soundhole, exciter and pickup on the instrument. Turn on &#x270e; to reshape the body.</div>
     <div id="lower">
       <canvas id="dcv"></canvas>
       <div id="info"></div>
@@ -242,19 +242,19 @@ body.dragging .knob{outline:1px dashed #6f5e4a}
 </main>
 <footer>
   <div id="kbctl">
-    <div class="r"><button class="hbtn" id="octDn">−</button><span id="octLbl" style="flex:1;text-align:center">C2</span><button class="hbtn" id="octUp">+</button></div>
-    <div>Keys: A–; · Z/X octave<br>Shift+key = ghost · Space = sustain<br>Top of a key = softest</div>
+    <div class="r"><button class="hbtn" id="octDn">&#x2212;</button><span id="octLbl" style="flex:1;text-align:center">C2</span><button class="hbtn" id="octUp">+</button></div>
+    <div>Keys: A&#x2013;; &#xb7; Z/X octave<br>Shift+key = ghost &#xb7; Space = sustain<br>Top of a key = softest</div>
   </div>
   <div id="kb"><canvas id="kbcv" style="width:100%;height:100%;display:block"></canvas></div>
 </footer>
 </div>
-<div id="overlay"><div class="card"><h1>Luither</h1><div style="color:var(--dim);font-size:12px;letter-spacing:2px;text-transform:uppercase">Stage 1 · Instrument Builder</div>
+<div id="overlay"><div class="card"><h1>Luither</h1><div style="color:var(--dim);font-size:12px;letter-spacing:2px;text-transform:uppercase">Stage 1 &#xb7; Instrument Builder</div>
 <p>Build a string instrument from bows, picks, fingers, hammers, e-bows or wind; strings of any material; a body you sculpt. It plays live from your MIDI keyboard or computer keys.</p>
 <button id="startBtn">Start audio</button></div></div>
 <div id="modal"><div class="card" id="modalCard"></div></div>
 
-<script id="dsp" type="text/plain">// ───────────────────────── shared filter maths (used by the audio engine and by the on-screen curves) ─────────────────────────
-// RBJ cookbook biquads → [b0, b1, b2, a1, a2] (a0 normalised to 1)
+<script id="dsp" type="text/plain">// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 shared filter maths (used by the audio engine and by the on-screen curves) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// RBJ cookbook biquads \u2192 [b0, b1, b2, a1, a2] (a0 normalised to 1)
 function bqCoefs(type, f, q, gdb, fs) {
   f = Math.max(10, Math.min(f, fs * 0.45)); q = Math.max(0.05, q || 0.707);
   const w = 2 * Math.PI * f / fs, cw = Math.cos(w), sw = Math.sin(w), al = sw / (2 * q), A = Math.pow(10, (gdb || 0) / 40);
@@ -299,12 +299,12 @@ function toneStackDesign(h) { // knobs 0..10, 5 = flat-ish
 }
 // Cabinet: speakers, box and microphone as a chain of filters
 const CABS = {
-  '1x12 open': { label: '1×12 open back', hp: 85, bump: [95, 1.2, 1], dip: [180, 1.2, -2] },
-  '2x12 open': { label: '2×12 open back', hp: 75, bump: [100, 1.1, 2.5], dip: [200, 1.4, -1.5] },
-  '2x12 closed': { label: '2×12 closed', hp: 70, bump: [105, 1.3, 4], dip: [300, 1, -1] },
-  '4x12': { label: '4×12 closed', hp: 65, bump: [95, 1.5, 5.5], dip: [400, .9, -1.5] },
-  '1x15 bass': { label: '1×15 bass', hp: 38, bump: [60, 1.2, 4], dip: [500, .8, -2] },
-  '8x10 bass': { label: '8×10 bass', hp: 42, bump: [75, 1.1, 5], dip: [900, 1, -1] },
+  '1x12 open': { label: '1\u00d712 open back', hp: 85, bump: [95, 1.2, 1], dip: [180, 1.2, -2] },
+  '2x12 open': { label: '2\u00d712 open back', hp: 75, bump: [100, 1.1, 2.5], dip: [200, 1.4, -1.5] },
+  '2x12 closed': { label: '2\u00d712 closed', hp: 70, bump: [105, 1.3, 4], dip: [300, 1, -1] },
+  '4x12': { label: '4\u00d712 closed', hp: 65, bump: [95, 1.5, 5.5], dip: [400, .9, -1.5] },
+  '1x15 bass': { label: '1\u00d715 bass', hp: 38, bump: [60, 1.2, 4], dip: [500, .8, -2] },
+  '8x10 bass': { label: '8\u00d710 bass', hp: 42, bump: [75, 1.1, 5], dip: [900, 1, -1] },
 };
 const SPEAKERS = {
   v30:      { label: 'Vintage 30 (aggressive mids)', pk: [2400, 1.3, 4.5], pk2: [1200, 1, 1.5], lp: 5200 },
@@ -331,7 +331,7 @@ function cabDesign(c) {
   return out;
 }
 
-/* Luither — synth face DSP: modulation sources, oscillator mix, filters, mod FX, pitch shifter, gate, amp. */
+/* Luither \u2014 synth face DSP: modulation sources, oscillator mix, filters, mod FX, pitch shifter, gate, amp. */
 const TWO_PI = Math.PI * 2;
 const VOWELS = [[730, 1090, 2440], [530, 1840, 2480], [270, 2290, 3010], [570, 840, 2410], [300, 870, 2240]]; // a e i o u
 const PHYS = { ph_pos: ['ex', 'pos'], ph_pressure: ['ex', 'pressure'], ph_speed: ['ex', 'speed'], ph_ebow: ['ex', 'ebow'], ph_wind: ['ex', 'wind'], ph_jawari: ['nk', 'jawari'], ph_buzz: ['nk', 'buzz'] };
@@ -343,7 +343,7 @@ function polyblep(t, dt) {
   if (t > 1 - dt) { t = (t - 1) / dt; return t * t + t + t + 1; }
   return 0;
 }
-// Shape 0 → 1 morphs sine → triangle → saw → square
+// Shape 0 \u2192 1 morphs sine \u2192 triangle \u2192 saw \u2192 square
 function oscWave(ph, dt, m) {
   const sine = Math.sin(TWO_PI * ph);
   if (m <= 0.001) return sine;
@@ -457,7 +457,7 @@ class Synth {
       else if (e.st === 4) { e.v *= Math.exp(-dt * 4.6 / R); if (e.v < 1e-4) { e.v = 0; e.st = 0; } }
       src[k] = e.v;
     }
-    // follower in dB, so quiet plucks and loud bowing both sweep a useful range: -36 dB → 0, 0 dB → 1 (Sensitivity shifts it ±12 dB)
+    // follower in dB, so quiet plucks and loud bowing both sweep a useful range: -36 dB \u2192 0, 0 dB \u2192 1 (Sensitivity shifts it \u00b112 dB)
     { const fdb = 20 * Math.log10(this.folV + 1e-9); src.fol = Math.max(0, Math.min(1, (fdb + 36 + ((p.fol_gain ?? .5) - .5) * 24) / 36)); }
     let en = 0; for (const s of this.E.S) if (s.role !== 'symp') en += s.env; src.energy = Math.min(1, en * 4);
     src.gate = (o.gate_steps || [])[this.gateStep] ? 1 : 0;
@@ -568,13 +568,13 @@ class Synth {
   }
 }
 
-/* Luither — amp face DSP: pedals, amp head, cabinet. Runs after the synth face. */
+/* Luither \u2014 amp face DSP: pedals, amp head, cabinet. Runs after the synth face. */
 class Biq {
   constructor() { this.z1 = 0; this.z2 = 0; this.c = [1, 0, 0, 0, 0]; }
   set(t, f, q, g, fs) { this.c = bqCoefs(t, f, q, g, fs); return this; }
   run(x) { const c = this.c, y = c[0] * x + this.z1; let z = c[1] * x - c[3] * y + this.z2; this.z1 = (z > 1e-15 || z < -1e-15) ? z : 0; z = c[2] * x - c[4] * y; this.z2 = (z > 1e-15 || z < -1e-15) ? z : 0; return y; }
 }
-// 2× oversampling around a nonlinearity, so heavy clipping doesn't fold harsh aliasing back into the audio band
+// 2\u00d7 oversampling around a nonlinearity, so heavy clipping doesn't fold harsh aliasing back into the audio band
 class OS2 {
   constructor(fs) { const f2 = fs * 2; this.u = [new Biq().set('lp', fs * .45, .54, 0, f2), new Biq().set('lp', fs * .45, 1.31, 0, f2)]; this.d = [new Biq().set('lp', fs * .45, .54, 0, f2), new Biq().set('lp', fs * .45, 1.31, 0, f2)]; }
   up(x) { this.a = this.u[1].run(this.u[0].run(x * 2)); this.b = this.u[1].run(this.u[0].run(0)); }
@@ -585,13 +585,13 @@ class DL { // delay line with fractional read (power-of-two buffer: wrap with a 
   put(x) { this.b[this.w] = (x > 1e-15 || x < -1e-15) ? x : 0; this.w = (this.w + 1) & this.k; }
   get(d) { const rp = this.w - 1 - d, i = Math.floor(rp), f = rp - i, k = this.k, a = this.b[i & k]; return a + (this.b[(i + 1) & k] - a) * f; }
 }
-// fast curves for the hot path: rational tanh, and a cubic clipper with a hard knee at ±1.5
+// fast curves for the hot path: rational tanh, and a cubic clipper with a hard knee at \u00b11.5
 const tanhF = x => x < -3 ? -1 : x > 3 ? 1 : x * (27 + x * x) / (27 + 9 * x * x);
 const softClip = tanhF;
 const hardClip = x => x <= -1.5 ? -1 : x >= 1.5 ? 1 : x - x * x * x / 6.75;
 const dbToLin = d => Math.pow(10, d / 20);
 const REF = .3; // typical playing peak: drive settings are level-matched around this
-// measured loudness correction (dB) at knob 0, ¼, ½, ¾, full: heavier drive squashes and sustains, so it gets turned down to sit at the same mix level
+// measured loudness correction (dB) at knob 0, \u00bc, \u00bd, \u00be, full: heavier drive squashes and sustains, so it gets turned down to sit at the same mix level
 const DCORR = { od: [1.7, 4.2, 1.9, .7, -.8], dist: [.1, -6.9, -9.2, -10.5, -11], fuzz: [6.9, -1.7, -4.1, -5.3, -6.1], octave: [-4.6, -1.3, -3.2, -4.7, -5.6], amp: [12.5, 7.5, 3.5, .4, -.8] };
 const dcorr = (t, v) => { const c = DCORR[t], x = Math.max(0, Math.min(1, v)) * 4, i = Math.min(3, Math.floor(x)); return dbToLin(c[i] + (c[i + 1] - c[i]) * (x - i)); };
 
@@ -767,7 +767,7 @@ class AmpHead {
   one(x, k) {
     const h = this.h;
     x = this.inHP[k].run(x);
-    const os = this.os[k]; os.up(x); let y = os.down(this.pre(os.a), this.pre(os.b)) // both 2× samples, in order, through the same stages * this.comp;
+    const os = this.os[k]; os.up(x); let y = os.down(this.pre(os.a), this.pre(os.b)) // both 2\u00d7 samples, in order, through the same stages * this.comp;
     for (const t of this.tone[k]) y = t.run(y);
     const sg = 1 - h.sag * .55 * Math.min(1, this.sag * 1.5); // power-supply sag: loud playing squashes the output
     const pd = (1 + h.pdrive * 5) * .8; y = tanhF(y * sg * pd) / tanhF(.45 * pd) * .45 * this.post; // power amp: same level at any drive setting
@@ -807,12 +807,12 @@ class AmpRack {
   viz() { const pd = {}; for (const [u, p] of this.inst) { pd[u] = { ...p.v, mix: p.mix }; if (p.v.gr !== undefined) p.v.gr = 0; } return { pd, head: this.head.v }; }
 }
 
-/* Luither — string engine (AudioWorklet). Waveguide strings + modal body. */
+/* Luither \u2014 string engine (AudioWorklet). Waveguide strings + modal body. */
 const DMAX = 8192, DM = DMAX - 1;
 const mtof = n => 440 * Math.pow(2, (n - 69) / 12);
 const CONT = { bow: 1, ebow: 1, wind: 1 };
 const OSC_G = 0.3, RING_G = 0.5;
-// phase delays (samples) at ω of a one-pole lowpass (1-d)/(1-d z⁻¹) and of a first-order allpass (a+z⁻¹)/(1+a z⁻¹)
+// phase delays (samples) at \u03c9 of a one-pole lowpass (1-d)/(1-d z\u207b\u00b9) and of a first-order allpass (a+z\u207b\u00b9)/(1+a z\u207b\u00b9)
 const lpDelay = (d, w) => Math.atan2(d * Math.sin(w), 1 - d * Math.cos(w)) / w;
 const apDelay = (a, w) => -(Math.atan2(-Math.sin(w), a + Math.cos(w)) - Math.atan2(-a * Math.sin(w), 1 + a * Math.cos(w))) / w;
 const SRR = sampleRate / 48000, SRK = 48000 / sampleRate; // keep the sound identical at 44.1 / 48 / 96 kHz
@@ -831,7 +831,7 @@ class Delay {
   }
 }
 
-// ── fretting-hand noises: each is a few resonators excited by a click or a noise burst ──
+// \u2500\u2500 fretting-hand noises: each is a few resonators excited by a click or a noise burst \u2500\u2500
 // [centre Hz, Q, decay s, gain, impulse?]
 const FNOISE = {
   hammer:   [[340, .8, .007, 1, 0], [3200, 7, .0018, .45, 1], [1500, 3, .002, .25, 1]],   // fingertip thump + string slapping the fret
@@ -863,10 +863,10 @@ class Str {
     const roleChanged = this.role !== p.role;
     this.role = p.role; this.open = p.note; this.range = p.range;
     const m = p.mat;
-    // inharmonicity B of the open string (measured guitars: ~5e-5 plain trebles … 1–3e-4 wound basses); fretting raises it ∝ (f/f_open)²
+    // inharmonicity B of the open string (measured guitars: ~5e-5 plain trebles \u2026 1\u20133e-4 wound basses); fretting raises it \u221d (f/f_open)\u00b2
     this.Bo = Math.min(4e-3, m.stiff * 4.2e-4 * (p.wound ? .5 + 1.6 * p.gauge * p.gauge : .25 + 1.2 * p.gauge));
     this.fOpen = mtof(p.note);
-    // high-frequency loss in dB/s per kHz (internal friction + air): real strings sit around 20–35 whatever their pitch
+    // high-frequency loss in dB/s per kHz (internal friction + air): real strings sit around 20\u201335 whatever their pitch
     this.hf = (m.hf ?? (6 + 60 * Math.pow(m.bright, 1.5))) * (p.wound ? 1 + .9 * p.gauge : 1); // windings rub: wound strings lose their highs faster (measured E2/A2 vs trebles)
     this.decay = m.decay * (1.2 - 0.4 * p.gauge) * (p.role === 'symp' ? 1.4 : 1) * (p.sus || 1); // neck stiffness
     this.tm = (1 - p.tension) * 0.12;
@@ -878,11 +878,11 @@ class Str {
     // a jawari bridge is a broad, hard bone plate that hardly takes energy from the string: sitars and tanpuras ring on and on
     const f = this.target, fs = this.E.fs, T60 = this.decay * Math.pow(110 / f, 0.4) * (1 + 1.6 * (this.E.jaw || 0)), R0 = 60 / T60;
     this.g = Math.pow(10, -R0 / (20 * f));
-    // loss filter: one-pole whose extra loss at fh gives R(fh) = R0 + hf·fh/1000 dB/s, so highs die in seconds (not cycles) at every pitch
+    // loss filter: one-pole whose extra loss at fh gives R(fh) = R0 + hf\u00b7fh/1000 dB/s, so highs die in seconds (not cycles) at every pitch
     const fh = Math.min(2500, fs * .4), w = 2 * Math.PI * fh / fs, r = Math.pow(10, -(this.hf * (1 - .7 * (this.E.jaw || 0)) * fh / 1000) / (20 * f)) /* a jawari bridge is hard bone: it soaks up far less treble */, r2 = r * r, c = Math.cos(w);
     let d = 0; if (r2 < .999999) { const A = 1 - r2, Bq = 1 - r2 * c; d = (Bq - Math.sqrt(Math.max(0, Bq * Bq - A * A))) / A; }
     this.d = Math.min(.97, Math.max(0, d));
-    // dispersion: 4 first-order allpasses fitted so partial k lands at k·f0·√(1+Bk²)
+    // dispersion: 4 first-order allpasses fitted so partial k lands at k\u00b7f0\u00b7\u221a(1+Bk\u00b2)
     // a bow (or e-bow / wind) mode-locks the partials into a harmonic series, so a sustained string barely shows its stiffness
     const B = (this.role === 'stopped' ? this.Bo * Math.pow(f / this.fOpen, 2) : this.Bo) * (CONT[this.E.ex.type] ? .08 : 1), w0 = 2 * Math.PI * f / fs, N0 = fs / f;
     const k = Math.max(2, Math.min(12, Math.floor(5000 / f))), wk = w0 * k * Math.sqrt(1 + B * k * k), need = (N0 - N0 / Math.sqrt(1 + B * k * k));
@@ -902,8 +902,8 @@ class Str {
   pluckPulse(v, vel = v, click = 0) {
     const ex = this.E.ex, type = ex.type;
     let L, noise = 0;
-    if (type === 'pick') { L = 4 + Math.round((1 - ex.pickStiff) * 30); noise = 48; } // 0.1–0.7 ms contact, like a real pick
-    else if (type === 'finger') L = 4 + Math.round(ex.fingerSoft * 24); // the release slip is quick even from a soft fingertip (0.1–0.6 ms)
+    if (type === 'pick') { L = 4 + Math.round((1 - ex.pickStiff) * 30); noise = 48; } // 0.1\u20130.7 ms contact, like a real pick
+    else if (type === 'finger') L = 4 + Math.round(ex.fingerSoft * 24); // the release slip is quick even from a soft fingertip (0.1\u20130.6 ms)
     else L = 2 + Math.round((1 - ex.hammerHard) * 30);
     L = Math.max(1, Math.round(L * (1.4 - 0.7 * Math.min(1, vel)) * SRR));
     if (click) noise = Math.max(noise, 90); noise = Math.round(noise * SRR);
@@ -912,7 +912,7 @@ class Str {
     let out = arr;
     if (type !== 'hammer') {
       // a pluck releases a displaced string; a strike gives it velocity. Released displacement means the velocity waves carry
-      // a 1/k spectrum (−6 dB/oct above the fundamental) instead of the flat spectrum of a strike, which made plucks sound
+      // a 1/k spectrum (\u22126 dB/oct above the fundamental) instead of the flat spectrum of a strike, which made plucks sound
       // too zingy next to recordings. A leaky integrator with its corner near f0 gives that slope; the fundamental keeps its level.
       const fs = this.E.fs, f0 = Math.max(20, this.target), fc = f0 * .8, rho = Math.exp(-2 * Math.PI * fc / fs);
       const tail = Math.min(4096, Math.ceil(4 * fs / (2 * Math.PI * fc))), gn = (1 - rho) * Math.sqrt(1 + (f0 / fc) ** 2) * (f0 < 300 ? Math.pow(300 / f0, .45) : 1); // low notes keep their old loudness
@@ -1066,7 +1066,7 @@ class Str {
       this.jpk = yc > this.jpk ? yc : this.jpk * this.E.jRel;
       const th = this.jm + this.jpk * (1 - .8 * E.jaw), pen = Math.min(y - th, this.jpk * .8 * E.jaw); /* never more than the wave itself, even as it fades */
       // a light push where the string lies on the bridge; most of the old treble loss is gone (bone bridge), so the buzz sustains
-      const xin = x; if (pen > 0) { const push = pen * 1.75 * E.jaw * this.cf * 6.2832 / this.E.fs * Math.min(1, this.env * 25); /* a faint string barely touches the bridge */ /* displacement → velocity units, so every pitch feels the same contact */ x -= push; this.jy -= push; }
+      const xin = x; if (pen > 0) { const push = pen * 1.75 * E.jaw * this.cf * 6.2832 / this.E.fs * Math.min(1, this.env * 25); /* a faint string barely touches the bridge */ /* displacement \u2192 velocity units, so every pitch feels the same contact */ x -= push; this.jy -= push; }
       // the bridge reshapes the wave but barely absorbs it: put back the energy the push took, so jawari moves energy up the
       // spectrum (the buzz) without shortening the note
       const k = this.E.jEn; this.jPi += (xin * xin - this.jPi) * k; this.jPo += (x * x - this.jPo) * k;
@@ -1115,8 +1115,8 @@ class Str {
     this.hist[this.hw] = o;
     let v = o - this.hist[(this.hw - this.magD) & DM];
     this.hw = (this.hw + 1) & DM;
-    // the pickup's magnetic window is ~2.5 cm wide: it averages the string over that span (two boxcars ≈ a soft triangle),
-    // which dulls the highs of slow, heavy strings far more than thin trebles — why a bass E is so much darker than a high E
+    // the pickup's magnetic window is ~2.5 cm wide: it averages the string over that span (two boxcars \u2248 a soft triangle),
+    // which dulls the highs of slow, heavy strings far more than thin trebles \u2014 why a bass E is so much darker than a high E
     const W = this.mw; if (W > 1) { const r1 = this.mr1, r2 = this.mr2, j = this.mj;
       this.ms1 += v - r1[(j - W) & 63]; r1[j & 63] = v; const u = this.ms1 / W;
       this.ms2 += u - r2[(j - W) & 63]; r2[j & 63] = u; v = this.ms2 / W; this.mj = (j + 1) & 0x3fffffff; }
@@ -1347,21 +1347,21 @@ registerProcessor('luither', LuitherProc);
 </script>
 <script>
 "use strict";
-// ───────────────────────── data ─────────────────────────
-const NN = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+const NN = ['C','C\u266f','D','E\u266d','E','F','F\u266f','G','A\u266d','A','B\u266d','B'];
 const nn = n => { n = Math.round(n); return NN[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1); };
 function parseNote(s) {
-  s = String(s).trim().replace('♯','#').replace('♭','b');
+  s = String(s).trim().replace('\u266f','#').replace('\u266d','b');
   if (/^-?\d+(\.\d+)?$/.test(s)) return Math.max(12, Math.min(108, +s));
   const m = /^([A-Ga-g])([#b]?)(-?\d)$/.exec(s); if (!m) return null;
   const base = { c:0, d:2, e:4, f:5, g:7, a:9, b:11 }[m[1].toLowerCase()];
   const n = base + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (+m[3] + 1) * 12;
   return Math.max(12, Math.min(108, n));
 }
-// ───────────────────────── body outlines, necks, heads, pegs, frames ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 body outlines, necks, heads, pegs, frames \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // A body outline is a closed list of control points [x, y] in metres (x along the strings, 0 = neck joint; y across, negative = top of screen).
 // The drawn edge is a smooth curve through the midpoints of the control polygon, so any shape works: horns, cutaways, V's.
-function hwToOutline(b) { // old mirrored half-widths → free outline
+function hwToOutline(b) { // old mirrored half-widths \u2192 free outline
   const n = b.hw.length, L = b.length, top = b.hw.map((h, i) => [L * i / (n - 1), -h]);
   return [[0, 0], [0, -b.hw[0] * .6], ...top, [L, 0], ...top.slice().reverse().map(([x, y]) => [x, -y]), [0, b.hw[0] * .6]];
 }
@@ -1402,11 +1402,11 @@ function bodyPoly(b) {
 }
 function tracePoly(c, P, X, Y) { const d = P.dense; c.beginPath(); c.moveTo(X(d[0][0]), Y(d[0][1])); for (let i = 1; i < d.length; i++) c.lineTo(X(d[i][0]), Y(d[i][1])); c.closePath(); }
 
-// ── neck & head looks ──
+// \u2500\u2500 neck & head looks \u2500\u2500
 const NECKMATS = { // colour, and how much the neck helps the strings sustain
   'Maple': { c: '#e6c48a', sus: 1 }, 'Mahogany': { c: '#7d4428', sus: .97 }, 'Walnut': { c: '#5c4030', sus: .98 }, 'Rosewood': { c: '#4a2618', sus: 1.01 },
   'Ebony': { c: '#1c1612', sus: 1.03 }, 'Toon (tun)': { c: '#9a5a34', sus: .95 }, 'Roasted maple': { c: '#b0773e', sus: 1.01 }, 'Carbon fiber': { c: '#2e2f33', sus: 1.08 },
-  'Aluminum': { c: '#b7bcc3', sus: 1.12 }, '✦ Glass': { c: '#a6dbe4', sus: 1.15 }, '✦ Bone': { c: '#ece3cd', sus: 1.05 },
+  'Aluminum': { c: '#b7bcc3', sus: 1.12 }, '\u2726 Glass': { c: '#a6dbe4', sus: 1.15 }, '\u2726 Bone': { c: '#ece3cd', sus: 1.05 },
 };
 const HEADS = { paddle: 'Paddle, 3 + 3', inline: 'In-line (one side)', slotted: 'Slotted (classical)', scroll: 'Scroll & pegbox (violin)', bentback: 'Bent-back pegbox (lute/oud)', pegbox: 'Long pegbox (sitar)', headless: 'Headless (tuners at bridge)' };
 const PEGS = { machine: 'Guitar tuning machines', bass: 'Bass tuning machines', friction: 'Wooden friction pegs', planetary: 'Round knob tuners', pins: 'Zither / harp pins', tied: 'Tied (no pegs)' };
@@ -1414,7 +1414,7 @@ const FRAMES = { none: 'None (strings over the body)', bar: 'Straight bar', harp
 const MARKERS = { none: 'None', dots: 'Dots', blocks: 'Blocks' };
 function lookDefault() { return { neckMat: 'Mahogany', boardMat: 'Rosewood', head: 'paddle', pegs: 'machine', markers: 'dots', neckWidth: 1, boardOver: .02, frame: 'none', spacing: 0 }; }
 
-// draw one tuning peg; side = -1 (top edge) or +1 (bottom edge); u = metres→pixels; back = seen from behind
+// draw one tuning peg; side = -1 (top edge) or +1 (bottom edge); u = metres\u2192pixels; back = seen from behind
 function drawPeg(c, x, y, side, style, u, back) {
   const d = devicePixelRatio || 1;
   c.save(); c.translate(x, y);
@@ -1485,14 +1485,14 @@ function drawFrame(g, c, look) {
   if (look.frame === 'harp') drawHarpFrame(g, c, pl, P, nm, u, d);
 }
 
-// Catmull-Rom through points → dense smooth polyline
+// Catmull-Rom through points \u2192 dense smooth polyline
 function smoothPath(pts, steps = 10) {
   const out = []; for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
     for (let s = 0; s < steps; s++) { const t = s / steps, t2 = t * t, t3 = t2 * t;
       out.push([0, 1].map(k => .5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3))); } }
   out.push(pts[pts.length - 1]); return out;
 }
-// a shaded band of varying width along a centre line (world coords → screen)
+// a shaded band of varying width along a centre line (world coords \u2192 screen)
 function drawBand(c, g, line, wA, wB, col) {
   const n = line.length, L = [], R = [];
   for (let i = 0; i < n; i++) { const a = line[Math.max(0, i - 1)], b = line[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1, w = (wA + (wB - wA) * i / (n - 1)) / 2;
@@ -1547,12 +1547,12 @@ const SMAT = {
   'Silk':         { decay: 3,   bright: .48, hf: 30, stiff: .06, magnetic: 0,  color: '#f7f1de' },
   'Tetron':       { decay: 4.5,  bright: .35, hf: 12, stiff: .1,  magnetic: 0,  color: '#efe6cf' },
   'Carbon':       { decay: 6,   bright: .25, hf: 9, stiff: .25, magnetic: 0,  color: '#8a8a8a' },
-  '✦ Glass fiber':{ decay: 14,  bright: .03, hf: 3, stiff: .7,  magnetic: 0,  color: '#aee8f0' },
-  '✦ Spider silk':{ decay: 12,  bright: .2,  hf: 8, stiff: .05, magnetic: 0,  color: '#ffffff' },
-  '✦ Light beam': { decay: 30,  bright: 0,   hf: 0.3, stiff: 0,   magnetic: 1,  color: '#ffe66b' },
-  '✦ Mud':        { decay: .6,  bright: .85, hf: 300, stiff: 0,   magnetic: 0,  color: '#7a5530' },
+  '\u2726 Glass fiber':{ decay: 14,  bright: .03, hf: 3, stiff: .7,  magnetic: 0,  color: '#aee8f0' },
+  '\u2726 Spider silk':{ decay: 12,  bright: .2,  hf: 8, stiff: .05, magnetic: 0,  color: '#ffffff' },
+  '\u2726 Light beam': { decay: 30,  bright: 0,   hf: 0.3, stiff: 0,   magnetic: 1,  color: '#ffe66b' },
+  '\u2726 Mud':        { decay: .6,  bright: .85, hf: 300, stiff: 0,   magnetic: 0,  color: '#7a5530' },
 };
-// E in GPa (effective, across both grain directions), density kg/m³, Q = how long it rings
+// E in GPa (effective, across both grain directions), density kg/m\u00b3, Q = how long it rings
 const BMAT = {
   'Spruce':        { E: 4.5, rho: 420,  Q: 60,   color: '#e6cf98' },
   'Cedar':         { E: 3.8, rho: 380,  Q: 55,   color: '#c98a5a' },
@@ -1568,10 +1568,10 @@ const BMAT = {
   'Brass':         { E: 100, rho: 8500, Q: 600,  color: '#c9a33a' },
   'Glass':         { E: 70,  rho: 2500, Q: 900,  color: '#9fd6e0' },
   'Marble':        { E: 50,  rho: 2700, Q: 300,  color: '#d9d5cf' },
-  '✦ Aerogel':     { E: .01, rho: 3,    Q: 4,    color: '#dcecff' },
-  '✦ Diamond':     { E: 1050,rho: 3500, Q: 3000, color: '#e9fbff' },
-  '✦ Jelly':       { E: .0005,rho:1050, Q: 2.5,  color: '#e05a86' },
-  '✦ Singing crystal':{ E: 20, rho: 300, Q: 8000, color: '#c2a6ff' },
+  '\u2726 Aerogel':     { E: .01, rho: 3,    Q: 4,    color: '#dcecff' },
+  '\u2726 Diamond':     { E: 1050,rho: 3500, Q: 3000, color: '#e9fbff' },
+  '\u2726 Jelly':       { E: .0005,rho:1050, Q: 2.5,  color: '#e05a86' },
+  '\u2726 Singing crystal':{ E: 20, rho: 300, Q: 8000, color: '#c2a6ff' },
 };
 const BRACING = {
   none:    { label: 'None',               f: 1,    asym: .3, mx: 1,   ny: 1 },
@@ -1586,14 +1586,14 @@ const BACKS = {
   bowl:   { label: 'Round bowl (oud)',       f: r => Math.max(.1, Math.sqrt(1 - r * r)) },
   ribbed: { label: 'Ribbed staves (lute)',   f: r => Math.max(.1, Math.sqrt(1 - r * r)), ribs: 11 },
   gourd:  { label: 'Gourd (sitar)',          f: r => Math.max(.15, Math.pow(1 - Math.pow(r, 2.5), .55)) },
-  keel:   { label: '✦ Keel (boat hull)',     f: r => Math.max(.08, 1 - r * .92) },
+  keel:   { label: '\u2726 Keel (boat hull)',     f: r => Math.max(.08, 1 - r * .92) },
   custom: { label: 'Custom (drag the points)' },
 };
 function applyBack(shape) { const b = cfg.body, D = Math.max(...b.depth); b.backShape = shape; const f = BACKS[shape]?.f; if (f) b.depth = b.depth.map((_, i) => +(D * f(i / (b.depth.length - 1))).toFixed(4)); }
 const ROLE = { stopped: { c: '#e9b65a', l: 'Stopped' }, open: { c: '#7fc4b8', l: 'Open' }, drone: { c: '#d97a5b', l: 'Drone' }, symp: { c: '#a99be0', l: 'Sympathetic' } };
 const EXC = [
-  ['pick', 'Pick', '◣'], ['finger', 'Finger', '●'], ['hammer', 'Hammer', '▮'],
-  ['bow', 'Bow', '〰'], ['ebow', 'E-bow', '◉'], ['wind', 'Wind', '≋'],
+  ['pick', 'Pick', '\u25e3'], ['finger', 'Finger', '\u25cf'], ['hammer', 'Hammer', '\u25ae'],
+  ['bow', 'Bow', '\u3030'], ['ebow', 'E-bow', '\u25c9'], ['wind', 'Wind', '\u224b'],
 ];
 const S = (role, note, mat, gauge, o = {}) => ({ role, note, range: o.range ?? 12, mat, gauge, wound: !!o.wound, tension: o.tension ?? .5, ...(o.from ? { from: o.from } : {}) });
 const exDefault = () => ({ type: 'pick', pos: .15, pickStiff: .6, fingerSoft: .4, hammerHard: .6, pressure: .5, speed: .5,
@@ -1638,7 +1638,7 @@ const PRESETS = {
     pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8 },
   }),
 };
-// ── more factory instruments ──
+// \u2500\u2500 more factory instruments \u2500\u2500
 BMAT['Snakeskin'] = { E: .35, rho: 1100, Q: 14, color: '#bfa77a' };
 // drum heads: stretched membranes. Their pitch comes from tension, not stiffness (see computeBody); Q = how long the head rings
 Object.assign(BMAT, {
@@ -1727,7 +1727,7 @@ Object.assign(PRESETS, {
     body: { length: .48, hw: [.07,.12,.135,.13,.115,.12,.15,.17,.175,.16,.08], depth: [.085,.085,.085,.085,.085,.085,.085], top: 'Aluminum', back: 'Mahogany', topT: .9, backT: 2.6,
       hole: { type: 'rose', x: .62, size: .95 }, bridgeX: .62, neckLen: .35 } }),
   'Banjo (5-string)': pre({
-    // open G: the short 5th string (g′) is the thumb drone, tuned from the 5th fret
+    // open G: the short 5th string (g\u2032) is the thumb drone, tuned from the 5th fret
     strings: () => [S('open',67,'Steel',.17,{range:0,from:5}), S('stopped',50,'Nickel-wound',.42,{range:22,wound:1}), S('stopped',55,'Steel',.3,{range:22}),
       S('stopped',59,'Steel',.24,{range:22}), S('stopped',62,'Steel',.2,{range:22})],
     ex: { type: 'pick', pos: .09, pickStiff: .95, fretNoise: .45 },
@@ -1753,22 +1753,22 @@ Object.assign(PRESETS, {
     ex: { type: 'wind', pos: .3, wind: .55, gust: .65, attack: .9, release: 1.6 }, nk: { frets: false, pressBend: 0 },
     body: { length: .9, hw: [.11,.12,.12,.12,.12,.12,.12,.12,.12,.12,.11], depth: [.07,.07,.07,.07,.07,.07,.07], top: 'Spruce', back: 'Maple', topT: 3, backT: 4,
       hole: { type: 'round', x: .5, size: .55 }, bridgeX: .95, neckLen: 0, nutX: .05 } }),
-  '✦ Glass cello': pre({
-    strings: () => [36,43,50,57].map((n, i) => S('stopped', n, '✦ Glass fiber', .7 - i * .12, { range: 26 })),
+  '\u2726 Glass cello': pre({
+    strings: () => [36,43,50,57].map((n, i) => S('stopped', n, '\u2726 Glass fiber', .7 - i * .12, { range: 26 })),
     ex: { type: 'bow', pos: .12, pressure: .45, speed: .5, attack: .12, release: .4, vibDepth: 14 }, nk: { frets: false, glide: .09, thr: 5 },
     body: { length: .75, hw: [.09,.16,.17,.15,.115,.12,.18,.215,.22,.19,.09], depth: [.13,.128,.125,.12,.115,.11,.1], top: 'Glass', back: 'Glass', topT: 3, backT: 3,
       bracing: 'bassbar', hole: { type: 'f', x: .55, size: .55 }, bridgeX: .55, neckLen: .28, backShape: 'arched' } }),
-  '✦ Crystal harp': pre({
-    strings: () => [...diat(48, [0,2,4,7,9], 16).map(n => S('open', n, '✦ Light beam', .2)), ...[60,64,67,72,76,79,84,88].map(n => S('symp', n, '✦ Spider silk', .1))],
+  '\u2726 Crystal harp': pre({
+    strings: () => [...diat(48, [0,2,4,7,9], 16).map(n => S('open', n, '\u2726 Light beam', .2)), ...[60,64,67,72,76,79,84,88].map(n => S('symp', n, '\u2726 Spider silk', .1))],
     ex: { type: 'finger', pos: .3, fingerSoft: .6 }, nk: { frets: false, pressBend: 0, sympC: .7 },
-    body: { length: 1.1, hw: [.06,.07,.08,.09,.1,.11,.12,.13,.14,.15,.16], depth: [.2,.198,.19,.175,.15,.11,.04], top: '✦ Singing crystal', back: '✦ Singing crystal', topT: 2, backT: 2,
+    body: { length: 1.1, hw: [.06,.07,.08,.09,.1,.11,.12,.13,.14,.15,.16], depth: [.2,.198,.19,.175,.15,.11,.04], top: '\u2726 Singing crystal', back: '\u2726 Singing crystal', topT: 2, backT: 2,
       hole: { type: 'under', x: .55, size: .6 }, bridgeX: .96, neckLen: 0, nutX: .04, backShape: 'bowl' } }),
 });
 
-// ── output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS ──
-const CAL = {"Acoustic guitar": 1.454, "Cello": 0.41, "Sitar": 1.298, "Koto": 1.408, "Violin": 1.117, "Double bass": 0.113, "Classical guitar": 0.392, "Electric guitar": 0.831, "Electric bass": 0.644, "Oud": 2.619, "Concert harp": 0.35, "Hammered dulcimer": 0.42, "Guzheng": 1.653, "Tanpura": 2.254, "Hurdy-gurdy": 0.867, "Alpine zither": 0.838, "Erhu": 0.401, "Aeolian harp": 0.846, "✦ Glass cello": 1.092, "✦ Crystal harp": 0.747, "Slide guitar (resonator)": 2.742, "Banjo (5-string)": 1.13, "Banjo (open-back clawhammer)": 0.278};
+// \u2500\u2500 output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS \u2500\u2500
+const CAL = {"Acoustic guitar": 1.454, "Cello": 0.41, "Sitar": 1.298, "Koto": 1.408, "Violin": 1.117, "Double bass": 0.113, "Classical guitar": 0.392, "Electric guitar": 0.831, "Electric bass": 0.644, "Oud": 2.619, "Concert harp": 0.35, "Hammered dulcimer": 0.42, "Guzheng": 1.653, "Tanpura": 2.254, "Hurdy-gurdy": 0.867, "Alpine zither": 0.838, "Erhu": 0.401, "Aeolian harp": 0.846, "\u2726 Glass cello": 1.092, "\u2726 Crystal harp": 0.747, "Slide guitar (resonator)": 2.742, "Banjo (5-string)": 1.13, "Banjo (open-back clawhammer)": 0.278};
 for (const k in CAL) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.pk.master = CAL[k]; return p; }; }
-// ── how each instrument looks: neck & board woods, head, pegs; some get their own body outline ──
+// \u2500\u2500 how each instrument looks: neck & board woods, head, pegs; some get their own body outline \u2500\u2500
 const LOOKS = {
   'Acoustic guitar': { neckMat: 'Mahogany', boardMat: 'Rosewood', head: 'paddle', pegs: 'machine', markers: 'dots', boardOver: .02 },
   'Classical guitar': { neckMat: 'Mahogany', boardMat: 'Ebony', head: 'slotted', pegs: 'machine', markers: 'none', neckWidth: 1.25, boardOver: .03 },
@@ -1777,7 +1777,7 @@ const LOOKS = {
   'Violin': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'friction', markers: 'none', neckWidth: .9, boardOver: .12 },
   'Cello': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'friction', markers: 'none', boardOver: .22 },
   'Double bass': { neckMat: 'Maple', boardMat: 'Ebony', head: 'scroll', pegs: 'bass', markers: 'none', neckWidth: 1.2, boardOver: .3 },
-  '✦ Glass cello': { neckMat: '✦ Glass', boardMat: '✦ Glass', head: 'scroll', pegs: 'friction', markers: 'none', boardOver: .22 },
+  '\u2726 Glass cello': { neckMat: '\u2726 Glass', boardMat: '\u2726 Glass', head: 'scroll', pegs: 'friction', markers: 'none', boardOver: .22 },
   'Sitar': { neckMat: 'Toon (tun)', boardMat: 'Toon (tun)', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: 1.3, boardOver: .04 },
   'Tanpura': { neckMat: 'Toon (tun)', boardMat: 'Toon (tun)', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: 1.2, boardOver: .02 },
   'Oud': { neckMat: 'Walnut', boardMat: 'Ebony', head: 'bentback', pegs: 'friction', markers: 'none', boardOver: .1 },
@@ -1787,15 +1787,15 @@ const LOOKS = {
   'Erhu': { neckMat: 'Rosewood', boardMat: 'none', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: .8, boardOver: 0 },
   'Koto': { pegs: 'tied' }, 'Guzheng': { pegs: 'pins' }, 'Hammered dulcimer': { pegs: 'pins' }, 'Alpine zither': { pegs: 'pins' }, 'Aeolian harp': { pegs: 'pins' }, 'Hurdy-gurdy': { pegs: 'friction' },
   'Concert harp': { frame: 'harp', neckMat: 'Maple', pegs: 'pins', spacing: .034 },
-  '✦ Crystal harp': { frame: 'harp', neckMat: '✦ Glass', pegs: 'pins', spacing: .04 },
+  '\u2726 Crystal harp': { frame: 'harp', neckMat: '\u2726 Glass', pegs: 'pins', spacing: .04 },
 };
-const OUTLINE_OF = { 'Banjo (5-string)': 'Banjo pot (round)', 'Banjo (open-back clawhammer)': 'Banjo pot (round)', 'Electric guitar': 'Double-cut (horns)', 'Electric bass': 'Offset bass', 'Concert harp': 'Harp soundbox', '✦ Crystal harp': 'Harp soundbox' };
+const OUTLINE_OF = { 'Banjo (5-string)': 'Banjo pot (round)', 'Banjo (open-back clawhammer)': 'Banjo pot (round)', 'Electric guitar': 'Double-cut (horns)', 'Electric bass': 'Offset bass', 'Concert harp': 'Harp soundbox', '\u2726 Crystal harp': 'Harp soundbox' };
 for (const k in PRESETS) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.look = { ...lookDefault(), ...(LOOKS[k] || {}) };
   if (OUTLINE_OF[k]) { const t = BODY_TEMPLATES[OUTLINE_OF[k]]; p.body.outline = t.pts(); p.body.length = t.len; }
   if (p.look.frame === 'harp') { p.body.bridgeX = .3; p.body.nutX = -5.3; p.body.backShape = 'bowl'; } // floating strings: anchored on the harp neck, far past the soundbox
   return p; }; }
 
-// ───────────────────────── state ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let cfg = PRESETS['Acoustic guitar']();
 let quality = 'med';
 let node = null, actx = null;
@@ -1803,10 +1803,10 @@ const viz = { amp: [], note: [], held: [], modeE: [] };
 let modesInfo = { modes: [], top: [], info: {} };
 let sustain = false;
 
-// ───────────────────────── body physics → modes ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 body physics \u2192 modes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function bodyGeom(b) {
   const A = bodyPoly(b).area;
-  // depth profile: centre → edge; volume = area × mean depth (weighted toward edge, where there is more area)
+  // depth profile: centre \u2192 edge; volume = area \u00d7 mean depth (weighted toward edge, where there is more area)
   let num = 0, den = 0; b.depth.forEach((d, i) => { const r = (i + .5) / b.depth.length; num += d * r; den += r; });
   const meanD = num / den;
   return { A, W: A / b.length, V: A * meanD, meanD };
@@ -1855,7 +1855,7 @@ function computeBody() {
   const top = BMAT[b.top]?.skin ? membrane(b.top, b.topT, count[0] * 3) : plate(b.top, b.topT, 1, count[0], true);
   const openBack = !!BMAT[b.back]?.open;
   // open back: no back plate and no air cavity; the head radiates from both faces, so its lowest, pumping modes partly cancel
-  // (mellower, plunkier — the clawhammer banjo sound)
+  // (mellower, plunkier \u2014 the clawhammer banjo sound)
   // and with no resonator to throw the treble forward, the highs are softer too
   if (openBack) top.list.forEach(m => { if (m.f < 700) m.amp *= .55 + .45 * m.f / 700; else if (m.f > 1200) m.amp *= Math.max(.35, 1 - .45 * (m.f - 1200) / 1500); });
   const back = openBack ? { list: [], f11: 0 } : plate(b.back, b.backT, .45, count[1], false);
@@ -1884,7 +1884,7 @@ function autoThr() {
   return cfg.nk.frets ? 4 : 5;
 }
 
-// ───────────────────────── audio ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 audio \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function send(t, v) { if (node) node.port.postMessage({ t, v }); }
 function pushStrings() { const sus = stringSus(); send('strings', cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] || SMAT.Steel, sus }))); markEdit(); }
 function pushEx() { send('ex', cfg.ex); markEdit(); }
@@ -1906,12 +1906,13 @@ async function startAudio() {
   initMidi();
 }
 const heldKeys = new Set();
-// ── scale purity: keys outside the chosen scale jump to the nearest scale note
+// \u2500\u2500 scale purity: keys outside the chosen scale jump to the nearest scale note
 let purity = { on: false, root: 0, scale: 'Major (Bilawal)' };
 try { Object.assign(purity, JSON.parse(localStorage.getItem('luither.purity') || '{}')); } catch (e) {}
 const inScale = n => (SCALES[purity.scale] || SCALES.Chromatic).includes((((n - purity.root) % 12) + 12) % 12);
 function snap(n) { if (!purity.on) return n; for (let d = 0; d < 12; d++) { if (inScale(n + d)) return n + d; if (inScale(n - d)) return n - d; } return n; }
 function setPurity(p) { Object.assign(purity, p); try { localStorage.setItem('luither.purity', JSON.stringify(purity)); } catch (e) {}
+  if (node) node.port.postMessage({ t: 'purity', v: { on: purity.on, root: purity.root, set: SCALES[purity.scale] || SCALES.Chromatic } }); // the plugin snaps host notes too
   $('purBtn').textContent = purity.on ? `Purity: ${PC[purity.root]} ${purity.scale.split(' (')[0]}` : 'Purity: off'; $('purBtn').classList.toggle('on', purity.on); drawKb(); if (Object.keys(p).length) buildNeck(); }
 const keyMap = new Map(), refs = new Map();
 function noteOn(k, v = .8) {
@@ -1927,7 +1928,7 @@ function noteOff(k) {
 }
 function setSus(v) { sustain = v; node && node.port.postMessage({ t: 'sus', v }); $('susPill').textContent = v ? 'Sus: ON' : 'Sus: off'; $('susPill').classList.toggle('ok', v); }
 
-// ───────────────────────── MIDI ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 MIDI \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let learnCC = false, posCC = 74;
 try { const v = localStorage.getItem('luither.posCC'); if (v) posCC = +v; } catch (e) {}
 function initMidi() {
@@ -1954,7 +1955,7 @@ function onMidi(e) {
   }
 }
 // The mod wheel is the main expressive control for a keyboard without MPE: on plucked and struck instruments it's
-// finger vibrato (0–35 cents, straight away); on a bow it's bow pressure; on an e-bow or wind, their strength
+// finger vibrato (0\u201335 cents, straight away); on a bow it's bow pressure; on an e-bow or wind, their strength
 function modWheel(v) {
   const t = cfg.ex.type, plucked = t === 'pick' || t === 'finger' || t === 'hammer';
   const key = t === 'bow' ? 'pressure' : t === 'ebow' ? 'ebow' : t === 'wind' ? 'wind' : 'vibDepth';
@@ -1962,7 +1963,7 @@ function modWheel(v) {
   pushEx(); syncCtl('ex.' + key); syncCtl('ex.vibDelay');
   send('mw', v); if (face === 'synth' && !plucked) renderKnob('ph_' + key);
 }
-// ── MIDI learn: click "MIDI learn", click any slider, move a knob. Mappings are kept in this browser.
+// \u2500\u2500 MIDI learn: click "MIDI learn", click any slider, move a knob. Mappings are kept in this browser.
 const ctlInfo = {}, learn = { on: false, armed: null };
 let ccMap = {}; try { ccMap = JSON.parse(localStorage.getItem('luither.ccMap') || '{}'); } catch (e) {}
 const saveCC = () => { try { localStorage.setItem('luither.ccMap', JSON.stringify(ccMap)); } catch (e) {} };
@@ -1973,7 +1974,7 @@ function bindCC(cc) { const path = learn.armed; for (const c in ccMap) if (ccMap
   learn.armed = null; markLearn(); }
 function markLearn() {
   document.body.classList.toggle('learning', learn.on); $('learnBtn').classList.toggle('on', learn.on);
-  $('learnBtn').textContent = learn.on ? (learn.armed ? 'Move a knob…' : 'Click a slider · Esc') : 'Learn';
+  $('learnBtn').textContent = learn.on ? (learn.armed ? 'Move a knob\u2026' : 'Click a slider \u00b7 Esc') : 'Learn';
   for (const p in ctlInfo) { const ci = ctlInfo[p], cc = ccOf(p); ci.row.classList.toggle('armed', learn.armed === p);
     let tag = ci.row.querySelector('.cc'); if (cc != null) { if (!tag) { tag = el('span', { class: 'cc' }); ci.row.querySelector('label').append(tag); } tag.textContent = ' CC' + cc; } else if (tag) tag.remove(); }
 }
@@ -1981,7 +1982,7 @@ function markLearn() {
 // older Firefox / Safari: canvas roundRect arrived in Firefox 112 and Safari 16
 if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
   r = Math.min(+r || 0, Math.abs(w) / 2, Math.abs(h) / 2); this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); };
-// ───────────────────────── UI helpers ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 UI helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const $ = id => document.getElementById(id);
 const ctlReg = {};
 function el(tag, attrs = {}, ...kids) { const e = document.createElement(tag); for (const k in attrs) { if (k === 'class') e.className = attrs[k]; else if (k.startsWith('on')) e[k] = attrs[k]; else e.setAttribute(k, attrs[k]); } kids.forEach(k => e.append(k)); return e; }
@@ -2015,10 +2016,10 @@ const h3 = (p, t) => p.append(el('h3', {}, t));
 const noteP = (p, t) => p.append(el('div', { class: 'note' }, t));
 const fmt = {
   pct: v => Math.round(v * 100) + '%', s: v => v < 1 ? Math.round(v * 1000) + 'ms' : v.toFixed(2) + 's', m: v => v.toFixed(2) + 'm',
-  mm: v => v.toFixed(1) + 'mm', c: v => Math.round(v) + '¢', hz: v => v.toFixed(1) + 'Hz', st: v => v.toFixed(1) + 'st', x: v => '×' + v.toFixed(2),
+  mm: v => v.toFixed(1) + 'mm', c: v => Math.round(v) + '\u00a2', hz: v => v.toFixed(1) + 'Hz', st: v => v.toFixed(1) + 'st', x: v => '\u00d7' + v.toFixed(2),
 };
 
-// ───────────────────────── panels ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 panels \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function buildStrings() {
   const p = $('p-strings'); p.innerHTML = '';
   const n = cfg.strings.length;
@@ -2027,7 +2028,7 @@ function buildStrings() {
     const b = el('button', { onclick: () => addString(r) }, l); b.disabled = n >= 24; b.style.borderColor = ROLE[r].c + '88'; tools.append(b);
   });
   tools.append(el('span', { class: 'pill' }, `${n} / 24`));
-  tools.append(el('button', { onclick: smartTune, style: 'margin-left:auto;border-color:#d9a441;color:#f2c568' }, '♪ Smart tune'));
+  tools.append(el('button', { onclick: smartTune, style: 'margin-left:auto;border-color:#d9a441;color:#f2c568' }, '\u266a Smart tune'));
   p.append(tools);
   noteP(p, 'Stopped strings are fingered along a neck. Open strings sound only their tuning (pressing behind the bridge bends them up, as on a koto). Drones ring whenever you play. Sympathetic strings are never touched; they only resonate.');
   cfg.strings.forEach((s, i) => {
@@ -2041,7 +2042,7 @@ function buildStrings() {
     note.value = Math.round(s.note); note.onchange = () => { s.note = +note.value; pushStrings(); draw(); };
     const mat = el('select'); Object.keys(SMAT).forEach(k => mat.append(el('option', { value: k }, k))); mat.value = s.mat;
     mat.onchange = () => { s.mat = mat.value; pushStrings(); draw(); };
-    const x = el('button', { class: 'x', title: 'Remove string', onclick: () => { cfg.strings.splice(i, 1); pushStrings(); pushNk(); buildStrings(); } }, '×');
+    const x = el('button', { class: 'x', title: 'Remove string', onclick: () => { cfg.strings.splice(i, 1); pushStrings(); pushNk(); buildStrings(); } }, '\u00d7');
     row.append(dot, role, note, mat, x);
     const sub = el('div', { class: 'sub' });
     const rng = (lbl, key, min, max, step) => { const r = el('input', { type: 'range', min, max, step }); r.value = s[key]; r.oninput = () => { s[key] = +r.value; pushStrings(); draw(); }; sub.append(lbl, r); };
@@ -2055,7 +2056,7 @@ function buildStrings() {
     row.append(sub); p.append(row);
   });
 }
-// ───────────────────────── smart tune ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 smart tune \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const SCALES = {
   'Major (Bilawal)': [0,2,4,5,7,9,11], 'Natural minor (Asavari)': [0,2,3,5,7,8,10], 'Dorian (Kafi)': [0,2,3,5,7,9,10],
   'Mixolydian (Khamaj)': [0,2,4,5,7,9,10], 'Phrygian (Bhairavi)': [0,1,3,5,7,8,10], 'Lydian (Yaman)': [0,2,4,6,7,9,11],
@@ -2070,7 +2071,7 @@ const TUNINGS = { // by number of playing (stopped + open) strings, in string or
        'Open D': [38,45,50,54,57,62], 'Open E': [40,47,52,56,59,64], 'Half-step down': [39,44,49,54,58,63] },
   13: { 'Hirajoshi in D (koto)': [50,43,45,46,50,51,55,57,58,62,63,67,69] },
 };
-const PC = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
+const PC = ['C','C\u266f','D','E\u266d','E','F','F\u266f','G','A\u266d','A','B\u266d','B'];
 // Move each string to the nearest note allowed by the scale, keeping the strings in the same pitch order
 function fitStrings(idxs, root, steps) {
   const ok = n => steps.includes((((n - root) % 12) + 12) % 12);
@@ -2094,7 +2095,7 @@ function smartTune() {
   const drones = idx(s => s.role === 'drone');
   const rootGuess = ((Math.round(drones.length ? Math.min(...drones.map(i => cfg.strings[i].note)) : cfg.strings[play[0] ?? 0]?.note ?? 48) % 12) + 12) % 12;
   const groups = [['symp', 'Sympathetic strings'], ['open', 'Open strings'], ['drone', 'Drones (root + fifth)'], ['stopped', 'Stopped strings (their open pitch)']].filter(([r]) => cfg.strings.some(s => s.role === r));
-  modal(`<h3>♪ Smart tune</h3>
+  modal(`<h3>\u266a Smart tune</h3>
     ${Object.keys(named).length ? `<div class="note">Named tunings for ${play.length} playing strings</div><div class="strtools" id="stNamed">${Object.keys(named).map(k => `<button data-k="${k}">${k}</button>`).join('')}</div>` : ''}
     <h3>Fit strings to a scale</h3>
     <div class="row sel"><label>Root</label><select id="stRoot">${PC.map((p, i) => `<option value="${i}">${p}</option>`).join('')}</select></div>
@@ -2102,10 +2103,10 @@ function smartTune() {
     ${groups.map(([r, l]) => `<label class="chk"><input type="checkbox" data-r="${r}" ${r === 'stopped' ? '' : 'checked'}> ${l}</label>`).join('')}
     <div class="note">Each string moves to the nearest note of the scale, staying in the same order, so a 13-string koto or 11 sitar sympathetics retune in one go.</div>
     <h3>Transpose whole instrument</h3>
-    <div class="strtools"><button id="stDn">− semitone</button><button id="stUp">+ semitone</button><button id="stDn12">− octave</button><button id="stUp12">+ octave</button><span class="pill" id="stOff">±0</span></div>
+    <div class="strtools"><button id="stDn">\u2212 semitone</button><button id="stUp">+ semitone</button><button id="stDn12">\u2212 octave</button><button id="stUp12">+ octave</button><span class="pill" id="stOff">\u00b10</span></div>
     <div class="btns"><span id="stMsg" class="note" style="flex:1"></span><button class="hbtn" id="stRevert">Revert</button><button class="hbtn" id="stApply">Apply scale</button><button class="hbtn" id="stDone">Done</button></div>`, () => {
     $('stRoot').value = rootGuess;
-    let off = 0; const after = msg => { pushStrings(); buildStrings(); draw(); $('stMsg').textContent = msg; $('stOff').textContent = (off > 0 ? '+' : off < 0 ? '−' : '±') + Math.abs(off); };
+    let off = 0; const after = msg => { pushStrings(); buildStrings(); draw(); $('stMsg').textContent = msg; $('stOff').textContent = (off > 0 ? '+' : off < 0 ? '\u2212' : '\u00b1') + Math.abs(off); };
     document.querySelectorAll('#stNamed button').forEach(b => b.onclick = () => { named[b.dataset.k].forEach((n, k) => cfg.strings[play[k]].note = n); after(b.dataset.k); });
     $('stApply').onclick = () => {
       const root = +$('stRoot').value, steps = SCALES[$('stScale').value]; let moved = 0;
@@ -2139,7 +2140,7 @@ function buildExciter() {
   if (t === 'pick') { h3(p, 'Pick'); slider(p, 'Stiffness', 'ex.pickStiff', 0, 1, .01, fmt.pct, on); }
   if (t === 'finger') { h3(p, 'Finger'); slider(p, 'Softness', 'ex.fingerSoft', 0, 1, .01, fmt.pct, on); }
   if (t === 'pick' || t === 'finger') { h3(p, 'Ghost notes & harmonics');
-    noteP(p, 'Velocity under 20 is a ghost note: the fretting hand only rests on the string. Near 20 it is a dead thud; softer touches ring more. A very soft touch (under ~12) on a pitch that is a natural harmonic of one of the strings rings as that harmonic, e.g. on a guitar A3, E4, A4 or C♯5 from the A string. Harder plucks are brighter as well as louder.'); }
+    noteP(p, 'Velocity under 20 is a ghost note: the fretting hand only rests on the string. Near 20 it is a dead thud; softer touches ring more. A very soft touch (under ~12) on a pitch that is a natural harmonic of one of the strings rings as that harmonic, e.g. on a guitar A3, E4, A4 or C\u266f5 from the A string. Harder plucks are brighter as well as louder.'); }
   if (t === 'hammer') { h3(p, 'Hammer'); slider(p, 'Hardness', 'ex.hammerHard', 0, 1, .01, fmt.pct, on); noteP(p, 'Soft = felt piano hammer, hard = dulcimer mallet.'); }
   if (t === 'bow') {
     h3(p, 'Bow');
@@ -2156,7 +2157,7 @@ function buildExciter() {
     slider(p, 'Attack', 'ex.attack', .005, 2, .005, fmt.s, on); slider(p, 'Release', 'ex.release', .01, 2, .01, fmt.s, on); noteP(p, 'Faster wind locks onto higher harmonics, like an Aeolian harp.'); }
   h3(p, 'Fretting hand');
   { const fr = cfg.ex.fretter || 'fingers', g2 = el('div', { class: 'exc' });
-    [['fingers', 'Fingers', '☝'], ['keys', 'Keys (tangents)', '▤'], ['slide', 'Slide', '▬']].forEach(([k, l, ic]) => g2.append(el('button', { class: fr === k ? 'on' : '', onclick: () => { cfg.ex.fretter = k; pushEx(); pushNk(); buildExciter(); buildNeck(); draw(); } }, el('span', {}, ic), l)));
+    [['fingers', 'Fingers', '\u261d'], ['keys', 'Keys (tangents)', '\u25a4'], ['slide', 'Slide', '\u25ac']].forEach(([k, l, ic]) => g2.append(el('button', { class: fr === k ? 'on' : '', onclick: () => { cfg.ex.fretter = k; pushEx(); pushNk(); buildExciter(); buildNeck(); draw(); } }, el('span', {}, ic), l)));
     p.append(g2);
     noteP(p, { fingers: cfg.nk.frets ? 'Fingertips thump on hammer-ons, snap on pull-offs, squeak when they slide along wound strings, and thud softly when they lift.' : 'Fretless: play legato softly (velocity under 70) and the finger slides smoothly to the new note; play it firmly and it hammers on, or pulls off when you let go. Slide speed sets how long a slide takes.', keys: 'Keys or tangents stop the string mechanically, like a hurdy-gurdy or nyckelharpa: a wooden clack, no squeak.', slide: 'A bar rests on the strings: pitch glides freely, it scrapes as it moves (most on wound strings), and it clanks when it lands. Legato jumps up to an octave glide on one string.' }[fr]);
     slider(p, 'Fret-hand noise', 'ex.fretNoise', 0, 1, .01, fmt.pct, on);
@@ -2169,8 +2170,8 @@ function buildExciter() {
   if (cfg.strings.some(s => s.role === 'drone')) { h3(p, 'Drones'); slider(p, 'Drone level', 'ex.drone', 0, 1, .01, fmt.pct, on); }
   h3(p, 'Keyboard control');
   const modTarget = { bow: 'bow pressure', ebow: 'e-bow strength', wind: 'wind speed' }[t] || 'pick/strike position';
-  noteP(p, `Mod wheel → ${modTarget}. Velocity → attack. Sustain pedal → hold notes / keep bowing. Pitch bend → ±${cfg.nk.pbRange} semitones.`);
-  const lb = el('button', { class: 'hbtn', onclick: () => { learnCC = true; lb.textContent = 'Move a knob or fader…'; } }, `Position knob: CC ${posCC} (click to learn)`);
+  noteP(p, `Mod wheel \u2192 ${modTarget}. Velocity \u2192 attack. Sustain pedal \u2192 hold notes / keep bowing. Pitch bend \u2192 \u00b1${cfg.nk.pbRange} semitones.`);
+  const lb = el('button', { class: 'hbtn', onclick: () => { learnCC = true; lb.textContent = 'Move a knob or fader\u2026'; } }, `Position knob: CC ${posCC} (click to learn)`);
   p.append(lb);
 }
 function buildNeck() {
@@ -2209,7 +2210,7 @@ function buildNeck() {
   p.append(el('div', { class: 'row sel' }, el('label', {}, 'Root'), pr), el('div', { class: 'row sel' }, el('label', {}, 'Scale'), ps));
   noteP(p, 'Wrong keys jump to the nearest note in the scale. Keys outside it are dimmed on the keyboard below, and the root has a dot.');
   h3(p, 'Playing');
-  select(p, 'Legato', 'nk.legato', [['poly', 'Poly — every note fresh'], ['legato', 'Legato — always slur'], ['smart', 'Smart legato']], onN);
+  select(p, 'Legato', 'nk.legato', [['poly', 'Poly \u2014 every note fresh'], ['legato', 'Legato \u2014 always slur'], ['smart', 'Smart legato']], onN);
   if (cfg.nk.legato === 'smart') {
     check(p, `Auto threshold (${autoThr()} semitones for this instrument)`, 'nk.thrAuto', onN);
     const r = slider(p, 'Slur threshold', 'nk.thr', 1, 12, 1, fmt.st, () => pushNk()); if (cfg.nk.thrAuto) r.classList.add('dis');
@@ -2226,13 +2227,13 @@ function buildBody() {
   const onB = () => { pushBody(); pushStrings(); draw(); };
   h3(p, 'Shape');
   ensureOutline(cfg.body);
-  const tp = el('select'); tp.append(el('option', { value: '' }, 'Apply a body template…')); Object.keys(BODY_TEMPLATES).forEach(k => tp.append(el('option', { value: k }, k)));
+  const tp = el('select'); tp.append(el('option', { value: '' }, 'Apply a body template\u2026')); Object.keys(BODY_TEMPLATES).forEach(k => tp.append(el('option', { value: k }, k)));
   tp.onchange = () => { const t = BODY_TEMPLATES[tp.value]; if (!t) return; cfg.body.outline = t.pts(); cfg.body.length = t.len; outlineChanged(); buildBody(); draw(); };
   p.append(el('div', { class: 'row sel' }, el('label', {}, 'Template'), tp));
   const scaleRow = (label, axis) => { const base = cfg.body.outline.map(q => q.slice()), len0 = cfg.body.length;
-    const r = el('div', { class: 'row' }, el('label', {}, label), el('input', { type: 'range', min: .5, max: 1.6, step: .01, value: 1 }), el('output', {}, '×1.00'));
+    const r = el('div', { class: 'row' }, el('label', {}, label), el('input', { type: 'range', min: .5, max: 1.6, step: .01, value: 1 }), el('output', {}, '\u00d71.00'));
     r.children[1].oninput = e => { const k = +e.target.value; cfg.body.outline = base.map(([x, y]) => axis ? [x, y * k] : [x * k, y]); if (!axis) cfg.body.length = len0 * k;
-      r.children[2].textContent = '×' + k.toFixed(2) + (axis ? '' : ' (' + (cfg.body.length * 100).toFixed(0) + 'cm)'); outlineChanged(); draw(); };
+      r.children[2].textContent = '\u00d7' + k.toFixed(2) + (axis ? '' : ' (' + (cfg.body.length * 100).toFixed(0) + 'cm)'); outlineChanged(); draw(); };
     p.append(r); };
   scaleRow('Length (scale)', 0); scaleRow('Width (scale)', 1);
   { const cb = el('input', { type: 'checkbox' }); cb.checked = mirrorEdit; cb.onchange = () => mirrorEdit = cb.checked; p.append(el('label', { class: 'chk' }, cb, 'Mirror outline edits (turn off for horns & cutaways)')); }
@@ -2241,8 +2242,8 @@ function buildBody() {
   const dShow = () => { const D = Math.max(...cfg.body.depth); drow.children[1].value = D; drow.children[2].textContent = (D * 100).toFixed(1) + 'cm'; };
   drow.children[1].oninput = e => { const D = Math.max(...cfg.body.depth), k = +e.target.value / D; cfg.body.depth = cfg.body.depth.map(v => v * k); dShow(); onB(); drawDepth(); };
   p.append(drow); dShow(); ctlReg['body.depthMax'] = dShow;
-  noteP(p, 'Curved backs are stiffer than flat ones and ring higher; ribbed staves are a touch more damped. Use ⟲ Back view to see it.');
-  noteP(p, 'Turn on ✎ Edit outline and drag the points anywhere: horns, cutaways and points are all possible. Double-click a point to add one after it; right-click a point to delete it. Hold Shift while dragging, adding or deleting to touch one side only (asymmetric). Template outlines are a starting point.');
+  noteP(p, 'Curved backs are stiffer than flat ones and ring higher; ribbed staves are a touch more damped. Use \u27f2 Back view to see it.');
+  noteP(p, 'Turn on \u270e Edit outline and drag the points anywhere: horns, cutaways and points are all possible. Double-click a point to add one after it; right-click a point to delete it. Hold Shift while dragging, adding or deleting to touch one side only (asymmetric). Template outlines are a starting point.');
   noteP(p, 'Drag the points in the cross-section below the instrument to set depth: flat sides like a guitar, or a bulging bowl like a lute or gourd.');
   h3(p, 'Materials');
   const mats = Object.keys(BMAT).filter(k => !BMAT[k].open).map(k => [k, k]), backMats = Object.keys(BMAT).filter(k => !BMAT[k].skin).map(k => [k, k]);
@@ -2270,7 +2271,7 @@ function buildBody() {
   slider(p, 'Bridge position', 'body.bridgeX', .3, .97, .005, fmt.pct, () => { draw(); renderInfo(); });
   slider(p, 'Bridge coupling', 'nk.coupling', 0, 1, .01, fmt.pct, () => pushNk());
   slider(p, 'Sympathetic coupling', 'nk.sympC', 0, 1, .01, fmt.pct, () => pushNk());
-  noteP(p, '✦ marks impossible materials. Glass and diamond ring for seconds, aerogel and jelly swallow the sound, and singing crystal hums along with everything.');
+  noteP(p, '\u2726 marks impossible materials. Glass and diamond ring for seconds, aerogel and jelly swallow the sound, and singing crystal hums along with everything.');
 }
 function holeSlider(p, label, key, min, max, onB) {
   const out = el('output'), inp = el('input', { type: 'range', min, max, step: .01 });
@@ -2281,7 +2282,7 @@ function holeSlider(p, label, key, min, max, onB) {
 function buildPickups() {
   const p = $('p-pickups'); p.innerHTML = '';
   const on = () => { pushPk(); draw(); };
-  h3(p, 'Pickups → the signal Luither\'s synth will receive');
+  h3(p, 'Pickups \u2192 the signal Luither\'s synth will receive');
   slider(p, 'Microphone', 'pk.mic', 0, 1.5, .01, fmt.pct, on);
   noteP(p, 'The mic hears the whole body and the air inside it, the way a room would.');
   slider(p, 'Piezo (bridge)', 'pk.piezo', 0, 1.5, .01, fmt.pct, on);
@@ -2302,13 +2303,13 @@ function renderInfo() {
   const i = modesInfo.info, b = cfg.body;
   const scale = scaleLen();
   const st = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
-  $('info').innerHTML = st(i.air ? i.air.toFixed(0) + ' Hz' : '—', b.hole.type === 'none' ? 'cavity mode' : 'air resonance') +
-    st(i.f11 ? i.f11.toFixed(0) + ' Hz' : '—', BMAT[cfg.body.top]?.skin ? 'drum head mode' : 'top plate mode') + st(i.back ? i.back.toFixed(0) + ' Hz' : '—', 'back plate mode') +
-    st((i.vol * 1000).toFixed(1) + ' L', 'air volume') + st((i.area * 10000).toFixed(0) + ' cm²', 'soundboard') + st((scale * 100).toFixed(1) + ' cm', 'scale length') +
+  $('info').innerHTML = st(i.air ? i.air.toFixed(0) + ' Hz' : '\u2014', b.hole.type === 'none' ? 'cavity mode' : 'air resonance') +
+    st(i.f11 ? i.f11.toFixed(0) + ' Hz' : '\u2014', BMAT[cfg.body.top]?.skin ? 'drum head mode' : 'top plate mode') + st(i.back ? i.back.toFixed(0) + ' Hz' : '\u2014', 'back plate mode') +
+    st((i.vol * 1000).toFixed(1) + ' L', 'air volume') + st((i.area * 10000).toFixed(0) + ' cm\u00b2', 'soundboard') + st((scale * 100).toFixed(1) + ' cm', 'scale length') +
     st(i.n, 'body modes') + st(cfg.strings.filter(s => s.role !== 'symp').length, 'playing strings') + st(cfg.strings.filter(s => s.role === 'symp').length, 'sympathetic');
 }
 
-// ───────────────────────── drawing ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 drawing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const cv = $('cv'), ctx = cv.getContext('2d'), dcv = $('dcv'), dctx = dcv.getContext('2d');
 let G = null, dragging = null, hover = null, editOutline = false, showBrace = true;
 const heat = document.createElement('canvas'); heat.width = 144; heat.height = 48; const hctx = heat.getContext('2d');
@@ -2503,7 +2504,7 @@ function drawHeat(g, c, list, off) {
   c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; const bb = g.P.bb;
   c.drawImage(heat, g.X(bb.x0), g.Y(bb.y0), (bb.x1 - bb.x0) * g.sc, (bb.y1 - bb.y0) * g.sc);
 }
-// ── back view: a shaded relief of the back, lit from the upper left
+// \u2500\u2500 back view: a shaded relief of the back, lit from the upper left
 let backView = false, backCache = { key: '' };
 const hexRgb = h => { h = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
 function depthAt(b, r) { // Catmull-Rom through the depth points, so shading has no facets
@@ -2562,7 +2563,7 @@ function drawBack(g) {
   c.fillStyle = '#d8cdb8'; c.beginPath(); c.arc(g.X(b.length) + 2 * dpr, g.Y(0), 4 * dpr, 0, 7); c.fill();
   c.restore();
   c.fillStyle = 'rgba(239,228,210,.6)'; c.font = `${12 * dpr}px "IBM Plex Sans"`; c.textAlign = 'right';
-  c.fillText(`BACK  ·  ${(BACKS[b.backShape] || BACKS.custom).label}  ·  ${b.back}`, cv.width - 14 * dpr, cv.height - 14 * dpr); c.textAlign = 'left';
+  c.fillText(`BACK  \u00b7  ${(BACKS[b.backShape] || BACKS.custom).label}  \u00b7  ${b.back}`, cv.width - 14 * dpr, cv.height - 14 * dpr); c.textAlign = 'left';
 }
 function l0x(g) { return Math.min(g.nutX, 0); }
 function drawDepth() {
@@ -2578,7 +2579,7 @@ function drawDepth() {
   c.fillStyle = (BMAT[b.back]?.color || '#6e3b28') + 'cc'; c.fill();
   c.strokeStyle = BMAT[b.top]?.color || '#e6cf98'; c.lineWidth = 4 * dpr; c.beginPath(); c.moveTo(cx - sx, top); c.lineTo(cx + sx, top); c.stroke();
   c.fillStyle = '#f2c568'; pts.forEach((p, i) => { c.beginPath(); c.arc(cx + sx * p[0], top + p[1] * sy, (hoverD === i ? 7 : 5) * dpr, 0, 7); c.fill(); });
-  c.fillStyle = '#a8957b'; c.font = `${11 * dpr}px "IBM Plex Sans"`; c.fillText('CROSS-SECTION · drag points to set depth', 10 * dpr, 16 * dpr);
+  c.fillStyle = '#a8957b'; c.font = `${11 * dpr}px "IBM Plex Sans"`; c.fillText('CROSS-SECTION \u00b7 drag points to set depth', 10 * dpr, 16 * dpr);
   c.textAlign = 'right'; c.fillText(`${(b.depth[0] * 100).toFixed(1)} cm deep`, W - 10 * dpr, 16 * dpr); c.textAlign = 'left';
 }
 let hoverD = -1, dragD = -1;
@@ -2589,7 +2590,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-// ───────────────────────── canvas interaction ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 canvas interaction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function evPos(e, c) { const r = c.getBoundingClientRect(), d = devicePixelRatio || 1; return [(e.clientX - r.left) * d, (e.clientY - r.top) * d]; }
 function hitTest(x, y) {
   const g = G; if (!g || backView) return null; const d = devicePixelRatio || 1, scale = g.bridgeX - g.nutX, b = g.b;
@@ -2640,7 +2641,7 @@ dcv.addEventListener('pointerup', () => { dragD = -1; });
 function depthHit(x, y) { const d = devicePixelRatio || 1, W = dcv.width, cx = W / 2, sx = W * .42, top = 26 * d, sy = (dcv.height - top - 16 * d) / .25;
   for (let i = 0; i < cfg.body.depth.length; i++) { const p = i / (cfg.body.depth.length - 1); for (const sg of [1, -1]) if (Math.hypot(x - (cx + sg * sx * p), y - (top + cfg.body.depth[i] * sy)) < 11 * d) return i; } return -1; }
 
-// ───────────────────────── keyboard ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 keyboard \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let baseOct = 36;
 const kbcv = $('kbcv'), kctx = kbcv.getContext('2d');
 const KB_KEYS = 'awsedftgyhujkolp;';
@@ -2656,7 +2657,7 @@ function drawKb() {
     if (purity.on && !out && (((k.n - purity.root) % 12) + 12) % 12 === 0) { c.fillStyle = '#d9a441'; c.beginPath(); c.arc(k.x + k.w / 2, k.h - (k.black ? 10 : 22) * d, 3.5 * d, 0, 7); c.fill(); }
     if (!k.black) { c.fillStyle = 'rgba(120,100,70,.18)'; c.fillRect(k.x + 1, 0, k.w - 2, k.h * .15); }
     if (!k.black && k.n % 12 === 0) { c.fillStyle = '#8a7558'; c.font = `${10 * d}px "IBM Plex Mono"`; c.fillText(nn(k.n), k.x + 4 * d, k.h - 8 * d); } });
-  $('octLbl').textContent = nn(baseOct) + '–' + nn(baseOct + 36);
+  $('octLbl').textContent = nn(baseOct) + '\u2013' + nn(baseOct + 36);
 }
 let ptrNote = new Map();
 kbcv.addEventListener('pointerdown', e => { if (!node) return; kbcv.setPointerCapture(e.pointerId); const n = kbHit(e); if (n != null) { ptrNote.set(e.pointerId, n); const [, y] = evPos(e, kbcv); noteOn(n, Math.max(.01, Math.min(1, y / kbcv.height))); } });
@@ -2679,7 +2680,7 @@ window.addEventListener('keyup', e => {
   if (qwHeld.has(k)) { noteOff(qwHeld.get(k)); qwHeld.delete(k); }
 });
 
-// ───────────────────────── presets / JSON ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 presets / JSON \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function userPresets() { try { return JSON.parse(localStorage.getItem('luither.user') || '{}'); } catch (e) { return {}; } }
 function fillPresets(sel) {
   const p = $('preset'); p.innerHTML = '';
@@ -2687,11 +2688,11 @@ function fillPresets(sel) {
   const up = userPresets(); if (Object.keys(up).length) { const g2 = el('optgroup', { label: 'My instruments' }); Object.keys(up).forEach(k => g2.append(el('option', { value: 'u:' + k }, k))); p.append(g2); }
   if (sel) p.value = sel;
 }
-// ── undo / redo: every edit ends up in one of the push functions; snapshots are taken once things settle
+// \u2500\u2500 undo / redo: every edit ends up in one of the push functions; snapshots are taken once things settle
 const hist = { list: [], i: -1, mute: 0, t: 0 };
 const snapCfg = () => JSON.stringify(cfg);
 function markEdit() { if (hist.mute || !cfg) return; clearTimeout(hist.t); hist.t = setTimeout(recordEdit, 350); }
-function recordEdit() { const s = snapCfg(); if (hist.list[hist.i] === s) return; hist.list.length = hist.i + 1; hist.list.push(s); if (hist.list.length > 120) hist.list.shift(); hist.i = hist.list.length - 1; undoUI(); }
+function recordEdit() { const s = snapCfg(); if (window.__JUCE__?.backend) window.__JUCE__.backend.emitEvent('cfg', s); if (hist.list[hist.i] === s) return; hist.list.length = hist.i + 1; hist.list.push(s); if (hist.list.length > 120) hist.list.shift(); hist.i = hist.list.length - 1; undoUI(); }
 function undoUI() { $('undoBtn').disabled = hist.i <= 0; $('redoBtn').disabled = hist.i >= hist.list.length - 1; }
 function stepHist(d) { clearTimeout(hist.t); recordEdit(); const j = hist.i + d; if (j < 0 || j >= hist.list.length) return; hist.i = j;
   hist.mute++; const keepFace = face; loadCfg(JSON.parse(hist.list[j]), true); hist.mute--; undoUI(); if (face !== keepFace) setFace(keepFace); }
@@ -2715,7 +2716,7 @@ function loadCfg(c, fromHistory) {
   else cfg.amp = { ...(prevAmp || ampDefault()), on: false };
   if (face === 'synth') buildSynth();
   if (face === 'amp') buildAmp();
-  if (node) node.port.postMessage({ t: 'panic' });
+  if (node && !pluginBoot) node.port.postMessage({ t: 'panic' });
   hist.mute++; pushAll(); buildAll(); renderInfo(); drawDepth(); draw(); hist.mute--;
   if (!fromHistory) { clearTimeout(hist.t); recordEdit(); }
 }
@@ -2733,16 +2734,16 @@ $('jsonBtn').onclick = () => modal(`<h3>Instrument JSON</h3><div class="note">Co
   $('mLoad').onclick = () => { try { loadCfg(JSON.parse($('mTxt').value)); closeModal(); } catch (e) { $('mMsg').textContent = 'That isn\'t valid JSON.'; } };
 });
 
-// ───────────────────────── synth face: parameters, sources, presets ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 synth face: parameters, sources, presets \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // id: [label, min, max, default, log?, unit]
 const SP = {
   src_lvl: ['Pickup', 0, 2, 1, 0, 'x'],
-  osc_lvl: ['Osc level', 0, 1, 0, 0, '%'], osc_shape: ['Shape', 0, 1, .66, 0, 'shape'], osc_semi: ['Pitch', -24, 24, 0, 0, 'st'], osc_fine: ['Fine', -100, 100, 0, 0, '¢'],
+  osc_lvl: ['Osc level', 0, 1, 0, 0, '%'], osc_shape: ['Shape', 0, 1, .66, 0, 'shape'], osc_semi: ['Pitch', -24, 24, 0, 0, 'st'], osc_fine: ['Fine', -100, 100, 0, 0, '\u00a2'],
   f1_cut: ['Cutoff', 20, 20000, 2000, 1, 'Hz'], f1_res: ['Reso', 0, 1, .2, 0, '%'], f1_drive: ['Drive', 0, 1, 0, 0, '%'], f1_vowel: ['Vowel', 0, 1, 0, 0, 'vowel'], f1_mix: ['Mix', 0, 1, 1, 0, '%'],
   f2_cut: ['Cutoff', 20, 20000, 6000, 1, 'Hz'], f2_res: ['Reso', 0, 1, .2, 0, '%'], f2_drive: ['Drive', 0, 1, 0, 0, '%'], f2_vowel: ['Vowel', 0, 1, 0, 0, 'vowel'], f2_mix: ['Mix', 0, 1, 1, 0, '%'],
   mfx_time: ['Time', .2, 30, 3, 1, 'ms'], mfx_depth: ['Depth', 0, 1, .3, 0, '%'], mfx_rate: ['Rate', .02, 12, .5, 1, 'Hz'], mfx_fb: ['Feedback', -.95, .95, 0, 0, '%'],
   mfx_mix: ['Mix', 0, 1, .5, 0, '%'], mfx_spread: ['Stereo', 0, 1, .5, 0, '%'],
-  ps_semi: ['Shift', -24, 24, 12, 0, 'st'], ps_fine: ['Fine', -100, 100, 0, 0, '¢'], ps_mix: ['Mix', 0, 1, .3, 0, '%'], ps_fb: ['Feedback', 0, .9, 0, 0, '%'],
+  ps_semi: ['Shift', -24, 24, 12, 0, 'st'], ps_fine: ['Fine', -100, 100, 0, 0, '\u00a2'], ps_mix: ['Mix', 0, 1, .3, 0, '%'], ps_fb: ['Feedback', 0, .9, 0, 0, '%'],
   tempo: ['Tempo', 40, 240, 120, 0, 'bpm'], gate_depth: ['Depth', 0, 1, 1, 0, '%'], gate_smooth: ['Smooth', 1, 60, 5, 1, 'ms'],
   amp_lvl: ['Level', 0, 2, 1, 0, 'x'], amp_pan: ['Pan', -1, 1, 0, 0, 'pan'],
   lfo1_rate: ['Rate', .02, 20, 1, 1, 'Hz'], lfo2_rate: ['Rate', .02, 20, .25, 1, 'Hz'],
@@ -2796,7 +2797,7 @@ function synthPreset(name) {
 function divBeats(d) { const m = /^(\d+)\/(\d+)([.t]?)$/.exec(String(d)); if (!m) return 1; return 4 * m[1] / m[2] * (m[3] === '.' ? 1.5 : m[3] === 't' ? 2 / 3 : 1); }
 function synthDefs() { const d = {}; for (const k in SP) d[k] = { min: SP[k][1], max: SP[k][2], log: !!SP[k][4] }; return d; }
 
-// ───────────────────────── synth face UI ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 synth face UI \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let face = 'builder';
 const MODNAME = { src: 'Pickup', osc: 'Osc', f1: 'Filter 1', f2: 'Filter 2', mfx: 'Mod FX', ps: 'Pitch', gate: 'Gate', amp: 'Amp', lfo1: 'LFO 1', lfo2: 'LFO 2', env1: 'Env 1', env2: 'Env 2', fol: 'Follower', ph: 'Physical' };
 const sN = (id, v) => { const d = SP[id]; const n = d[4] ? Math.log(v / d[1]) / Math.log(d[2] / d[1]) : (v - d[1]) / (d[2] - d[1]); return Math.max(0, Math.min(1, n)); };
@@ -2812,10 +2813,10 @@ function sFmt(id, v) {
   if (u === 'Hz') return v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 1 : 2) + 'k' : v >= 100 ? v.toFixed(0) : v.toFixed(v < 1 ? 2 : 1);
   if (u === '%') return Math.round(v * 100) + '%';
   if (u === 'st') return (v > 0 ? '+' : '') + v.toFixed(0);
-  if (u === '¢') return (v > 0 ? '+' : '') + v.toFixed(0) + '¢';
+  if (u === '\u00a2') return (v > 0 ? '+' : '') + v.toFixed(0) + '\u00a2';
   if (u === 's') return v < 1 ? Math.round(v * 1000) + 'ms' : v.toFixed(2) + 's';
   if (u === 'ms') return v.toFixed(v < 10 ? 1 : 0) + 'ms';
-  if (u === 'x') return '×' + v.toFixed(2);
+  if (u === 'x') return '\u00d7' + v.toFixed(2);
   if (u === 'bpm') return v.toFixed(0);
   if (u === 'pan') return Math.abs(v) < .02 ? 'C' : (v < 0 ? 'L' : 'R') + Math.round(Math.abs(v) * 100);
   if (u === 'vowel') return 'AEIOU'[Math.min(4, Math.round(v * 4))];
@@ -2826,7 +2827,7 @@ function pushSynth() { send('synth', { p: cfg.synth.p, o: cfg.synth.o, mods: cfg
 function pushMods() { send('synth', { mods: cfg.synth.mods }); }
 function setOpt(k, v, rebuild) { cfg.synth.o[k] = v; send('synth', { o: { [k]: v } }); if (rebuild) buildSynth(); else drawSynthStatic(); }
 
-// ── knobs (value arc + one coloured arc per modulation + live dot) ──
+// \u2500\u2500 knobs (value arc + one coloured arc per modulation + live dot) \u2500\u2500
 const knobs = {};
 const A0 = -135, A1 = 135;
 function arcD(r, a0, a1) {
@@ -2834,7 +2835,7 @@ function arcD(r, a0, a1) {
   const [x0, y0] = p(a0), [x1, y1] = p(a1); return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} ${a1 > a0 ? 1 : 0} ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
 function knob(id, small) {
-  const wrap = el('div', { class: 'knob' + (small ? ' sm' : ''), 'data-id': id, title: SP[id][0] + ' — drag up/down, double-click to reset. Drop a source here to modulate.' });
+  const wrap = el('div', { class: 'knob' + (small ? ' sm' : ''), 'data-id': id, title: SP[id][0] + ' \u2014 drag up/down, double-click to reset. Drop a source here to modulate.' });
   wrap.innerHTML = `<svg viewBox="0 0 48 48"><path class="trk" d="${arcD(17, A0, A1)}"/><g class="mods"></g><path class="val"/><circle class="cap" cx="24" cy="24" r="12"/><line class="ptr" x1="24" y1="24" x2="24" y2="14"/><circle class="live" r="2.6" cx="-9" cy="-9"/></svg><div class="kv"></div><div class="kl">${SP[id][0]}</div>`;
   knobs[id] = wrap;
   let y0, n0, drag = false;
@@ -2861,9 +2862,9 @@ function renderKnob(id) {
 }
 function renderAllKnobs() { for (const id in knobs) renderKnob(id); }
 
-// ── drag a source chip onto a knob ──
+// \u2500\u2500 drag a source chip onto a knob \u2500\u2500
 function chip(src, extra) {
-  const c = el('div', { class: 'chip', 'data-src': src, title: 'Drag onto any knob to modulate it' }, el('span', { class: 'grip' }, '⠿'), SRC[src][0]);
+  const c = el('div', { class: 'chip', 'data-src': src, title: 'Drag onto any knob to modulate it' }, el('span', { class: 'grip' }, '\u283f'), SRC[src][0]);
   c.style.setProperty('--c', SRC[src][1]);
   if (extra) c.append(extra);
   c.addEventListener('pointerdown', e => startDrag(e, src));
@@ -2872,7 +2873,7 @@ function chip(src, extra) {
 let dragGhost = null, dragSrc = null, dropOn = null;
 function startDrag(e, src) {
   e.preventDefault(); dragSrc = src;
-  dragGhost = el('div', { class: 'chip ghost' }, '⠿ ' + SRC[src][0]); dragGhost.style.setProperty('--c', SRC[src][1]); document.body.append(dragGhost);
+  dragGhost = el('div', { class: 'chip ghost' }, '\u283f ' + SRC[src][0]); dragGhost.style.setProperty('--c', SRC[src][1]); document.body.append(dragGhost);
   document.body.classList.add('dragging');
   const mv = ev => { dragGhost.style.left = ev.clientX + 10 + 'px'; dragGhost.style.top = ev.clientY + 10 + 'px';
     const k = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.knob'); if (dropOn !== k) { dropOn?.classList.remove('over'); dropOn = k; k?.classList.add('over'); } };
@@ -2888,20 +2889,20 @@ function addMod(s, d) {
 function dstName(id) { return (MODNAME[id.split('_')[0]] || '') + ' ' + SP[id][0]; }
 function buildModList(flash) {
   const box = $('modList'); if (!box) return; box.innerHTML = '';
-  if (!cfg.synth.mods.length) { box.append(el('div', { class: 'note' }, 'No modulation yet. Drag a coloured source chip (⠿) onto any knob, including the physical ones.')); return; }
+  if (!cfg.synth.mods.length) { box.append(el('div', { class: 'note' }, 'No modulation yet. Drag a coloured source chip (\u283f) onto any knob, including the physical ones.')); return; }
   cfg.synth.mods.forEach((m, i) => {
     const amt = el('input', { type: 'range', min: -1, max: 1, step: .005 }); amt.value = m.a;
     const val = el('span', { class: 'mv' }, (m.a > 0 ? '+' : '') + Math.round(m.a * 100) + '%');
     amt.oninput = () => { m.a = +amt.value; val.textContent = (m.a > 0 ? '+' : '') + Math.round(m.a * 100) + '%'; pushMods(); renderKnob(m.d); };
     amt.ondblclick = () => { m.a = 0; amt.value = 0; amt.oninput(); };
     const row = el('div', { class: 'mrow' + (flash === m.d ? ' flash' : '') },
-      el('span', { class: 'dot', style: `background:${SRC[m.s][1]}` }), el('span', { class: 'mn' }, `${SRC[m.s][0]} → ${dstName(m.d)}`),
-      el('button', { class: 'x', title: 'Remove', onclick: () => { cfg.synth.mods.splice(i, 1); pushMods(); renderKnob(m.d); buildModList(); } }, '×'), amt, val);
+      el('span', { class: 'dot', style: `background:${SRC[m.s][1]}` }), el('span', { class: 'mn' }, `${SRC[m.s][0]} \u2192 ${dstName(m.d)}`),
+      el('button', { class: 'x', title: 'Remove', onclick: () => { cfg.synth.mods.splice(i, 1); pushMods(); renderKnob(m.d); buildModList(); } }, '\u00d7'), amt, val);
     box.append(row);
   });
 }
 
-// ── cards ──
+// \u2500\u2500 cards \u2500\u2500
 function card(title, onKey, extraHead) {
   const c = el('div', { class: 'card' + (onKey && !cfg.synth.o[onKey] ? ' off' : '') });
   const h = el('div', { class: 'ch' }, el('span', { class: 'ct' }, title));
@@ -2951,7 +2952,7 @@ function buildSynth() {
     ['vel', 'note', 'mw', 'rnd', 'energy', 'gate'].forEach(s => g.append(chip(s, el('i', { class: 'cbar', id: 'cb_' + s }))));
     c.append(g); put(c, 2); }
   // row 2: the sound path
-  { const c = card('Pickup → Oscillator'); c.append(seg([['layer', 'Layer'], ['morph', 'Morph'], ['ring', 'Ring']], o.osc_mode, v => setOpt('osc_mode', v, true)), mini('cv_osc', 34),
+  { const c = card('Pickup \u2192 Oscillator'); c.append(seg([['layer', 'Layer'], ['morph', 'Morph'], ['ring', 'Ring']], o.osc_mode, v => setOpt('osc_mode', v, true)), mini('cv_osc', 34),
       krow(knob('src_lvl', 1), knob('osc_lvl', 1), knob('osc_shape', 1), knob('osc_semi', 1), knob('osc_fine', 1)),
       el('div', { class: 'note' }, { layer: 'Adds a synth voice that follows each string.', morph: 'Crossfades the string into a synth voice that keeps its dynamics.', ring: 'Multiplies each string by its own oscillator: metallic, bell-like.' }[o.osc_mode]));
     put(c, 3); }
@@ -3039,8 +3040,8 @@ function setFace(f) {
   if (f === 'synth') buildSynth(); else if (f === 'amp') buildAmp(); else requestAnimationFrame(fit);
 }
 
-// ───────────────────────── shared filter maths (used by the audio engine and by the on-screen curves) ─────────────────────────
-// RBJ cookbook biquads → [b0, b1, b2, a1, a2] (a0 normalised to 1)
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 shared filter maths (used by the audio engine and by the on-screen curves) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// RBJ cookbook biquads \u2192 [b0, b1, b2, a1, a2] (a0 normalised to 1)
 function bqCoefs(type, f, q, gdb, fs) {
   f = Math.max(10, Math.min(f, fs * 0.45)); q = Math.max(0.05, q || 0.707);
   const w = 2 * Math.PI * f / fs, cw = Math.cos(w), sw = Math.sin(w), al = sw / (2 * q), A = Math.pow(10, (gdb || 0) / 40);
@@ -3085,12 +3086,12 @@ function toneStackDesign(h) { // knobs 0..10, 5 = flat-ish
 }
 // Cabinet: speakers, box and microphone as a chain of filters
 const CABS = {
-  '1x12 open': { label: '1×12 open back', hp: 85, bump: [95, 1.2, 1], dip: [180, 1.2, -2] },
-  '2x12 open': { label: '2×12 open back', hp: 75, bump: [100, 1.1, 2.5], dip: [200, 1.4, -1.5] },
-  '2x12 closed': { label: '2×12 closed', hp: 70, bump: [105, 1.3, 4], dip: [300, 1, -1] },
-  '4x12': { label: '4×12 closed', hp: 65, bump: [95, 1.5, 5.5], dip: [400, .9, -1.5] },
-  '1x15 bass': { label: '1×15 bass', hp: 38, bump: [60, 1.2, 4], dip: [500, .8, -2] },
-  '8x10 bass': { label: '8×10 bass', hp: 42, bump: [75, 1.1, 5], dip: [900, 1, -1] },
+  '1x12 open': { label: '1\u00d712 open back', hp: 85, bump: [95, 1.2, 1], dip: [180, 1.2, -2] },
+  '2x12 open': { label: '2\u00d712 open back', hp: 75, bump: [100, 1.1, 2.5], dip: [200, 1.4, -1.5] },
+  '2x12 closed': { label: '2\u00d712 closed', hp: 70, bump: [105, 1.3, 4], dip: [300, 1, -1] },
+  '4x12': { label: '4\u00d712 closed', hp: 65, bump: [95, 1.5, 5.5], dip: [400, .9, -1.5] },
+  '1x15 bass': { label: '1\u00d715 bass', hp: 38, bump: [60, 1.2, 4], dip: [500, .8, -2] },
+  '8x10 bass': { label: '8\u00d710 bass', hp: 42, bump: [75, 1.1, 5], dip: [900, 1, -1] },
 };
 const SPEAKERS = {
   v30:      { label: 'Vintage 30 (aggressive mids)', pk: [2400, 1.3, 4.5], pk2: [1200, 1, 1.5], lp: 5200 },
@@ -3117,7 +3118,7 @@ function cabDesign(c) {
   return out;
 }
 
-// ───────────────────────── amp face: pedals, amp head, cabinet definitions ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 amp face: pedals, amp head, cabinet definitions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // param: [key, label, min, max, default, log?, unit]
 const PDIVS = []; for (const d of ['1/1', '1/2', '1/4', '1/8', '1/16', '1/32']) PDIVS.push(d, d + '.', d + 't');
 const PEDALS = {
@@ -3127,7 +3128,7 @@ const PEDALS = {
   dist:   { name: 'Distortion', color: '#2e2e2e', board: 'pre', params: [['dist', 'Distortion', 0, 1, .6, 0, '%'], ['filter', 'Filter', 0, 1, .4, 0, '%'], ['level', 'Level', -24, 12, 0, 0, 'dB']] },
   fuzz:   { name: 'Fuzz', color: '#b23b3b', board: 'pre', params: [['sustain', 'Sustain', 0, 1, .7, 0, '%'], ['tone', 'Tone', 0, 1, .5, 0, '%'], ['level', 'Level', -24, 12, 0, 0, 'dB']] },
   octave: { name: 'Octave fuzz', color: '#d08a2a', board: 'pre', params: [['fuzz', 'Fuzz', 0, 1, .6, 0, '%'], ['octave', 'Octave', 0, 1, .6, 0, '%'], ['level', 'Level', -24, 12, 0, 0, 'dB']] },
-  crush:  { name: 'Bitcrusher', color: '#7a4fb0', board: 'pre', params: [['bits', 'Bits', 2, 16, 6, 0, 'bit'], ['down', 'Rate ÷', 1, 40, 4, 1, '×'], ['mix', 'Mix', 0, 1, 1, 0, '%']] },
+  crush:  { name: 'Bitcrusher', color: '#7a4fb0', board: 'pre', params: [['bits', 'Bits', 2, 16, 6, 0, 'bit'], ['down', 'Rate \u00f7', 1, 40, 4, 1, '\u00d7'], ['mix', 'Mix', 0, 1, 1, 0, '%']] },
   gate:   { name: 'Noise gate', color: '#4b4b4b', board: 'pre', params: [['thresh', 'Threshold', -80, -10, -55, 0, 'dB'], ['release', 'Release', 5, 500, 80, 1, 'ms'], ['range', 'Range', 6, 80, 60, 0, 'dB']] },
   geq:    { name: 'Graphic EQ', color: '#cfcfcf', board: 'pre', params: [['b0', '100', -12, 12, 0, 0, 'dB'], ['b1', '200', -12, 12, 0, 0, 'dB'], ['b2', '400', -12, 12, 0, 0, 'dB'], ['b3', '800', -12, 12, 0, 0, 'dB'], ['b4', '1.6k', -12, 12, 0, 0, 'dB'], ['b5', '3.2k', -12, 12, 0, 0, 'dB'], ['b6', '6.4k', -12, 12, 0, 0, 'dB'], ['level', 'Level', -12, 12, 0, 0, 'dB']], eq: true },
   phaser: { name: 'Phaser', color: '#e07a2a', board: 'pre', params: [['rate', 'Rate', .05, 8, .5, 1, 'Hz'], ['depth', 'Depth', 0, 1, .7, 0, '%'], ['center', 'Center', 150, 3000, 700, 1, 'Hz'], ['fb', 'Feedback', 0, .9, .4, 0, '%'], ['mix', 'Mix', 0, 1, 1, 0, '%']], opts: { stages: ['6', [['4', '4 stage'], ['6', '6 stage'], ['8', '8 stage'], ['12', '12 stage']]], sync: ['free', 'sync'] } },
@@ -3165,13 +3166,13 @@ function ampPreset(name, keep) {
 }
 function ampDefault() { const a = ampPreset('British crunch'); a.on = false; return a; }
 
-// ───────────────────────── amp face UI ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 amp face UI \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function pushAmp() { send('amp', cfg.amp); try { markEdit(); } catch (e) {} }
 let ampSendQ = false;
 function pushAmpSoon() { if (ampSendQ) return; ampSendQ = true; requestAnimationFrame(() => { ampSendQ = false; pushAmp(); }); }
 // generic knob (same look as the synth face, not a modulation target)
 function gknob(o) {
-  const w = el('div', { class: 'knob sm', title: o.label + ' — drag up/down, double-click to reset' });
+  const w = el('div', { class: 'knob sm', title: o.label + ' \u2014 drag up/down, double-click to reset' });
   w.innerHTML = `<svg viewBox="0 0 48 48"><path class="trk" d="${arcD(17, A0, A1)}"/><path class="val"/><circle class="cap" cx="24" cy="24" r="12"/><line class="ptr" x1="24" y1="24" x2="24" y2="14"/></svg><div class="kv"></div><div class="kl">${o.label}</div>`;
   const toN = v => o.log ? Math.log(v / o.min) / Math.log(o.max / o.min) : (v - o.min) / (o.max - o.min);
   const fromN = n => { n = Math.max(0, Math.min(1, n)); let v = o.log ? o.min * Math.pow(o.max / o.min, n) : o.min + (o.max - o.min) * n; if (o.step) v = Math.round(v / o.step) * o.step; return v; };
@@ -3186,15 +3187,15 @@ function gknob(o) {
   w.addEventListener('dblclick', () => { if (o.def !== undefined) { o.set(o.def); draw(); } });
   draw(); w._draw = draw; return w;
 }
-const ufmt = (u) => v => u === 'dB' ? (v > 0 ? '+' : '') + v.toFixed(1) : u === '%' ? Math.round(v * 100) + '%' : u === 'Hz' ? (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toFixed(v < 10 ? 2 : 0)) : u === 'ms' ? v.toFixed(v < 10 ? 1 : 0) + 'ms' : u === ':1' ? v.toFixed(1) + ':1' : u === 'tilt' ? (v > 0 ? 'bright ' : v < 0 ? 'dark ' : '') + Math.abs(v * 100).toFixed(0) : u === 'bit' ? v.toFixed(0) + ' bit' : u === '×' ? '÷' + v.toFixed(0) : v.toFixed(1);
+const ufmt = (u) => v => u === 'dB' ? (v > 0 ? '+' : '') + v.toFixed(1) : u === '%' ? Math.round(v * 100) + '%' : u === 'Hz' ? (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toFixed(v < 10 ? 2 : 0)) : u === 'ms' ? v.toFixed(v < 10 ? 1 : 0) + 'ms' : u === ':1' ? v.toFixed(1) + ':1' : u === 'tilt' ? (v > 0 ? 'bright ' : v < 0 ? 'dark ' : '') + Math.abs(v * 100).toFixed(0) : u === 'bit' ? v.toFixed(0) + ' bit' : u === '\u00d7' ? '\u00f7' + v.toFixed(0) : v.toFixed(1);
 function ampEdited() { if (cfg.amp.preset !== 'Custom') { cfg.amp.preset = 'Custom'; const s = $('ampPreset'); if (s) s.value = 'Custom'; } pushAmpSoon(); }
 
-// ── pedal ──
+// \u2500\u2500 pedal \u2500\u2500
 let dragUid = null;
-// drag a pedal by its ⠿ grip: drop it between pedals on either board
+// drag a pedal by its \u283f grip: drop it between pedals on either board
 function startPedalDrag(e, uid, card) {
   e.preventDefault(); dragUid = uid; card.classList.add('dragging');
-  const ghost = el('div', { class: 'chip ghost', style: '--c:' + PEDALS[[...cfg.amp.pre, ...cfg.amp.post].find(p => p.uid === uid).type].color + ';color:#fff' }, '⠿ ' + card.querySelector('.pn').textContent); document.body.append(ghost);
+  const ghost = el('div', { class: 'chip ghost', style: '--c:' + PEDALS[[...cfg.amp.pre, ...cfg.amp.post].find(p => p.uid === uid).type].color + ';color:#fff' }, '\u283f ' + card.querySelector('.pn').textContent); document.body.append(ghost);
   let target = null;
   const mv = ev => { ghost.style.left = ev.clientX + 10 + 'px'; ghost.style.top = ev.clientY + 10 + 'px';
     const b = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.board'); document.querySelectorAll('.board').forEach(x => x.classList.toggle('over', x === b)); target = b ? { b, x: ev.clientX } : null; };
@@ -3216,8 +3217,8 @@ function pedalEl(d, board) {
   const led = el('span', { class: 'led' + (d.on ? ' on' : '') });
   const sw = el('button', { class: 'foot', title: 'Footswitch: on / bypass' }, led);
   sw.onclick = () => { d.on = !d.on; led.classList.toggle('on', d.on); c.classList.toggle('bypassed', !d.on); pushAmpSoon(); };
-  const head = el('div', { class: 'ph' }, el('span', { class: 'grip', title: 'Drag to reorder or move to the other board' }, '⠿'), el('span', { class: 'pn' }, def.name), sw,
-    el('button', { class: 'x', title: 'Remove pedal', onclick: () => { removePedal(d.uid); } }, '×'));
+  const head = el('div', { class: 'ph' }, el('span', { class: 'grip', title: 'Drag to reorder or move to the other board' }, '\u283f'), el('span', { class: 'pn' }, def.name), sw,
+    el('button', { class: 'x', title: 'Remove pedal', onclick: () => { removePedal(d.uid); } }, '\u00d7'));
   const nk = def.eq ? 0 : def.params.length;
   c.style.width = (def.eq ? 214 : Math.max(150, nk * 45 + 20)) + 'px';
   c.append(head, el('canvas', { class: 'pscreen', id: 'ps_' + d.uid, height: 34 }));
@@ -3225,11 +3226,11 @@ function pedalEl(d, board) {
   for (const q of def.params) {
     const [k, label, min, max, dflt, log, unit] = q;
     if (def.eq && k !== 'level') { // graphic EQ: vertical sliders read better than knobs
-      const s = el('input', { type: 'range', min, max, step: .5, class: 'vsl', title: label + ' Hz — double-click to reset' }); s.value = d.p[k];
+      const s = el('input', { type: 'range', min, max, step: .5, class: 'vsl', title: label + ' Hz \u2014 double-click to reset' }); s.value = d.p[k];
       s.oninput = () => { d.p[k] = +s.value; pushAmpSoon(); }; s.ondblclick = () => { s.value = 0; s.oninput(); };
       ks.append(el('div', { class: 'vcol' }, el('div', { class: 'vwrap' }, s), el('span', {}, label))); continue;
     }
-    ks.append(gknob({ label, min, max, log, def: dflt, step: unit === 'bit' || unit === '×' ? 1 : 0, fmt: ufmt(unit), get: () => d.p[k], set: v => { d.p[k] = v; pushAmpSoon(); } }));
+    ks.append(gknob({ label, min, max, log, def: dflt, step: unit === 'bit' || unit === '\u00d7' ? 1 : 0, fmt: ufmt(unit), get: () => d.p[k], set: v => { d.p[k] = v; pushAmpSoon(); } }));
   }
   c.append(ks);
   const opts = el('div', { class: 'popts' });
@@ -3247,7 +3248,7 @@ function pedalEl(d, board) {
 function removePedal(uid) { for (const b of ['pre', 'post']) cfg.amp[b] = cfg.amp[b].filter(p => p.uid !== uid); pushAmp(); buildAmp(); }
 function boardEl(which, title, note) {
   const list = cfg.amp[which], b = el('div', { class: 'board', 'data-b': which });
-  const add = el('select', { class: 'ssel addp' }); add.append(el('option', { value: '' }, '+ Add pedal…'));
+  const add = el('select', { class: 'ssel addp' }); add.append(el('option', { value: '' }, '+ Add pedal\u2026'));
   Object.entries(PEDALS).forEach(([k, v]) => add.append(el('option', { value: k }, v.name)));
   add.onchange = () => { if (!add.value) return; list.push(newPedal(add.value)); pushAmp(); buildAmp(); };
   const wrap = el('div', { class: 'bcard' }, el('div', { class: 'ch' }, el('span', { class: 'ct' }, title), el('span', { class: 'note', style: 'margin:0;flex:1' }, note), add), b);
@@ -3256,7 +3257,7 @@ function boardEl(which, title, note) {
   return wrap;
 }
 
-// ── head & cab ──
+// \u2500\u2500 head & cab \u2500\u2500
 function buildAmp() {
   const root = $('amp'); if (!root) return; root.innerHTML = '';
   const a = cfg.amp, h = a.head, cb = a.cab;
@@ -3267,7 +3268,7 @@ function buildAmp() {
   ps.onchange = () => { if (ps.value === 'Custom') return; cfg.amp = ampPreset(ps.value, a); cfg.amp.on = true; pushAmp(); buildAmp(); };
   root.append(el('div', { class: 'sbar' }, el('span', { class: 'ct', style: 'flex:0 0 auto' }, 'Amp'), ps, power,
     gknob({ label: 'Output', min: -24, max: 12, def: 0, fmt: ufmt('dB'), get: () => a.out || 0, set: v => { a.out = v; pushAmpSoon(); } }),
-    el('span', { class: 'note', style: 'margin:0;flex:1' }, 'Signal: synth face → front pedals → amp head → cabinet → effects loop → out. Drag pedals by ⠿ to reorder them or move them between boards.')));
+    el('span', { class: 'note', style: 'margin:0;flex:1' }, 'Signal: synth face \u2192 front pedals \u2192 amp head \u2192 cabinet \u2192 effects loop \u2192 out. Drag pedals by \u283f to reorder them or move them between boards.')));
   const G = el('div', { class: 'agrid' }); root.append(G);
   G.append(boardEl('pre', 'Front pedals', 'Into the amp: dynamics, drive, fuzz, filters.'));
   // head
@@ -3283,7 +3284,7 @@ function buildAmp() {
   const sel3 = (obj, key, opts) => { const s = el('select', { class: 'ssel', style: 'margin:0' }); Object.entries(opts).forEach(([k, v]) => s.append(el('option', { value: k }, v.label))); s.value = obj[key]; s.onchange = () => { obj[key] = s.value; ampEdited(); }; return s; };
   const cabOn = el('button', { class: 'sw' + (cb.on !== false ? ' on' : ''), title: 'Cabinet on/off (off = direct out of the head)' }); cabOn.onclick = () => { cb.on = cb.on === false; cabOn.classList.toggle('on', cb.on !== false); ampEdited(); };
   const cab = el('div', { class: 'card acab' + (a.on ? '' : ' off') }, el('div', { class: 'ch' }, el('span', { class: 'ct' }, 'Cabinet & mic'), cabOn),
-    el('div', { class: 'two' }, sel3(cb, 'cab', CABS), sel3(cb, 'speaker', SPEAKERS)), el('div', { class: 'two' }, sel3(cb, 'mic', MICS), el('span', { class: 'note', style: 'margin:0' }, 'Drag the mic ↔ centre/edge, ↕ distance')),
+    el('div', { class: 'two' }, sel3(cb, 'cab', CABS), sel3(cb, 'speaker', SPEAKERS)), el('div', { class: 'two' }, sel3(cb, 'mic', MICS), el('span', { class: 'note', style: 'margin:0' }, 'Drag the mic \u2194 centre/edge, \u2195 distance')),
     el('div', { class: 'cabview' }, el('canvas', { id: 'cv_spk', height: 100 }), el('canvas', { id: 'cv_cab', height: 100 })));
   G.append(el('div', { class: 'arow' }, head, cab));
   G.append(boardEl('post', 'Effects loop', 'After the cabinet: modulation, delay, reverb.'));
@@ -3296,7 +3297,7 @@ function wireMic() {
   cv.onpointerdown = e => { drag = true; cv.setPointerCapture(e.pointerId); setFrom(e); }; cv.onpointermove = e => { if (drag) setFrom(e); }; cv.onpointerup = () => drag = false;
 }
 
-// ── screens (every frame) ──
+// \u2500\u2500 screens (every frame) \u2500\u2500
 function respCurve(c, W, H, list, fs, col, range = 18) {
   const ds = list.map(f => bqCoefs(f[0], f[1], f[2], f[3], fs)); c.strokeStyle = col; c.lineWidth = 2 * (devicePixelRatio || 1); c.beginPath();
   for (let x = 0; x <= W; x += 2) { const f = 20 * Math.pow(1000, x / W); let m = 1; for (const d of ds) m *= bqMag(d, f, fs); const db = 20 * Math.log10(m), y = H / 2 - db / range * H * .45; x ? c.lineTo(x, y) : c.moveTo(x, y); }
@@ -3356,7 +3357,7 @@ function ampFrame() {
     if (cfg.amp.cab.on !== false) respCurve(c, W, H, cabDesign(cfg.amp.cab), fs, '#f2c568', 30); else { c.fillStyle = '#a8957b'; c.font = `${11 * d}px IBM Plex Sans`; c.fillText('Cabinet off: direct out', 8 * d, H / 2); } }
 }
 
-// ───────────────────────── wiring ─────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 wiring \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'p-' + b.dataset.t));
@@ -3372,16 +3373,16 @@ window.addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || typin
 $('helpBtn').onclick = () => modal(HELP, () => { $('helpClose').onclick = () => $('modal').style.display = 'none'; });
 const HELP = `<h2 style="margin:0 0 8px">Playing &amp; editing Luither</h2><div class="help">
 <h4>Playing</h4><ul>
-<li><b>Keyboard:</b> A–; play, Z / X shift octave, Space = sustain. Click near the top of a key on screen for the softest touch.</li>
+<li><b>Keyboard:</b> A\u2013; play, Z / X shift octave, Space = sustain. Click near the top of a key on screen for the softest touch.</li>
 <li><b>Velocity:</b> under 20 is a ghost note (the fretting hand only rests on the string); very soft (under ~12) on a natural-harmonic pitch rings the harmonic. Shift + key plays a ghost note.</li>
 <li><b>Legato</b> (play the next note before letting go): on frets it's a hammer-on, and lifting it is a pull-off. On <b>fretless</b> instruments, velocity under 70 <b>slides</b> to the note; 70 and up hammers on and pulls off. With the Slide fretter every legato glides.</li>
 <li><b>Mod wheel:</b> finger vibrato on plucked and struck instruments, bow pressure on bowed ones, strength on e-bow and wind. Pitch bend bends; the sustain pedal holds.</li>
 <li><b>MIDI learn:</b> click <i>MIDI learn</i>, click any slider, move a knob or fader. Alt-click (or right-click) a slider in learn mode to clear its knob. Esc finishes.</li></ul>
 <h4>Building</h4><ul>
 <li><b>Drag</b> the bridge, soundhole, pick/bow marker and pickup on the instrument.</li>
-<li><b>✎ Edit outline:</b> drag points; double-click a point to add one; right-click to delete; hold <b>Shift</b> to change one side only.</li>
+<li><b>\u270e Edit outline:</b> drag points; double-click a point to add one; right-click to delete; hold <b>Shift</b> to change one side only.</li>
 <li><b>Cross-section</b> (bottom left): drag the points to set the body depth.</li>
-<li><b>Undo / redo:</b> ↶ ↷ or Ctrl+Z / Ctrl+Shift+Z.</li>
+<li><b>Undo / redo:</b> \u21b6 \u21b7 or Ctrl+Z / Ctrl+Shift+Z.</li>
 <li><b>Save</b> keeps your instrument in this browser; <b>JSON</b> copies or loads it as text.</li></ul></div>
 <div class="btns"><button class="hbtn" id="helpClose">Close</button></div>`;
 $('learnBtn').onclick = () => { learn.on = !learn.on; learn.armed = null; markLearn(); };
@@ -3390,7 +3391,7 @@ $('panic').onclick = () => { node && node.port.postMessage({ t: 'panic' }); held
 $('octDn').onclick = () => { baseOct = Math.max(12, baseOct - 12); drawKb(); };
 $('octUp').onclick = () => { baseOct = Math.min(84, baseOct + 12); drawKb(); };
 $('startBtn').onclick = async () => {
-  $('startBtn').textContent = 'Starting…';
+  $('startBtn').textContent = 'Starting\u2026';
   try { await startAudio(); $('overlay').style.display = 'none'; }
   catch (e) { $('startBtn').textContent = 'Audio failed: ' + e.message; }
 };
@@ -3400,6 +3401,28 @@ document.querySelectorAll('.faces button[data-face]').forEach(b => b.onclick = (
 fillPresets('f:Acoustic guitar');
 buildAll(); setPurity({}); renderInfo();
 requestAnimationFrame(() => { fit(); requestAnimationFrame(frame); });
+// \u2500\u2500 inside the Luither plugin (VST3): the C++ engine plays; this page is its editor. Same messages as the AudioWorklet.
+var pluginBoot = false;
+if (window.__JUCE__ && window.__JUCE__.backend) {
+  const be = window.__JUCE__.backend;
+  $('overlay').style.display = 'none'; $('midiPill').textContent = 'MIDI: from host'; $('midiPill').classList.add('ok');
+  be.addEventListener('init', d => {
+    actx = { sampleRate: d.sr || 48000 };
+    node = { port: { postMessage: m => be.emitEvent('msg', m), onmessage: null }, connect() {} };
+    send('sdefs', synthDefs());
+    pluginBoot = true;
+    let loaded = false; if (d.cfg) { try { loadCfg(JSON.parse(d.cfg)); loaded = true; } catch (e) {} }
+    if (!loaded) { pushAll(); clearTimeout(hist.t); recordEdit(); }
+    pluginBoot = false; setPurity({});
+  });
+  be.addEventListener('viz', v => Object.assign(viz, v));
+  // host MIDI: [kind, a, b] \u2014 0 note on, 1 note off (for the on-screen keyboard), 2 controller (mod wheel, learned knobs)
+  be.addEventListener('midi', list => { let kb = false;
+    for (const [k, x, y] of list) { if (k === 0) { heldKeys.add(x); kb = true; } else if (k === 1) { heldKeys.delete(x); kb = true; } else if (k === 2) onMidi({ data: [0xB0, x, Math.round(y)] }); }
+    if (kb) drawKb(); });
+  be.addEventListener('load', d => { if (!d.cfg) return; pluginBoot = true; try { loadCfg(JSON.parse(d.cfg)); } catch (e) {} pluginBoot = false; });
+  be.emitEvent('hello', {});
+}
 </script>
 </body>
 </html>
