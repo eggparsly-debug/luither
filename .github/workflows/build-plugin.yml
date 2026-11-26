@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write   # to publish the built plugin as a release download
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -62,3 +65,18 @@ jobs:
         with:
           name: Luither-Windows-VST3
           path: out/
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path out/* -DestinationPath Luither-Windows-VST3.zip
+
+      - name: Publish as a release (direct download link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: Luither 0.1.${{ github.run_number }} (Windows VST3)
+          body: |
+            Windows 64-bit VST3 + standalone, built from ${{ github.sha }}.
+            Unzip, copy Luither.vst3 to C:\Program Files\Common Files\VST3\, rescan plug-ins in Cakewalk, insert as a soft synth.
+          files: Luither-Windows-VST3.zip
+          make_latest: true
