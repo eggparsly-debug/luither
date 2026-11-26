@@ -23,7 +23,12 @@ jobs:
 
       - name: Configure
         shell: pwsh
-        run: cmake -S plugin -B build -G "Visual Studio 17 2022" -A x64 "-DJUCE_WEBVIEW2_PACKAGE_LOCATION=$env:RUNNER_TEMP\webview2"
+        run: |
+          cmake -S plugin -B build -A x64 "-DJUCE_WEBVIEW2_PACKAGE_LOCATION=$env:RUNNER_TEMP\webview2" 2>&1 | Tee-Object -FilePath configure.log
+          if ($LASTEXITCODE -ne 0) {
+            Select-String -Path configure.log -Pattern 'CMake Error|error|not found|Could not' -Context 0,3 | Select-Object -First 8 | ForEach-Object { Write-Output "::error::$(($_.Line + ' ' + ($_.Context.PostContext -join ' ')).Trim())" }
+            exit 1
+          }
 
       - name: Build
         shell: pwsh
