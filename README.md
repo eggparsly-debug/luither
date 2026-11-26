@@ -1,6 +1,18 @@
 # Luither
 
-A physically modelled string synth, prototyped in the browser on the way to a VST3 plugin.
+A physically modelled string synth: a VST3 plugin (Windows) with the same engine and UI as the browser prototype.
+
+## Get the plugin
+
+Download **[Luither-Windows-VST3.zip](https://github.com/eggparsly-debug/luither/releases/latest/download/Luither-Windows-VST3.zip)** from the latest release.
+
+1. Unzip it, then copy the `Luither.vst3` folder to `C:\Program Files\Common Files\VST3\`.
+2. In Cakewalk, go to *Utilities → Cakewalk Plug-in Manager* and rescan VST plug-ins, or just restart Cakewalk.
+3. Insert it with *Insert → Soft Synth → Luither* and play it from a MIDI track.
+
+`Luither.exe` in the same zip is a standalone version of the instrument.
+
+Every push to `main` rebuilds the plugin (see `.github/workflows/build-plugin.yml`) and publishes it as a new release.
 
 You build the instrument, and the sound comes from simulating it. Strings, the exciter, the body, and the pickups are all modelled.
 
@@ -48,6 +60,15 @@ There are 23 factory presets, including guitars, bass, violin family, harps, sit
 | `ampdefs.js`, `ampui.js` | Amp face |
 | `app.html` | Main page, builder UI, and drawing |
 | `build.py` | Inlines everything into the single-file `luither.html` |
+
+## The plugin (`plugin/`)
+
+- **`Source/LuitherEngine.h`:** a line-for-line C++ port of the four JS DSP files. Rendered through the same messages, it matches the browser engine across all 23 instrument presets and the synth, amp, and pedal paths: correlation 1.000 on the deterministic presets, and within the browser's own run-to-run variation where the browser adds randomness. It also uses about one-sixth of the CPU.
+- **`Source/PluginProcessor.*`:** host MIDI goes straight to the engine (notes, pitch bend, sustain, and a mod wheel that works with the window closed). Scale purity applies to host notes too. The instrument is saved in the DAW project and restored before the window opens.
+- **`Source/PluginEditor.*`:** the window is `luither.html` in a web view (WebView2 on Windows). The page detects the plugin and sends its usual `{ t, v }` messages to the C++ engine. The engine returns the live visualisation, plus host MIDI for the keyboard display and *Learn*.
+- **`tools/`:** `luither_render` renders one note offline; `compare.py` checks it against the browser engine; `host_test` loads the built `.vst3` the way a DAW does.
+
+To build it yourself, get JUCE 8 and run `cmake -S plugin -B build -DJUCE_DIR=<path to JUCE>`. Without `JUCE_DIR`, CMake fetches JUCE itself. On Windows you also need the WebView2 SDK; the workflow shows how to fetch it.
 
 ## Build and test
 
