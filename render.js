@@ -10,7 +10,7 @@ vm.runInContext(fs.readFileSync(__dirname + '/synthdefs.js', 'utf8') + fs.readFi
 vm.runInContext(['biquad.js', 'synthdsp.js', 'ampdsp.js', 'dsp.js'].map(f => fs.readFileSync(__dirname + '/' + f, 'utf8')).join('\n'), ctx);
 ctx.__pre = pre; ctx.__patch = patch || '';
 vm.runInContext(`cfg = PRESETS[__pre](); if (__patch) (new Function('cfg', __patch))(cfg); var mods = computeBody(); var p = new P(); p.seed = 4242;
-  p.msg({ t: 'sdefs', v: synthDefs() }); p.msg({ t: 'strings', v: cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] })) });
+  p.msg({ t: 'sdefs', v: synthDefs() }); p.msg({ t: 'strings', v: cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat], sus: stringSus() })) });
   p.msg({ t: 'ex', v: { ...cfg.ex, humanize: 0 } }); p.msg({ t: 'nk', v: { ...cfg.nk, thr: autoThr() } });
   p.msg({ t: 'modes', v: mods.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan })) }); p.msg({ t: 'pk', v: { ...cfg.pk, scale: (b => b.bridgeX * b.length - (b.neckLen > .02 ? -b.neckLen : b.nutX * b.length))(cfg.body) } });
   var sp = synthPreset('Init (clean)'); p.msg({ t: 'synth', v: { p: sp.p, o: sp.o, mods: sp.mods } });`, ctx);

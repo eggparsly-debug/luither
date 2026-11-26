@@ -100,8 +100,16 @@ const PRESETS = {
 };
 // ── more factory instruments ──
 BMAT['Snakeskin'] = { E: .35, rho: 1100, Q: 14, color: '#bfa77a' };
+// drum heads: stretched membranes. Their pitch comes from tension, not stiffness (see computeBody); Q = how long the head rings
+Object.assign(BMAT, {
+  'Head: Mylar, frosted': { skin: true, rho: 1390, Q: 24, color: '#f1ece1', note: 'The classic banjo head: bright and punchy, the frosting tames the ring' },
+  'Head: Mylar, clear':   { skin: true, rho: 1390, Q: 42, color: '#dbe4ea', clear: true, note: 'Loud, ringy and glassy' },
+  'Head: Fiberskyn':      { skin: true, rho: 1250, Q: 16, color: '#eadbbd', note: 'Synthetic calf: warmer, less ring' },
+  'Head: Calfskin':       { skin: true, rho: 1100, Q: 11, color: '#e6d2a6', note: 'Old-time plunk: dark, short and woody' },
+  'Head: Goatskin':       { skin: true, rho: 1050, Q: 9,  color: '#d8c095', note: 'Thin and earthy, like an ngoni or akonting' },
+});
 const diat = (root, steps, count) => { const out = []; for (let i = 0; out.length < count; i++) out.push(root + 12 * Math.floor(i / steps.length) + steps[i % steps.length]); return out; };
-const body = (o) => ({ topT: 3, backT: 3, bracing: 'none', braceS: .5, hole: { type: 'round', x: .3, size: .6 }, bridgeX: .6, neckLen: .3, nutX: .05, backShape: 'flat', ...o });
+const body = (o) => ({ topT: 3, backT: 3, headT: .6, bracing: 'none', braceS: .5, hole: { type: 'round', x: .3, size: .6 }, bridgeX: .6, neckLen: .3, nutX: .05, backShape: 'flat', ...o });
 const pre = (o) => () => ({ ex: { ...exDefault(), ...o.ex }, nk: { ...nkDefault(), ...o.nk }, pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8, ...o.pk }, strings: o.strings(), body: body(o.body), ampPreset: o.amp });
 Object.assign(PRESETS, {
   'Violin': pre({
@@ -177,6 +185,14 @@ Object.assign(PRESETS, {
     nk: { frets: true, legato: 'smart', glide: .01 },
     body: { length: .48, hw: [.07,.12,.135,.13,.115,.12,.15,.17,.175,.16,.08], depth: [.085,.085,.085,.085,.085,.085,.085], top: 'Aluminum', back: 'Mahogany', topT: .9, backT: 2.6,
       hole: { type: 'rose', x: .62, size: .95 }, bridgeX: .62, neckLen: .35 } }),
+  'Banjo (5-string)': pre({
+    // open G: the short 5th string (g′) is the thumb drone, tuned from the 5th fret
+    strings: () => [S('open',67,'Steel',.17,{range:0}), S('stopped',50,'Nickel-wound',.42,{range:22,wound:1}), S('stopped',55,'Steel',.3,{range:22}),
+      S('stopped',59,'Steel',.24,{range:22}), S('stopped',62,'Steel',.2,{range:22})],
+    ex: { type: 'pick', pos: .09, pickStiff: .95, fretNoise: .45 },
+    nk: { frets: true, legato: 'smart', glide: .01 },
+    body: { length: .28, hw: [.06,.11,.13,.138,.14,.14,.138,.13,.11,.06,.0], depth: [.07,.07,.07,.07,.07,.07,.07], top: 'Head: Mylar, frosted', topT: .19, headT: .65,
+      back: 'Maple', backT: 5, bracing: 'none', hole: { type: 'none', x: .5, size: .4 }, bridgeX: .66, neckLen: .485, nutX: .05 } }),
   'Erhu': pre({
     strings: () => [S('stopped',62,'Steel',.3,{range:30}), S('stopped',69,'Steel',.22,{range:30})],
     ex: { type: 'bow', pos: .08, pressure: .55, speed: .5, attack: .05, release: .15, vibDepth: 30, vibDelay: .25, vibRate: 5.5 },
@@ -201,7 +217,7 @@ Object.assign(PRESETS, {
 });
 
 // ── output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS ──
-const CAL = {"Acoustic guitar": 1.405, "Cello": 0.511, "Sitar": 1.254, "Koto": 1.424, "Violin": 1.117, "Double bass": 0.113, "Classical guitar": 0.397, "Electric guitar": 0.811, "Electric bass": 0.659, "Oud": 2.649, "Concert harp": 0.35, "Hammered dulcimer": 0.425, "Guzheng": 1.771, "Tanpura": 2.307, "Hurdy-gurdy": 0.867, "Alpine zither": 0.8, "Erhu": 0.401, "Aeolian harp": 0.681, "✦ Glass cello": 1.092, "✦ Crystal harp": 0.256, "Slide guitar (resonator)": 2.649};
+const CAL = {"Acoustic guitar": 1.389, "Cello": 0.505, "Sitar": 1.344, "Koto": 1.457, "Violin": 1.117, "Double bass": 0.113, "Classical guitar": 0.392, "Electric guitar": 0.793, "Electric bass": 0.659, "Oud": 2.589, "Concert harp": 0.35, "Hammered dulcimer": 0.425, "Guzheng": 1.691, "Tanpura": 2.307, "Hurdy-gurdy": 0.867, "Alpine zither": 0.848, "Erhu": 0.401, "Aeolian harp": 0.827, "✦ Glass cello": 1.17, "✦ Crystal harp": 0.259, "Slide guitar (resonator)": 2.872, "Banjo (5-string)": 1.104};
 for (const k in CAL) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.pk.master = CAL[k]; return p; }; }
 // ── how each instrument looks: neck & board woods, head, pegs; some get their own body outline ──
 const LOOKS = {
@@ -217,12 +233,13 @@ const LOOKS = {
   'Tanpura': { neckMat: 'Toon (tun)', boardMat: 'Toon (tun)', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: 1.2, boardOver: .02 },
   'Oud': { neckMat: 'Walnut', boardMat: 'Ebony', head: 'bentback', pegs: 'friction', markers: 'none', boardOver: .1 },
   'Slide guitar (resonator)': { neckMat: 'Mahogany', boardMat: 'Rosewood', head: 'slotted', pegs: 'machine', markers: 'dots', boardOver: .02 },
+  'Banjo (5-string)': { neckMat: 'Maple', boardMat: 'Rosewood', head: 'paddle', pegs: 'planetary', markers: 'dots', neckWidth: .9, boardOver: .02 },
   'Erhu': { neckMat: 'Rosewood', boardMat: 'none', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: .8, boardOver: 0 },
   'Koto': { pegs: 'tied' }, 'Guzheng': { pegs: 'pins' }, 'Hammered dulcimer': { pegs: 'pins' }, 'Alpine zither': { pegs: 'pins' }, 'Aeolian harp': { pegs: 'pins' }, 'Hurdy-gurdy': { pegs: 'friction' },
   'Concert harp': { frame: 'harp', neckMat: 'Maple', pegs: 'pins', spacing: .034 },
   '✦ Crystal harp': { frame: 'harp', neckMat: '✦ Glass', pegs: 'pins', spacing: .04 },
 };
-const OUTLINE_OF = { 'Electric guitar': 'Double-cut (horns)', 'Electric bass': 'Offset bass', 'Concert harp': 'Harp soundbox', '✦ Crystal harp': 'Harp soundbox' };
+const OUTLINE_OF = { 'Banjo (5-string)': 'Banjo pot (round)', 'Electric guitar': 'Double-cut (horns)', 'Electric bass': 'Offset bass', 'Concert harp': 'Harp soundbox', '✦ Crystal harp': 'Harp soundbox' };
 for (const k in PRESETS) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.look = { ...lookDefault(), ...(LOOKS[k] || {}) };
   if (OUTLINE_OF[k]) { const t = BODY_TEMPLATES[OUTLINE_OF[k]]; p.body.outline = t.pts(); p.body.length = t.len; }
   if (p.look.frame === 'harp') { p.body.bridgeX = .3; p.body.nutX = -5.3; p.body.backShape = 'bowl'; } // floating strings: anchored on the harp neck, far past the soundbox

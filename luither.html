@@ -1368,6 +1368,7 @@ const BODY_TEMPLATES = {
       [.522, .045], [.495, .155], [.4, .19], [.29, .178], [.18, .134], [.1, .146], [.03, .152], [-.025, .14], [-.05, .122], [-.055, .106], [-.032, .084], [0, .058], [.03, .038]] },
   'Flying V': { len: .47, pts: () => [[0, -.04], [.40, -.25], [.47, -.21], [.24, -.03], [.24, .03], [.47, .21], [.40, .25], [0, .04]] },
   'Round gourd': { len: .42, pts: () => { const p = []; for (let i = 0; i < 16; i++) { const a = Math.PI + i / 16 * Math.PI * 2; p.push([.21 + Math.cos(a) * .21, Math.sin(a) * .21]); } return p; } },
+  'Banjo pot (round)': { len: .28, pts: () => { const p = []; for (let i = 0; i < 24; i++) { const a = Math.PI + i / 24 * Math.PI * 2; p.push([.14 + Math.cos(a) * .14, Math.sin(a) * .14]); } return p; } },
   'Pear (lute / oud)': { len: .5, pts: () => hwToOutline({ length: .5, hw: [.05, .1, .135, .16, .175, .182, .18, .17, .15, .11, .04] }) },
   'Box': { len: .6, pts: () => [[0, -.15], [.6, -.15], [.6, .15], [0, .15]] },
   'Trapezoid': { len: .95, pts: () => [[0, -.36], [.95, -.16], [.95, .16], [0, .36]] },
@@ -1625,8 +1626,16 @@ const PRESETS = {
 };
 // ── more factory instruments ──
 BMAT['Snakeskin'] = { E: .35, rho: 1100, Q: 14, color: '#bfa77a' };
+// drum heads: stretched membranes. Their pitch comes from tension, not stiffness (see computeBody); Q = how long the head rings
+Object.assign(BMAT, {
+  'Head: Mylar, frosted': { skin: true, rho: 1390, Q: 24, color: '#f1ece1', note: 'The classic banjo head: bright and punchy, the frosting tames the ring' },
+  'Head: Mylar, clear':   { skin: true, rho: 1390, Q: 42, color: '#dbe4ea', clear: true, note: 'Loud, ringy and glassy' },
+  'Head: Fiberskyn':      { skin: true, rho: 1250, Q: 16, color: '#eadbbd', note: 'Synthetic calf: warmer, less ring' },
+  'Head: Calfskin':       { skin: true, rho: 1100, Q: 11, color: '#e6d2a6', note: 'Old-time plunk: dark, short and woody' },
+  'Head: Goatskin':       { skin: true, rho: 1050, Q: 9,  color: '#d8c095', note: 'Thin and earthy, like an ngoni or akonting' },
+});
 const diat = (root, steps, count) => { const out = []; for (let i = 0; out.length < count; i++) out.push(root + 12 * Math.floor(i / steps.length) + steps[i % steps.length]); return out; };
-const body = (o) => ({ topT: 3, backT: 3, bracing: 'none', braceS: .5, hole: { type: 'round', x: .3, size: .6 }, bridgeX: .6, neckLen: .3, nutX: .05, backShape: 'flat', ...o });
+const body = (o) => ({ topT: 3, backT: 3, headT: .6, bracing: 'none', braceS: .5, hole: { type: 'round', x: .3, size: .6 }, bridgeX: .6, neckLen: .3, nutX: .05, backShape: 'flat', ...o });
 const pre = (o) => () => ({ ex: { ...exDefault(), ...o.ex }, nk: { ...nkDefault(), ...o.nk }, pk: { mag: 0, magPos: .12, piezo: .2, mic: 1, master: .8, ...o.pk }, strings: o.strings(), body: body(o.body), ampPreset: o.amp });
 Object.assign(PRESETS, {
   'Violin': pre({
@@ -1702,6 +1711,14 @@ Object.assign(PRESETS, {
     nk: { frets: true, legato: 'smart', glide: .01 },
     body: { length: .48, hw: [.07,.12,.135,.13,.115,.12,.15,.17,.175,.16,.08], depth: [.085,.085,.085,.085,.085,.085,.085], top: 'Aluminum', back: 'Mahogany', topT: .9, backT: 2.6,
       hole: { type: 'rose', x: .62, size: .95 }, bridgeX: .62, neckLen: .35 } }),
+  'Banjo (5-string)': pre({
+    // open G: the short 5th string (g′) is the thumb drone, tuned from the 5th fret
+    strings: () => [S('open',67,'Steel',.17,{range:0}), S('stopped',50,'Nickel-wound',.42,{range:22,wound:1}), S('stopped',55,'Steel',.3,{range:22}),
+      S('stopped',59,'Steel',.24,{range:22}), S('stopped',62,'Steel',.2,{range:22})],
+    ex: { type: 'pick', pos: .09, pickStiff: .95, fretNoise: .45 },
+    nk: { frets: true, legato: 'smart', glide: .01 },
+    body: { length: .28, hw: [.06,.11,.13,.138,.14,.14,.138,.13,.11,.06,.0], depth: [.07,.07,.07,.07,.07,.07,.07], top: 'Head: Mylar, frosted', topT: .19, headT: .65,
+      back: 'Maple', backT: 5, bracing: 'none', hole: { type: 'none', x: .5, size: .4 }, bridgeX: .66, neckLen: .485, nutX: .05 } }),
   'Erhu': pre({
     strings: () => [S('stopped',62,'Steel',.3,{range:30}), S('stopped',69,'Steel',.22,{range:30})],
     ex: { type: 'bow', pos: .08, pressure: .55, speed: .5, attack: .05, release: .15, vibDepth: 30, vibDelay: .25, vibRate: 5.5 },
@@ -1726,7 +1743,7 @@ Object.assign(PRESETS, {
 });
 
 // ── output levels calibrated by the QA suite: strummed chord peaks near -3 dBFS, sustained RMS no hotter than -16 dBFS ──
-const CAL = {"Acoustic guitar": 1.405, "Cello": 0.511, "Sitar": 1.254, "Koto": 1.424, "Violin": 1.117, "Double bass": 0.113, "Classical guitar": 0.397, "Electric guitar": 0.811, "Electric bass": 0.659, "Oud": 2.649, "Concert harp": 0.35, "Hammered dulcimer": 0.425, "Guzheng": 1.771, "Tanpura": 2.307, "Hurdy-gurdy": 0.867, "Alpine zither": 0.8, "Erhu": 0.401, "Aeolian harp": 0.681, "✦ Glass cello": 1.092, "✦ Crystal harp": 0.256, "Slide guitar (resonator)": 2.649};
+const CAL = {"Acoustic guitar": 1.389, "Cello": 0.505, "Sitar": 1.344, "Koto": 1.457, "Violin": 1.117, "Double bass": 0.113, "Classical guitar": 0.392, "Electric guitar": 0.793, "Electric bass": 0.659, "Oud": 2.589, "Concert harp": 0.35, "Hammered dulcimer": 0.425, "Guzheng": 1.691, "Tanpura": 2.307, "Hurdy-gurdy": 0.867, "Alpine zither": 0.848, "Erhu": 0.401, "Aeolian harp": 0.827, "✦ Glass cello": 1.17, "✦ Crystal harp": 0.259, "Slide guitar (resonator)": 2.872, "Banjo (5-string)": 1.104};
 for (const k in CAL) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.pk.master = CAL[k]; return p; }; }
 // ── how each instrument looks: neck & board woods, head, pegs; some get their own body outline ──
 const LOOKS = {
@@ -1742,12 +1759,13 @@ const LOOKS = {
   'Tanpura': { neckMat: 'Toon (tun)', boardMat: 'Toon (tun)', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: 1.2, boardOver: .02 },
   'Oud': { neckMat: 'Walnut', boardMat: 'Ebony', head: 'bentback', pegs: 'friction', markers: 'none', boardOver: .1 },
   'Slide guitar (resonator)': { neckMat: 'Mahogany', boardMat: 'Rosewood', head: 'slotted', pegs: 'machine', markers: 'dots', boardOver: .02 },
+  'Banjo (5-string)': { neckMat: 'Maple', boardMat: 'Rosewood', head: 'paddle', pegs: 'planetary', markers: 'dots', neckWidth: .9, boardOver: .02 },
   'Erhu': { neckMat: 'Rosewood', boardMat: 'none', head: 'pegbox', pegs: 'friction', markers: 'none', neckWidth: .8, boardOver: 0 },
   'Koto': { pegs: 'tied' }, 'Guzheng': { pegs: 'pins' }, 'Hammered dulcimer': { pegs: 'pins' }, 'Alpine zither': { pegs: 'pins' }, 'Aeolian harp': { pegs: 'pins' }, 'Hurdy-gurdy': { pegs: 'friction' },
   'Concert harp': { frame: 'harp', neckMat: 'Maple', pegs: 'pins', spacing: .034 },
   '✦ Crystal harp': { frame: 'harp', neckMat: '✦ Glass', pegs: 'pins', spacing: .04 },
 };
-const OUTLINE_OF = { 'Electric guitar': 'Double-cut (horns)', 'Electric bass': 'Offset bass', 'Concert harp': 'Harp soundbox', '✦ Crystal harp': 'Harp soundbox' };
+const OUTLINE_OF = { 'Banjo (5-string)': 'Banjo pot (round)', 'Electric guitar': 'Double-cut (horns)', 'Electric bass': 'Offset bass', 'Concert harp': 'Harp soundbox', '✦ Crystal harp': 'Harp soundbox' };
 for (const k in PRESETS) { const f = PRESETS[k]; PRESETS[k] = () => { const p = f(); p.look = { ...lookDefault(), ...(LOOKS[k] || {}) };
   if (OUTLINE_OF[k]) { const t = BODY_TEMPLATES[OUTLINE_OF[k]]; p.body.outline = t.pts(); p.body.length = t.len; }
   if (p.look.frame === 'harp') { p.body.bridgeX = .3; p.body.nutX = -5.3; p.body.backShape = 'bowl'; } // floating strings: anchored on the harp neck, far past the soundbox
@@ -1776,6 +1794,9 @@ function holeArea(h) {
   if (h.type === 'rose') a *= .55;
   return a;
 }
+// zeros of the Bessel functions J_m: [m, n, j_mn], the mode shapes of a round drum head
+const BESSEL = [[0,1,2.405],[1,1,3.832],[2,1,5.136],[0,2,5.520],[3,1,6.380],[1,2,7.016],[4,1,7.588],[2,2,8.417],[0,3,8.654],[5,1,8.771],[3,2,9.761],[6,1,9.936],[1,3,10.173],
+  [4,2,11.065],[7,1,11.086],[2,3,11.620],[0,4,11.792],[8,1,12.225],[5,2,12.339],[3,3,13.015],[1,4,13.324],[9,1,13.354],[6,2,13.589],[4,3,14.372],[10,1,14.476],[2,4,14.796],[7,2,14.821],[0,5,14.931],[11,1,15.59],[8,2,16.038]];
 function computeBody() {
   const b = cfg.body, g = bodyGeom(b), br = BRACING[b.bracing] || BRACING.none;
   const s = .5 + b.braceS; // brace strength scaling
@@ -1799,7 +1820,15 @@ function computeBody() {
     out.sort((a, c) => a.f - c.f);
     return { list: out.slice(0, nKeep), f11 };
   }
-  const top = plate(b.top, b.topT, 1, count[0], true);
+  // a drum head is a membrane: its modes come from tension and mass (Bessel zeros), not bending stiffness, and it's so light
+  // that it rings loud, fast and high, which is the banjo's bark
+  function membrane(matName, tmm, nKeep) {
+    const m = BMAT[matName], sigma = m.rho * tmm / 1000, T = 1200 + 7000 * Math.pow(b.headT ?? .6, 1.4), a = Math.sqrt(g.A / Math.PI), c = Math.sqrt(T / sigma), out = [];
+    for (const [mm, nn, j] of BESSEL) { const f = j * c / (2 * Math.PI * a); if (f < 25 || f > fs * .42) continue;
+      out.push({ f, q: Math.max(2, m.Q / (1 + .015 * out.length)), amp: 1.25 * (mm ? .55 : 1), pan: mm % 2 ? (nn % 2 ? .4 : -.4) : 0, m: mm + 1, n: nn, top: true }); }
+    out.sort((x, y) => x.f - y.f); return { list: out.slice(0, nKeep), f11: out[0]?.f || 0 };
+  }
+  const top = BMAT[b.top]?.skin ? membrane(b.top, b.topT, count[0] * 3) : plate(b.top, b.topT, 1, count[0], true);
   const back = plate(b.back, b.backT, .45, count[1], false);
   // Helmholtz air resonance from cavity volume and soundhole
   const S = holeArea(b.hole);
@@ -1812,6 +1841,12 @@ function computeBody() {
   modesInfo = { modes, top: top.list, back: back.list, info: { area: g.A, vol: g.V, air, f11: top.list[0]?.f || top.f11, back: back.list[0]?.f, n: modes.length } };
   return modes;
 }
+// how long strings ring as set by what holds them: a stiff neck keeps energy in the string; a light drum head drinks it fast
+// (the banjo's quick, punchy decay), the more so the more the head is damped
+function stringSus() { const L = cfg.look || lookDefault(), b = cfg.body, tm = BMAT[b.top] || {};
+  let sus = b.neckLen >= .02 ? (NECKMATS[L.neckMat]?.sus || 1) * Math.sqrt(NECKMATS[L.boardMat]?.sus || 1) : 1;
+  if (tm.skin) sus *= (.22 + .006 * tm.Q) * (.8 + .35 * (b.headT ?? .6));
+  return sus; }
 function autoThr() {
   const hasStop = cfg.strings.some(s => s.role === 'stopped');
   if (!hasStop) return 2;
@@ -1822,8 +1857,7 @@ function autoThr() {
 
 // ───────────────────────── audio ─────────────────────────
 function send(t, v) { if (node) node.port.postMessage({ t, v }); }
-function pushStrings() { const L = cfg.look || lookDefault(), sus = cfg.body.neckLen >= .02 ? (NECKMATS[L.neckMat]?.sus || 1) * Math.sqrt(NECKMATS[L.boardMat]?.sus || 1) : 1;
-  send('strings', cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] || SMAT.Steel, sus }))); }
+function pushStrings() { const sus = stringSus(); send('strings', cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] || SMAT.Steel, sus }))); }
 function pushEx() { send('ex', cfg.ex); }
 function pushNk() { const nk = { ...cfg.nk }; if (nk.thrAuto) nk.thr = autoThr(); send('nk', nk); }
 function pushBody() { const m = computeBody(); send('modes', m.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan }))); renderInfo(); }
@@ -2134,7 +2168,7 @@ function buildNeck() {
 }
 function buildBody() {
   const p = $('p-body'); p.innerHTML = '';
-  const onB = () => { pushBody(); draw(); };
+  const onB = () => { pushBody(); pushStrings(); draw(); };
   h3(p, 'Shape');
   ensureOutline(cfg.body);
   const tp = el('select'); tp.append(el('option', { value: '' }, 'Apply a body template…')); Object.keys(BODY_TEMPLATES).forEach(k => tp.append(el('option', { value: k }, k)));
@@ -2157,8 +2191,16 @@ function buildBody() {
   noteP(p, 'Drag the points in the cross-section below the instrument to set depth: flat sides like a guitar, or a bulging bowl like a lute or gourd.');
   h3(p, 'Materials');
   const mats = Object.keys(BMAT).map(k => [k, k]);
-  select(p, 'Top (soundboard)', 'body.top', mats, onB);
-  slider(p, 'Top thickness', 'body.topT', .5, 25, .1, fmt.mm, onB);
+  const skin = !!BMAT[cfg.body.top]?.skin;
+  select(p, 'Top (soundboard)', 'body.top', mats, () => { const nowSkin = !!BMAT[cfg.body.top]?.skin;
+    if (nowSkin && !skin) { cfg.body.topT = .19; cfg.body.bracing = 'none'; } else if (!nowSkin && skin) cfg.body.topT = 3;
+    onB(); buildBody(); });
+  if (skin) {
+    slider(p, 'Head thickness', 'body.topT', .1, 1, .01, fmt.mm, onB);
+    if (cfg.body.headT == null) cfg.body.headT = .6;
+    slider(p, 'Head tension', 'body.headT', 0, 1, .01, fmt.pct, onB);
+    noteP(p, (BMAT[cfg.body.top].note || '') + '. Tighter heads ring higher and snappier; slack heads go deep and plunky (the head\'s lowest mode is shown below the instrument).');
+  } else slider(p, 'Top thickness', 'body.topT', .5, 25, .1, fmt.mm, onB);
   select(p, 'Back & sides', 'body.back', mats, onB);
   slider(p, 'Back thickness', 'body.backT', .5, 25, .1, fmt.mm, onB);
   h3(p, 'Bracing');
@@ -2206,7 +2248,7 @@ function renderInfo() {
   const scale = scaleLen();
   const st = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
   $('info').innerHTML = st(i.air ? i.air.toFixed(0) + ' Hz' : '—', b.hole.type === 'none' ? 'cavity mode' : 'air resonance') +
-    st(i.f11 ? i.f11.toFixed(0) + ' Hz' : '—', 'top plate mode') + st(i.back ? i.back.toFixed(0) + ' Hz' : '—', 'back plate mode') +
+    st(i.f11 ? i.f11.toFixed(0) + ' Hz' : '—', BMAT[cfg.body.top]?.skin ? 'drum head mode' : 'top plate mode') + st(i.back ? i.back.toFixed(0) + ' Hz' : '—', 'back plate mode') +
     st((i.vol * 1000).toFixed(1) + ' L', 'air volume') + st((i.area * 10000).toFixed(0) + ' cm²', 'soundboard') + st((scale * 100).toFixed(1) + ' cm', 'scale length') +
     st(i.n, 'body modes') + st(cfg.strings.filter(s => s.role !== 'symp').length, 'playing strings') + st(cfg.strings.filter(s => s.role === 'symp').length, 'sympathetic');
 }
@@ -2269,10 +2311,17 @@ function draw() {
   c.save(); outlinePath(g, c);
   const tm = BMAT[b.top] || BMAT.Spruce; c.fillStyle = tm.color; c.fill();
   c.clip();
+  if (tm.skin) { // a stretched head: soft radial sheen, frosting speckle, no grain
+    const bb = g.P.bb, cx = g.X((bb.x0 + bb.x1) / 2), cy = g.Y(0), R = (bb.x1 - bb.x0) / 2 * g.sc;
+    const sh = c.createRadialGradient(cx - R * .25, cy - R * .3, R * .05, cx, cy, R * 1.05); sh.addColorStop(0, 'rgba(255,255,255,.35)'); sh.addColorStop(.6, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(60,40,20,.25)');
+    c.fillStyle = sh; c.fillRect(cx - R * 1.2, cy - R * 1.2, R * 2.4, R * 2.4);
+    if (!tm.clear) { c.fillStyle = 'rgba(90,70,40,.07)'; let sd = 7; for (let k = 0; k < 900; k++) { sd = (sd * 16807) % 2147483647; const u = sd / 2147483647; sd = (sd * 16807) % 2147483647; const v = sd / 2147483647;
+      c.fillRect(g.X(bb.x0 + u * (bb.x1 - bb.x0)), g.Y(bb.y0 + v * (bb.y1 - bb.y0)), 1.5 * dpr, 1.5 * dpr); } }
+  } else {
   // wood grain
   c.globalAlpha = .13; c.strokeStyle = '#000'; c.lineWidth = 1 * dpr;
   { const bb = g.P.bb; for (let y = bb.y0; y <= bb.y1; y += .009) { c.beginPath(); for (let x = bb.x0; x <= bb.x1; x += (bb.x1 - bb.x0) / 30) c.lineTo(g.X(x), g.Y(y + Math.sin(x * 9 + y * 40) * .002)); c.stroke(); } }
-  c.globalAlpha = 1;
+  c.globalAlpha = 1; }
   // bracing (seen through the top)
   if (showBrace && b.bracing !== 'none') {
     c.strokeStyle = 'rgba(70,40,15,.35)'; c.lineWidth = Math.max(2, .008 * g.sc); c.setLineDash([6 * dpr, 5 * dpr]); c.beginPath();
@@ -2286,6 +2335,13 @@ function draw() {
   drawHeat(g, c, modesInfo.top, 0);
   c.restore();
   c.save(); outlinePath(g, c); c.strokeStyle = BMAT[b.back]?.color || '#6e3b28'; c.lineWidth = Math.max(3, .01 * g.sc); c.stroke(); c.restore();
+  if (tm.skin) { // tension hoop and brackets around the head
+    c.save(); outlinePath(g, c); c.strokeStyle = '#c9ccd1'; c.lineWidth = Math.max(4, .014 * g.sc); c.stroke(); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1 * dpr; c.stroke(); c.restore();
+    const pts = g.P.dense, nb = 24, per = []; let tot = 0; for (let k = 0; k < pts.length; k++) { const p0 = pts[k], p1 = pts[(k + 1) % pts.length]; const d = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]); per.push(d); tot += d; }
+    c.fillStyle = '#e4e6ea'; c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 1 * dpr;
+    for (let q = 0; q < nb; q++) { let s = (q + .5) / nb * tot, k = 0; while (s > per[k]) { s -= per[k]; k = (k + 1) % per.length; } const p0 = pts[k], p1 = pts[(k + 1) % pts.length], t = s / per[k];
+      c.beginPath(); c.arc(g.X(p0[0] + (p1[0] - p0[0]) * t), g.Y(p0[1] + (p1[1] - p0[1]) * t), Math.max(2, .006 * g.sc), 0, 7); c.fill(); c.stroke(); }
+  }
   // soundhole
   const hx = g.X(b.hole.x * b.length), r = (.015 + b.hole.size * .045) * g.sc;
   if (b.hole.type === 'round' || b.hole.type === 'rose') {

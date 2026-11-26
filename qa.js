@@ -21,7 +21,7 @@ function run(sr, preset, synthName, scen, amp) {
     cfg = PRESETS[__pre](); var mods = computeBody();
     var p = new P();
     p.msg({ t: 'sdefs', v: synthDefs() });
-    p.msg({ t: 'strings', v: cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat] })) });
+    p.msg({ t: 'strings', v: cfg.strings.map(s => ({ ...s, mat: SMAT[s.mat], sus: stringSus() })) });
     p.msg({ t: 'ex', v: cfg.ex }); p.msg({ t: 'nk', v: { ...cfg.nk, thr: autoThr() } });
     p.msg({ t: 'modes', v: mods.map(x => ({ f: x.f, q: x.q, amp: x.amp, pan: x.pan })) });
     p.msg({ t: 'pk', v: { ...cfg.pk, master: cfg.pk.master * 0.7 } });
